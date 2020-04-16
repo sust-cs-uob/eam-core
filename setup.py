@@ -36,8 +36,8 @@ setup(
     url='https://github.com/dschien/eam-core',
     packages=find_packages('src'),
     package_dir={'': 'src'},
+    data_files=[('eam_core/eam_core', 'eam_core/logconf.yml')],
     py_modules=[splitext(basename(path))[0] for path in glob('src/*.py')],
-    include_package_data=True,
     zip_safe=False,
     classifiers=[
         # complete classifier list: http://pypi.python.org/pypi?%3Aaction=list_classifiers
@@ -62,14 +62,14 @@ setup(
         # eg: 'keyword1', 'keyword2', 'keyword3',
     ],
     python_requires='>=3.6',
-    install_requires=[
-        # eg: 'aspectlib==1.1.1', 'six>=1.7',
-    ],
-    extras_require={
-        # eg:
-        #   'rst': ['docutils>=0.11'],
-        #   ':python_version=="2.6"': ['argparse'],
-    },
+    # install_requires=[
+    #     # eg: 'aspectlib==1.1.1', 'six>=1.7',
+    # ],
+    # extras_require={
+    #     # eg:
+    #     #   'rst': ['docutils>=0.11'],
+    #     #   ':python_version=="2.6"': ['argparse'],
+    # },
     entry_points={
         'console_scripts': [
             'eam-core = eam_core.cli:main',
