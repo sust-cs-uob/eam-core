@@ -1,0 +1,7 @@
+﻿variable,scenario,type,param,ref value,mean growth,initial_value_proportional_variation,variability growth,ref date,unit,label,source,comment,control,scenario notes
+power_latop,,interp,linear,"{""2020-01-01"":10, ""2031-06-01"":9.5}",0,0.1,0.05,01/06/2019,W,,,,,
+time_laptop,,interp,linear,"{""2020-01-01"":100, ""2031-06-01"":95}",0,0.1,0.05,01/06/2019,minute,,,,,
+energy_intensity_network,,exp,,20,0.25,0.1,0.1,01/06/2016,kWh/GB,,,,,
+bitrate_laptop,,interp,exp,5,0,0.1,0.05,01/06/2019,Mb/s,,,,,
+carbon_intensity,,interp,exp,0.5,-0.1,0.1,0.05,01/06/2019,kg/kWh,,,,,
+carbon_intensity,S1,interp,exp,0.5,-0.2,0.1,0.05,01/06/2019,kg/kWh,,,,,

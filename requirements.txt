@@ -1,0 +1,33 @@
+antlr4-python3-runtime==4.7.1
+
+eam-data-tools>=1.2.2
+
+matplotlib>=2.0.2
+
+graphviz==0.8
+networkx==1.11
+pydotplus==2.0.2
+pypandoc>=1.4
+
+openpyxl>=2.4.8
+
+PyYAML
+ruamel.yaml
+
+simplejson
+
+tables>=3.4.4
+tabulate>=0.7.7
+tzlocal
+
+numpy>=1.14.5
+pandas==0.24.2
+
+# pint>=0.12
+# git+https://github.com/hgrecco/pint.git@f356379c15c1cb5d211c795872ac9e9284d2358f#egg=pint
+# git+https://github.com/crusaderky/pint.git@81cabd67722c657b3dae3c2d884b48f30313d9bd#egg=pint
+# --no-deps git+https://github.com/hgrecco/pint-pandas.git#egg=pint-pandas
+
+# google-api-python-client
+# httplib2>=0.10.3
+# oauth2client
