@@ -5,7 +5,7 @@ formatters:
         format:  "%(levelname)s - %(asctime)s - %(processName)s %(threadName)s - %(name)s - %(lineno)d - %(message)s"
 #        format: "%(asctime)s - %(filename)s - %(lineno)d - %(levelname)s - %(message)s"
     coloredFormatter:
-        '()': ngmodel.util.ColoredFormatter
+        '()': eam_core.util.ColoredFormatter
 handlers:
     console:
         class: logging.StreamHandler
@@ -14,7 +14,7 @@ handlers:
         stream: ext://sys.stdout
 
     info_file_handler:
-        class: ngmodel.util.MakeFileHandler
+        class: eam_core.util.MakeFileHandler
         level: DEBUG
         formatter: simple
         filename: logs/debug.log
@@ -23,7 +23,7 @@ handlers:
         encoding: utf8
 
     error_file_handler:
-        class: ngmodel.util.MakeFileHandler
+        class: eam_core.util.MakeFileHandler
         level: ERROR
         formatter: simple
         filename: logs/errors.log

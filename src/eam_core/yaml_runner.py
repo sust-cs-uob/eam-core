@@ -46,7 +46,7 @@ except:
 import logging
 from logging.config import dictConfig
 
-with open(resource_filename(Requirement.parse('ngmodel'), "ngmodel/logconf.yml"), 'r') as f:
+with open(resource_filename(Requirement.parse('eam_core'), "eam_core/logconf.yml"), 'r') as f:
     log_config = yaml.safe_load(f.read())
 dictConfig(log_config)
 
@@ -251,7 +251,6 @@ def run_mean(args, model_run_base_directory=None, simulation_run_description=Non
     logger.info(f"running mean for scenario {scenario}")
     if not model_run_base_directory:
         model_run_base_directory, simulation_run_description, yaml_struct = load_configuration(args)
-
 
     import copy
     _yaml_struct = copy.deepcopy(yaml_struct)

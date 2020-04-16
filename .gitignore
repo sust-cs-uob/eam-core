@@ -96,6 +96,7 @@ local.cfg
 __pycache__/*
 ipynb/.ipynb_checkpoints/*
 output/*
+tests/logs/**
 tests/__pycache__/*
 tests/baseline.png
 tests/test.dot

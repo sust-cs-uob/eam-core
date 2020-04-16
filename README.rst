@@ -61,6 +61,39 @@ Overview
 
 EAM core framework
 
+
+Documentation
+=============
+
+https://eam-core.readthedocs.io/
+
+Development
+===========
+
+Requires pandoc https://pandoc.org/installing.html
+
+create new virtual env (e.g on the CLI)::
+
+    python3 -m venv eam-core
+    source eam-core/bin/activate
+
+then install eam-core::
+
+    pip install -e .
+
+
+install non-pypi dependencies::
+
+    pip install git+https://github.com/hgrecco/pint.git@f356379c15c1cb5d211c795872ac9e9284d2358f#egg=pint
+    pip install --no-deps git+https://github.com/hgrecco/pint-pandas.git#egg=pint-pandas
+
+
+
+To run the all tests run::
+
+    tox
+
+
 Installation
 ============
 
@@ -72,34 +105,3 @@ You can also install the in-development version with::
 
     pip install https://github.com/dschien/eam-core/archive/master.zip
 
-
-Documentation
-=============
-
-
-https://eam-core.readthedocs.io/
-
-
-Development
-===========
-
-To run the all tests run::
-
-    tox
-
-Note, to combine the coverage data from all the tox environments run:
-
-.. list-table::
-    :widths: 10 90
-    :stub-columns: 1
-
-    - - Windows
-      - ::
-
-            set PYTEST_ADDOPTS=--cov-append
-            tox
-
-    - - Other
-      - ::
-
-            PYTEST_ADDOPTS=--cov-append tox
