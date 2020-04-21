@@ -1,0 +1,132 @@
+import unittest
+from ruamel import yaml
+
+from eam_core.ModuleParser import ModuleParser
+
+
+class ModuleParserTestCase(unittest.TestCase):
+    doc = u"""
+syntax_variant: 2
+
+Processes:
+- name: CDN
+
+  metadata:
+    model_layer: Datacentre
+  tableVariables:
+  - value: energy_intensity_network
+  - value: carbon_intensity
+  formula: |
+    energy = energy_intensity_network * data_volume
+    carbon = energy * carbon_intensity
+    return energy
+
+  id: 0
+
+Metadata:
+  model_name: CI_model
+  description: |
+    bla bla
+  model_version: 0.0.1
+  table_file_name: tests/data/ci_v2_data.xlsx
+  datasource_version_hint: 2
+  comparison_variable: energy
+  start_date: 2019-01-01
+  end_date: 2036-01-01
+  sample_size: 1
+  sample_mean: true
+  individual_process_graphs_variable: energy
+  analysis_configs:
+  - name: ci
+    named_plots:
+#        - all_area
+    - individual_processes
+    - input_vars
+    individual_process_graphs:
+    - Laptop
+    standard_plots:
+    - process_tree
+Analysis:
+  result_variables:
+  - energy
+  scenarios:
+  - S1
+  - default
+
+  numerical:
+  - energy
+  units:
+  - endswith: energy
+    to_unit: GWh
+  - __eq__: carbon
+    to_unit: Mt
+  - __eq__: data_volume
+    to_unit: TB
+  - __eq__: time
+    to_unit: kyear
+  - __eq__: result
+    to_unit: GWh
+
+  plots:
+  - name: individual_processes
+    variable: energy
+    kind: grid
+    title: Monthly Energy Consumption per Process
+    xlabel: Time
+    ylabel: Energy per Month [{unit}]
+Constants:
+- name: ref_duration
+  value: 2628000s
+"""
+
+    def test_variable_data(self):
+        """
+        test variables are read correctly
+        - id
+        - name
+        - unit
+        - description
+        - only include those mentioned in table variables
+        :return:
+        """
+        module = ModuleParser.load_module(yaml.load(ModuleParserTestCase.doc))
+        process = next(iter(module['processes'].values()))
+        params = process['params']
+        param_map = {v['name']: v for v in params}
+        assert set(param_map.keys()) == {'energy_intensity_network', 'carbon_intensity'}
+        assert param_map['carbon_intensity']['value'] == 0.5
+        assert param_map['carbon_intensity']['id'] == 5
+        assert param_map['carbon_intensity']['unit'] == 'kg/kWh'
+
+    def test_process_data(self):
+        """
+        test that process info is read correctly
+        - id
+        - name
+        - description
+        :return:
+        """
+        module = ModuleParser.load_module(yaml.load(ModuleParserTestCase.doc))
+
+        process = next(iter(module['processes'].values()))
+
+        assert process['id'] == 0
+        assert process['process_name'] == 'CDN'
+        assert process['model_layer'] == 'Datacentre'
+
+    def test_model_metadata(self):
+        """
+        test that model metadata is read correctly
+        - description
+        - version
+        - name
+        :return:
+        """
+
+        module = ModuleParser.load_module(yaml.load(ModuleParserTestCase.doc))
+        assert module['name'] == 'CI_model'
+        assert module['version'] == '0.0.1'
+
+
+if __name__ == '__main__':
+    unittest.main()

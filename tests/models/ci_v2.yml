@@ -21,7 +21,6 @@ Processes:
 
   id: 0
 - name: Internet Network
-
   metadata:
     model_layer: 3rd Party
   tableVariables:
@@ -66,7 +65,9 @@ Processes:
   id: 2
 Metadata:
   model_name: CI_model
-
+  description: |
+    bla bla
+  model_version: 0.0.1
   table_file_name: tests/data/ci_v2_data.xlsx
   datasource_version_hint: 2
   comparison_variable: energy
@@ -91,14 +92,7 @@ Analysis:
   scenarios:
   - S1
   - default
-  - default
-  - default
-  - default
-  - default
-  - default
-  - default
-  - default
-  - default
+
   numerical:
   - energy
   units:
@@ -112,52 +106,8 @@ Analysis:
     to_unit: kyear
   - __eq__: result
     to_unit: GWh
-#  process_group_colours:
-#    category_name: platform_name
-#    colours:
-#      DSL:
-#      Cellular:
-#      Shared:
-#      Fibre:
-#      Cable:
+
   plots:
-#    - name: all_area
-#      variable: energy
-#      kind: area
-#      title: Total Monthly Energy Consumption (GWh)
-#      ylabel: Energy per Month [{unit}]
-#      xlabel: Time
-#      groups:
-#        - name: Non-TV iPlayer Device
-#          categories:
-#            device_type: iPlayer Device
-#        - name: Home Networking
-#          categories:
-#            device_type: Home Networking
-#        - name: TVs
-#          categories:
-#            device_type: TV Device
-#        - name: STBs
-#          categories:
-#            device_type: STB Device
-#        - name: iPlayer Infrastucture
-#          categories:
-#            platform_name: iPlayer Infrastucture
-#        - name: IP Networking
-#          categories:
-#            device_type: IP Networking
-#        - name: Satellite Infrastructure
-#          categories:
-#            platform_name: Satellite
-#        - name: Cable Infrastructure
-#          categories:
-#            platform_name: Cable
-#        - name: Terrestrial Broadcast
-#          categories:
-#            platform_name: Terrestrial
-#        - name: Shared Infrastructure
-#          categories:
-#            platform_name: Shared
   - name: individual_processes
     variable: energy
     kind: grid
@@ -167,13 +117,3 @@ Analysis:
 Constants:
 - name: ref_duration
   value: 2628000s
-- name: hours_per_day
-  value: 24hr/day
-- name: seconds_per_hour
-  value: 3600s/hr
-- name: seconds_per_day
-  value: 86400s/day
-- name: seconds_per_month
-  value: 2628000s/month
-- name: hrs_per_year
-  value: 8766hr/year
