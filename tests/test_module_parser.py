@@ -87,13 +87,14 @@ Constants:
         - unit
         - description
         - only include those mentioned in table variables
+        - only include table variables that are marked with 'ui' in the table (excludes energy_intensity)
         :return:
         """
         module = ModuleParser.load_module(yaml.load(ModuleParserTestCase.doc))
         process = next(iter(module['processes'].values()))
         params = process['params']
         param_map = {v['name']: v for v in params}
-        assert set(param_map.keys()) == {'energy_intensity_network', 'carbon_intensity'}
+        assert set(param_map.keys()) == {'carbon_intensity'}
         assert param_map['carbon_intensity']['value'] == 0.5
         assert param_map['carbon_intensity']['id'] == 5
         assert param_map['carbon_intensity']['unit'] == 'kg/kWh'

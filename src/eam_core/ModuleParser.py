@@ -1,5 +1,6 @@
 import copy
 import logging
+import os
 from typing import Dict, Tuple
 
 import numpy as np
@@ -14,8 +15,9 @@ logger = logging.getLogger(__name__)
 
 class ModuleParser(object):
 
-    def __init__(self, version=1):
+    def __init__(self, yaml_file_location, version=1):
         self.version = version
+        self.yaml_file_location = yaml_file_location
 
     @staticmethod
     def load_definitions(doc):
@@ -29,6 +31,8 @@ class ModuleParser(object):
         result['model_layer'] = definition['metadata']['model_layer']
 
         table_file_name = yaml_structure['Metadata']['table_file_name']
+        if self.yaml_file_location:
+            table_file_name = self.yaml_file_location + os.path.sep + table_file_name
         if table_file_name.endswith('.csv'):
             definitions = CSVHandler().load_definitions(filename=table_file_name)
         else:
@@ -38,12 +42,13 @@ class ModuleParser(object):
             var_name = value_var_tuple['value']
             for parameter_definition in definitions:
                 if parameter_definition['variable'] == var_name:
-                    param = {}
-                    param['id'] = parameter_definition['id']
-                    param['value'] = parameter_definition['ref value']
-                    param['name'] = parameter_definition['variable']
-                    param['unit'] = parameter_definition['unit']
-                    result['params'].append(param)
+                    if parameter_definition['ui variable']:
+                        param = {}
+                        param['id'] = parameter_definition['id']
+                        param['value'] = parameter_definition['ref value']
+                        param['name'] = parameter_definition['variable']
+                        param['unit'] = parameter_definition['unit']
+                        result['params'].append(param)
 
         return result
 
@@ -60,9 +65,9 @@ class ModuleParser(object):
         return processes
 
     @staticmethod
-    def load_module(yaml_structure) -> Dict:
+    def load_module(yaml_structure, yaml_file_location="") -> Dict:
 
-        loader = ModuleParser(version=yaml_structure.get('variant', 2))
+        loader = ModuleParser(version=yaml_structure.get('variant', 2), yaml_file_location=yaml_file_location)
 
         result = {}
 
