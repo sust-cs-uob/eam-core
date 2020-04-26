@@ -36,7 +36,7 @@ setup(
     url='https://github.com/dschien/eam-core',
     packages=find_packages('src'),
     package_dir={'': 'src'},
-    data_files=[('eam_core/eam_core', 'eam_core/logconf.yml')],
+    data_files=[('eam_core\eam_core', 'eam_core\logconf.yml')],
     py_modules=[splitext(basename(path))[0] for path in glob('src/*.py')],
     zip_safe=False,
     classifiers=[
