@@ -31,10 +31,9 @@ class SimulationRunner(object):
 
     """
 
-    def __init__(self):
-        self.sim_control = None
+    def __init__(self, sim_control=None):
+        self.sim_control = sim_control
         self.use_docker = False
-
 
     def run_SA(self, create_model_func=None, embodied=False, sim_control=None):
         """
@@ -60,7 +59,7 @@ class SimulationRunner(object):
         model.footprint(use_phase=True, embodied=embodied, simulation_control=sim_control)
 
         traces: Dict[str, Dict[str, pd.Series]] = model.collect_calculation_traces()
-        Y = pd.DataFrame(traces['energy']) # .sum(axis=1)
+        Y = pd.DataFrame(traces['energy'])  # .sum(axis=1)
 
         Y.pint.dequantify().to_hdf(f'{output_directory}/Y.h5', 'Y', table=True, mode='a')
 
