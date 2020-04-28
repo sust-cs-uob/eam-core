@@ -37,11 +37,11 @@ class ModuleParser(object):
             definitions = CSVHandler().load_definitions(filename=table_file_name)
         else:
             definitions = OpenpyxlTableHandler().load_definitions(None, filename=table_file_name)
-
         for value_var_tuple in definition['tableVariables']:
             var_name = value_var_tuple['value']
             for parameter_definition in definitions:
                 if parameter_definition['variable'] == var_name:
+                    print(parameter_definition)
                     if parameter_definition['ui variable']:
                         param = {}
                         param['id'] = parameter_definition['id']
@@ -49,7 +49,8 @@ class ModuleParser(object):
                         param['name'] = parameter_definition['variable']
                         param['unit'] = parameter_definition['unit']
                         result['params'].append(param)
-
+                        print(result["params"])
+        print(result)
         return result
 
     def parse_yaml_structure(self, yaml_structure) -> Dict[str, Dict]:

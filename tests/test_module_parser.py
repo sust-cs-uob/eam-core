@@ -93,7 +93,9 @@ Constants:
         module = ModuleParser.load_module(yaml.load(ModuleParserTestCase.doc))
         process = next(iter(module['processes'].values()))
         params = process['params']
+        # print(params)
         param_map = {v['name']: v for v in params}
+        # print(param_map)
         assert set(param_map.keys()) == {'carbon_intensity'}
         assert param_map['carbon_intensity']['value'] == 0.5
         assert param_map['carbon_intensity']['id'] == 5

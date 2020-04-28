@@ -17,6 +17,7 @@ class YamlLoader(object):
 
     def __init__(self, version=1):
         self.version = version
+        self.id_map={'process': {}, 'parameters': {}}
 
     def create_formula_v1(self, formula_struct, yaml_structure, test=True):
         if 'ref' in formula_struct:
@@ -279,7 +280,7 @@ class YamlLoader(object):
 
             processes[definition['name']] = self.create_formula_process(definition, yaml_structure, sim_control,
                                                                         constants, prototypes)
-            if sim_control.ids:
+            if sim_control.process_ids:
                 if definition['name'] not in self.id_map['process'].keys() and 'id' in definition:
                     pid = definition['id']
                     # raises exception if the ID already exists
@@ -288,7 +289,7 @@ class YamlLoader(object):
                     else:
                         self.id_map['process'][definition['name']] = pid
             link_map[definition['name']] = definition.get('link_to', [])
-        if sim_control.ids:
+        if sim_control.process_ids:
             for definition in yaml_process_structs:
                 if not ('id' in definition):
                     # If this is the first process and it has no ID, set it to 0
