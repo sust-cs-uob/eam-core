@@ -2,7 +2,7 @@ variant: 2
 Processes:
 
   - name: CDN
-    id: 1
+    id: 0
     metadata:
       model_layer: 3rd Party
     tableVariables:
@@ -20,7 +20,7 @@ Processes:
       return energy
 
   - name: Internet Network
-    id: 2
+    id: 1
     metadata:
       model_layer: 3rd Party
     tableVariables:
@@ -41,6 +41,7 @@ Processes:
       return energy
 
   - name: Laptop
+    id: 2
     metadata:
       model_layer: User Device
     tableVariables:
