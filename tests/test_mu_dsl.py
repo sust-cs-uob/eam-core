@@ -105,7 +105,7 @@ class NumberTestCase(unittest.TestCase):
 
     def test_basic_mod(self):
         block = """
-            a = 14 % 5;            
+            a = 14 % 5;
         """
         visitor = evaluate(block)
         assert visitor.variables['a'] == 4
@@ -205,10 +205,59 @@ class NumberTestCase(unittest.TestCase):
                    a = true ;
                    if (a){
                         b = 2;
-                   }                   
+                   }
                """
         visitor = evaluate(block)
         assert visitor.variables['a'] and visitor.variables['b']
+
+    def test_basic_if_non_zero_is_true(self):
+        block = """
+                   a = 10000 ;
+                   if (a){
+                        b = 2;
+                   }
+               """
+        visitor = evaluate(block)
+        assert visitor.variables['a'] == 10000 and visitor.variables['b'] == 2
+
+    def test_basic_if_zero_is_false(self):
+        block = """
+                   a = 0 ;
+                   if (a){
+                        b = 2;
+                   }
+               """
+        visitor = evaluate(block)
+
+        assert visitor.variables['a'] == 0 and not 'b' in visitor.variables
+
+    def test_basic_if_else_if(self):
+        block = """
+                   a = 0 ;
+                   b = 0 ;
+                   if (a){
+                        b = 2;
+                   } else if (b){
+                        c = 1;
+                   } else {
+                        c = 2
+                   }
+               """
+        visitor = evaluate(block)
+        assert not visitor.variables['a'] and visitor.variables['b'] and visitor.variables['c'] == 2
+
+    def test_basic_if_else_if(self):
+        block = """
+                   a = 0 ;
+                   b = 1 ;
+                   if (a){
+                        b = 2;
+                   } else if (b){
+                        c = 1;
+                   }
+               """
+        visitor = evaluate(block)
+        assert not visitor.variables['a'] and visitor.variables['b'] and visitor.variables['c'] == 1
 
     def test_basic_if_else(self):
         block = """
@@ -217,7 +266,7 @@ class NumberTestCase(unittest.TestCase):
                         b = 2;
                    } else {
                         c = false;
-                   }             
+                   }
                """
         visitor = evaluate(block)
         assert visitor.variables['a'] and visitor.variables['b'] and 'c' not in visitor.variables
@@ -229,7 +278,7 @@ class NumberTestCase(unittest.TestCase):
                    while (a > 0){
                         b= b+1;
                         a = a- 1;
-                   }             
+                   }
                """
         visitor = evaluate(block)
         assert visitor.variables['a'] == 0 and visitor.variables['b'] == 10
@@ -339,7 +388,7 @@ class PandasTestCase(unittest.TestCase):
 
     def test_basic_mod(self):
         block = """
-            a = df % 5;            
+            a = df % 5;
         """
         visitor = evaluate(block, variables={'df': pd.DataFrame(data={'c': [14.]})})
         assert_frame_equal(visitor.variables['a'], pd.DataFrame(data={'c': [4.]}))
@@ -389,29 +438,29 @@ class PandasTestCase(unittest.TestCase):
         evaluate(block, variables={'df': pd.DataFrame(data={'c': [0., 1.]})})
 
     def test_basic_if_series(self):
-        block = """                   
+        block = """
                    if (0 == s) and (s == 0) {
                         b = s;
-                   }                     
+                   }
                """
         visitor = evaluate(block, variables={'s': pd.Series([0., 0.])})
         print(visitor.variables['b'])
         assert_series_equal(visitor.variables['b'], pd.Series([0., 0.]))
 
     def test_basic_if_df(self):
-        block = """                   
+        block = """
                    if (0 == df) and (df == 0) {
                         b = df;
-                   }                   
+                   }
                """
         visitor = evaluate(block, variables={'df': pd.DataFrame(data={'c': [0., 0.]})})
         print(visitor.variables['b'])
         assert_frame_equal(visitor.variables['b'], pd.DataFrame(data={'c': [0., 0.]}))
 
     def test_basic_and(self):
-        block = """            
+        block = """
             a = (df<3) &&  ( 4 >= 4);
-            
+
         """
         visitor = evaluate(block, variables={'df': pd.DataFrame(data={'c': [2.]})})
         print(visitor.variables['a'])
@@ -419,9 +468,9 @@ class PandasTestCase(unittest.TestCase):
 
     def test_basic_or(self):
         block = """
-            
+
             a = (df < 3 ) ||  ( 4 >= 1);
-           
+
         """
         visitor = evaluate(block, variables={'df': pd.DataFrame(data={'c': [2.]})})
         print(visitor.variables['a'])
@@ -535,7 +584,7 @@ class QuantityTestCase(unittest.TestCase):
 
     def test_basic_mod(self):
         block = """
-            a = df % 5;            
+            a = df % 5;
         """
         visitor = evaluate(block, variables={'df': pd.DataFrame(data={'c': [14.]})})
         assert_frame_equal(visitor.variables['a'], pd.DataFrame(data={'c': [4.]}))
@@ -585,29 +634,29 @@ class QuantityTestCase(unittest.TestCase):
         evaluate(block, variables={'df': pd.DataFrame(data={'c': [0., 1.]})})
 
     def test_basic_if_series(self):
-        block = """                   
+        block = """
                    if (0 == s) and (s == 0) {
                         b = s;
-                   }                     
+                   }
                """
         visitor = evaluate(block, variables={'s': pd.Series([0., 0.])})
         print(visitor.variables['b'])
         assert_series_equal(visitor.variables['b'], pd.Series([0., 0.]))
 
     def test_basic_if_df(self):
-        block = """                   
+        block = """
                    if (0 == df) and (df == 0) {
                         b = df;
-                   }                   
+                   }
                """
         visitor = evaluate(block, variables={'df': pd.DataFrame(data={'c': [0., 0.]})})
         print(visitor.variables['b'])
         assert_frame_equal(visitor.variables['b'], pd.DataFrame(data={'c': [0., 0.]}))
 
     def test_basic_and(self):
-        block = """            
+        block = """
             a = (df<3) &&  ( 4 >= 4);
-            
+
         """
         visitor = evaluate(block, variables={'df': pd.DataFrame(data={'c': [2.]})})
         print(visitor.variables['a'])
@@ -615,9 +664,9 @@ class QuantityTestCase(unittest.TestCase):
 
     def test_basic_or(self):
         block = """
-            
+
             a = (df < 3 ) ||  ( 4 >= 1);
-           
+
         """
         visitor = evaluate(block, variables={'df': pd.DataFrame(data={'c': [2.]})})
         print(visitor.variables['a'])
