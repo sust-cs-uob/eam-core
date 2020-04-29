@@ -1,19 +1,16 @@
-import copy
 import logging
 import os
-from typing import Dict, Tuple
+from typing import Dict
 
-import numpy as np
 import yaml
 
-from eam_core import Variable, ExcelVariable, Formula, FormulaModel, FormulaProcess, \
-    ServiceModel, SimulationControl, defaultdict, Q_, sample_value_for_simulation
 from table_data_reader import CSVHandler, OpenpyxlTableHandler
 
 logger = logging.getLogger(__name__)
 
 
 class ModuleParser(object):
+    param_type_map = {'p': 'proportion', 'd': 'decimal'}
 
     def __init__(self, yaml_file_location, version=1):
         self.version = version
@@ -27,8 +24,9 @@ class ModuleParser(object):
         result = {'params': []}
 
         result['id'] = definition['id']
-        result['process_name'] = definition['name']
-        result['model_layer'] = definition['metadata']['model_layer']
+        result['name'] = definition['name']
+        result['description'] = definition['description']
+        result['category'] = definition['metadata']['ui_category']
 
         table_file_name = yaml_structure['Metadata']['table_file_name']
         if self.yaml_file_location:
@@ -48,6 +46,8 @@ class ModuleParser(object):
                         param['value'] = parameter_definition['ref value']
                         param['name'] = parameter_definition['variable']
                         param['unit'] = parameter_definition['unit']
+                        param['description'] = parameter_definition['description']
+                        param['type'] = ModuleParser.param_type_map[parameter_definition['ui variable']]
                         result['params'].append(param)
 
         return result
@@ -73,6 +73,7 @@ class ModuleParser(object):
 
         result['name'] = yaml_structure['Metadata']['model_name']
         result['version'] = yaml_structure['Metadata']['model_version']
+        result['description'] = yaml_structure['Metadata']['description']
         result['processes'] = loader.parse_yaml_structure(yaml_structure)
 
         return result
