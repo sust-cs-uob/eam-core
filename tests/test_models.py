@@ -8,7 +8,7 @@ class MyTestCase(unittest.TestCase):
         runners = run(setup_parser(['-l', '-a dev', '-d', 'tests/models/youtube.yml']))
 
     def test_ci_v2(self):
-        runners = run(setup_parser(['-l', '-a', 'ci', '-d', 'tests/models/ci_v2.yml']))
+        runners = run(setup_parser(['-l', '-a', 'ci','-d', 'tests/models/ci_v2.yml']))
 
 
 if __name__ == '__main__':

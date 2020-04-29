@@ -72,11 +72,12 @@ class SimulationControl(object):
         self.sample_mean_value = False
         self.single_variable_names = None
         self.single_variable_run = False
-        self.excel_handler = 'xlrd'
+        self.excel_handler = 'openpyxl'
         self.times = pd.date_range('2009-01-01', '2017-01-01', freq='MS')
         self.sample_size = 100
         self.with_pint_units = True
-        self.ids = False
+        self.process_ids = False
+        self.variable_ids = False
         self.filename = None
 
     def reset(self):
@@ -243,7 +244,7 @@ class ExcelDataSource(DataSource):
         if not param_repo.exists(self.variable_name):
             logger.debug('opening excel file')
             loader = TableParameterLoader(filename=self.file_name, table_handler=simulation_control.excel_handler)
-            loader.load_into_repo(repository=param_repo)
+            loader.load_into_repo(repository=param_repo, id_flag= simulation_control.variable_ids)
 
         param = param_repo.get_parameter(self.variable_name, scenario_name=simulation_control.scenario)
         if 'process_name' in kwargs:
@@ -547,7 +548,7 @@ class ServiceModel(object):
         elements:[
             {group: 'nodes', data: { id: x}},
             {group: "edges", data: { id: x,  source: 'a', target: 'b' }},
-            
+
         ]
         { nodes:{
             'Laptop':
@@ -555,20 +556,20 @@ class ServiceModel(object):
                 'input vars': {'power':51},
                 'import vars': [
                 {    'formula_name': 'test',
-                    'edge_name': 'power', 
+                    'edge_name': 'power',
                     'value': 15}
                 ]
-                                
+
             }
             }
         edges:[
-            {'sourceNode':'', 'targetNode': '', 
+            {'sourceNode':'', 'targetNode': '',
                 data: {
                     'time': val
                 }
             }
         ]
-        
+
         }
         """
         simulation_control.trace = []

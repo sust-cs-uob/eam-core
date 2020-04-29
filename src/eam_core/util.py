@@ -965,7 +965,8 @@ def prepare_simulation(directory, simulation_run_description, yaml_struct, scena
     if not sim_control:
         sim_control = SimulationControl()
         configue_sim_control_from_yaml(sim_control, yaml_struct, directory)
-    sim_control.ids = IDs
+    sim_control.process_ids = IDs
+    sim_control.variable_ids = IDs
     sim_control.filename = filename
     sim_control.scenario = scenario
     store_sim_config(sim_control, directory, simulation_run_description)
