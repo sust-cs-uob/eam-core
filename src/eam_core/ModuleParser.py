@@ -25,7 +25,7 @@ class ModuleParser(object):
 
         result['id'] = definition['id']
         result['name'] = definition['name']
-        result['description'] = definition['description']
+        result['description'] = definition['metadata']['description']
         result['category'] = definition['metadata']['ui_category']
 
         table_file_name = yaml_structure['Metadata']['table_file_name']
