@@ -39,7 +39,6 @@ class ModuleParser(object):
             var_name = value_var_tuple['value']
             for parameter_definition in definitions:
                 if parameter_definition['variable'] == var_name:
-                    print(parameter_definition)
                     if parameter_definition['ui variable']:
                         param = {}
                         param['id'] = parameter_definition['id']
@@ -49,8 +48,6 @@ class ModuleParser(object):
                         param['description'] = parameter_definition['description']
                         param['type'] = ModuleParser.param_type_map[parameter_definition['ui variable']]
                         result['params'].append(param)
-                        print(result["params"])
-        print(result)
         return result
 
     def parse_yaml_structure(self, yaml_structure) -> Dict[str, Dict]:
