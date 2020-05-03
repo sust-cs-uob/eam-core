@@ -12,7 +12,10 @@ Processes:
 - name: CDN
 
   metadata:
-    model_layer: Datacentre
+    ui_category: Datacentre
+    description: |
+        A CDN is a
+        system that accelerates access
   tableVariables:
   - value: energy_intensity_network
   - value: carbon_intensity
@@ -90,7 +93,7 @@ Constants:
         - only include table variables that are marked with 'ui' in the table (excludes energy_intensity)
         :return:
         """
-        module = ModuleParser.load_module(yaml.load(ModuleParserTestCase.doc))
+        module = ModuleParser.load_module(yaml.load(ModuleParserTestCase.doc, ))
         process = next(iter(module['processes'].values()))
         params = process['params']
         # print(params)
@@ -98,8 +101,10 @@ Constants:
         # print(param_map)
         assert set(param_map.keys()) == {'carbon_intensity'}
         assert param_map['carbon_intensity']['value'] == 0.5
-        assert param_map['carbon_intensity']['id'] == 5
+        assert param_map['carbon_intensity']['id'] == 4
         assert param_map['carbon_intensity']['unit'] == 'kg/kWh'
+        assert param_map['carbon_intensity']['type'] == 'proportion'
+
 
     def test_process_data(self):
         """
@@ -114,8 +119,8 @@ Constants:
         process = next(iter(module['processes'].values()))
 
         assert process['id'] == 0
-        assert process['process_name'] == 'CDN'
-        assert process['model_layer'] == 'Datacentre'
+        assert process['name'] == 'CDN'
+        assert process['category'] == 'Datacentre'
 
     def test_model_metadata(self):
         """

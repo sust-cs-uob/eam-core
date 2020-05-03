@@ -1,0 +1,27 @@
+version: 2.1
+
+orbs:
+  python: circleci/python@0.3.0
+
+jobs:
+  build-and-test:
+    executor: python/default
+    steps:
+      - checkout
+      - python/load-cache
+      - run:
+          name: install deps
+          command: |
+            pip install -r requirements.txt
+            pip install pytest git+https://github.com/hgrecco/pint.git@f356379c15c1cb5d211c795872ac9e9284d2358f#egg=pint
+            pip install --no-deps git+https://github.com/hgrecco/pint-pandas.git#egg=pint-pandas
+
+      - python/save-cache
+      - run:
+          command: FLASK_ENV=testing pytest
+          name: Test
+
+workflows:
+  main:
+    jobs:
+      - build-and-test

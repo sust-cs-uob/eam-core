@@ -4,7 +4,9 @@ Processes:
   - name: CDN
     id: 0
     metadata:
-      model_layer: 3rd Party
+      ui_category: User Device
+      description: |
+          ignored
     tableVariables:
       - value: energy_intensity_network
       - value: carbon_intensity
@@ -22,7 +24,9 @@ Processes:
   - name: Internet Network
     id: 1
     metadata:
-      model_layer: 3rd Party
+      ui_category: User Device
+      description: |
+          ignored
     tableVariables:
       - value: energy_intensity_network
       - value: carbon_intensity
@@ -43,7 +47,9 @@ Processes:
   - name: Laptop
     id: 2
     metadata:
-      model_layer: User Device
+      ui_category: User Device
+      description: |
+          ignored
     tableVariables:
       - value: power_latop
       - value: time_laptop
