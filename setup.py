@@ -4,6 +4,7 @@ from __future__ import absolute_import
 from __future__ import print_function
 
 import io
+import os
 import re
 from glob import glob
 from os.path import basename
@@ -34,9 +35,10 @@ setup(
     author='Dan Schien',
     author_email='daniel.schien@bristol.ac.uk',
     url='https://github.com/dschien/eam-core',
+    include_package_data=True,
     packages=find_packages('src'),
     package_dir={'': 'src'},
-    # data_files=[('eam_core\eam_core', 'eam_core\logconf.yml')],
+    # data_files=[('eam_core', [os.path.join('eam_core', 'logconf.yml')])],
     py_modules=[splitext(basename(path))[0] for path in glob('src/*.py')],
     zip_safe=False,
     classifiers=[
