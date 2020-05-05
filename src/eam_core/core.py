@@ -28,10 +28,9 @@ from networkx.readwrite import json_graph
 
 import logging
 
-# with open("logconf.yml", 'r') as f:
-#     log_config = yaml.safe_load(f.read())
+import eam_core.log_configuration as logconf
+logconf.config_logging()
 
-# dictConfig(log_config)
 logger = logging.getLogger(__name__)
 
 CARBON_INTENSITY_kg_kWh = 0.41205  # kg/kWh
@@ -244,7 +243,7 @@ class ExcelDataSource(DataSource):
         if not param_repo.exists(self.variable_name):
             logger.debug('opening excel file')
             loader = TableParameterLoader(filename=self.file_name, table_handler=simulation_control.excel_handler)
-            loader.load_into_repo(repository=param_repo, id_flag= simulation_control.variable_ids)
+            loader.load_into_repo(repository=param_repo, id_flag=simulation_control.variable_ids)
 
         param = param_repo.get_parameter(self.variable_name, scenario_name=simulation_control.scenario)
         if 'process_name' in kwargs:
@@ -356,7 +355,7 @@ class FormulaModel(object):
     def evaluate(self, sim_control, input_variables: Dict[str, Variable] = None,
                  export_variable_names: Dict[str, str] = None,
                  DSL_variable_dict=None, **kwargs) -> \
-            Tuple[Dict[str, Variable], EvalVisitor]:
+        Tuple[Dict[str, Variable], EvalVisitor]:
         """
         1. variables and add to DSL
         2. evaluate

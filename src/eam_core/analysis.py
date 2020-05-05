@@ -10,20 +10,12 @@ import matplotlib
 import matplotlib.ticker as tkr
 import numpy as np
 import pandas as pd
-import statsmodels.api as sm
+# import statsmodels.api as sm
 from ruamel import yaml
 from matplotlib import pyplot as plt
 from pkg_resources import Requirement, resource_filename
 
 from eam_core.common_analysis import convert, metric_conversion
-
-with open(resource_filename(Requirement.parse('ngmodel'), "ngmodel/logconf.yml"), 'r') as f:
-    log_config = yaml.safe_load(f.read())
-
-# with open(os.path.dirname(os.path.realpath(__file__)) + '/logconf.yml', 'r') as f:
-#     log_config = yaml.safe_load(f.read())
-
-dictConfig(log_config)
 
 logger = logging.getLogger(__name__)
 
@@ -39,17 +31,17 @@ from eam_core.util import generate_model_definition_markdown, load_trace_data, k
 def calculate_SRCs(input_variables, y):
     """
     Calculate standardised regression coefficients.
-    See p. 9 ff. in "Sensitivity analysis in practice : a guide to assessing scientific models". 
+    See p. 9 ff. in "Sensitivity analysis in practice : a guide to assessing scientific models".
                      Andrea Saltelli et al. 2004
-                      
-    For linear models, the SRCs (beta) are equal to $S^x_\sigma$ and the square of the SRCs sum up to 1: 
+
+    For linear models, the SRCs (beta) are equal to $S^x_\sigma$ and the square of the SRCs sum up to 1:
     $1 = \sum (S_x^\sigma )^2 = \sum (\beta \frac{\sigma_x}{\sigma_y})^2$
-     
+
     if the model coefficient of determination R^2_y is close to one (for monotone models) then the SRC^2 provide the percentage of output variance effected by the input variable
 
-    :param input_variables: 
-    :param y: 
-    :return: 
+    :param input_variables:
+    :param y:
+    :return:
     """
     X = np.array(input_variables)
     X = sm.add_constant(X)

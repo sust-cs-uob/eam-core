@@ -26,7 +26,7 @@ def read(*names, **kwargs):
 
 setup(
     name='eam-core',
-    version='0.1.0',
+    version='0.1.1',
     description='EAM core framework',
     long_description='%s\n%s' % (
         re.compile('^.. start-badges.*^.. end-badges', re.M | re.S).sub('', read('README.rst')),
@@ -35,10 +35,11 @@ setup(
     author='Dan Schien',
     author_email='daniel.schien@bristol.ac.uk',
     url='https://github.com/dschien/eam-core',
-    include_package_data=True,
     packages=find_packages('src'),
     package_dir={'': 'src'},
-    # data_files=[('eam_core', [os.path.join('eam_core', 'logconf.yml')])],
+    include_package_data=True,
+    # package_data=[('eam_core', [os.path.join('eam_core', 'logconf.yml')])],
+    # data_files=[('', [os.path.join('eam_core', 'logconf.yml')])],
     py_modules=[splitext(basename(path))[0] for path in glob('src/*.py')],
     zip_safe=False,
     classifiers=[
@@ -68,9 +69,7 @@ setup(
     #     # eg: 'aspectlib==1.1.1', 'six>=1.7',
     # ],
     # extras_require={
-    #     # eg:
-    #     #   'rst': ['docutils>=0.11'],
-    #     #   ':python_version=="2.6"': ['argparse'],
+    #     'gdrive' = ['httplib2>=0.10.3', 'google-api-python-client', 'oauth2client'],
     # },
     entry_points={
         'console_scripts': [

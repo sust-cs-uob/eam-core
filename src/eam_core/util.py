@@ -4,6 +4,7 @@ from functools import partial
 
 import matplotlib
 import pint
+import os
 from pint.quantity import _Quantity
 
 from eam_core.YamlLoader import YamlLoader
@@ -16,7 +17,6 @@ import csv
 import inspect
 import logging
 
-logger = logging.getLogger(__name__)
 import subprocess
 from operator import itemgetter
 from typing import Dict, Any, Optional, Tuple
@@ -31,89 +31,12 @@ from tabulate import tabulate
 import networkx as nx
 from networkx.drawing.nx_agraph import graphviz_layout, write_dot
 
-import logging.handlers
-import os
+
 import errno
 
 logger = logging.getLogger(__name__)
 
 
-def mkdir_p(path):
-    """http://stackoverflow.com/a/600612/190597 (tzot)"""
-    try:
-        os.makedirs(path, exist_ok=True)  # Python>3.2
-    except TypeError:
-        try:
-            os.makedirs(path)
-        except OSError as exc:  # Python >2.5
-            if exc.errno == errno.EEXIST and os.path.isdir(path):
-                pass
-            else:
-                raise
-
-
-class MakeFileHandler(logging.handlers.RotatingFileHandler):
-    def __init__(self, filename, mode='a', maxBytes=0, backupCount=0, encoding=None, delay=False):
-        mkdir_p(os.path.dirname(filename))
-        logging.handlers.RotatingFileHandler.__init__(self, filename, mode, maxBytes, backupCount, encoding, delay)
-
-
-BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE = range(8)
-
-# The background is set with 40 plus the number of the color, and the foreground with 30
-
-# These are the sequences need to get colored ouput
-RESET_SEQ = "\033[0m"
-COLOR_SEQ = "\033[1;%dm"
-BOLD_SEQ = "\033[1m"
-
-
-def formatter_message(message, use_color=True):
-    if use_color:
-        message = message.replace("$RESET", RESET_SEQ).replace("$BOLD", BOLD_SEQ)
-    else:
-        message = message.replace("$RESET", "").replace("$BOLD", "")
-    return message
-
-
-COLORS = {
-    'WARNING': YELLOW,
-    'INFO': GREEN,
-    'DEBUG': WHITE,
-    'CRITICAL': YELLOW,
-    'ERROR': RED
-}
-
-
-class ColoredFormatter(logging.Formatter):
-    def __init__(self, use_color=True):
-        logging.Formatter.__init__(self,
-                                   "[\033[1m%(name)-20s\033[0m][%(levelname)-18s]  %(message)s (\033[1m%(filename)s\033[0m:%(lineno)d)")
-        self.use_color = use_color
-
-    def format(self, record):
-        levelname = record.levelname
-        if self.use_color and levelname in COLORS:
-            levelname_color = COLOR_SEQ % (30 + COLORS[levelname]) + levelname + RESET_SEQ
-            record.levelname = levelname_color
-        return logging.Formatter.format(self, record)
-
-
-# Custom logger class with multiple destinations
-class ColoredLogger(logging.Logger):
-    FORMAT = "[$BOLD%(name)-20s$RESET][%(levelname)-18s]  %(message)s ($BOLD%(filename)s$RESET:%(lineno)d)"
-    COLOR_FORMAT = formatter_message(FORMAT, True)
-
-    def __init__(self, name):
-        logging.Logger.__init__(self, name, logging.DEBUG)
-
-        color_formatter = ColoredFormatter(self.COLOR_FORMAT)
-
-        console = logging.StreamHandler()
-        console.setFormatter(color_formatter)
-
-        self.addHandler(console)
-        return
 
 
 def find_node_by_name(model, name) -> FormulaProcess:
@@ -325,7 +248,7 @@ def pandas_series_dict_to_dataframe(data: Dict[str, pd.Series], target_units=Non
 
 def quantity_dict_to_dataframe(q_data: Dict[str, _Quantity], target_units=None, var_name=None,
                                simulation_control: SimulationControl = None) \
-        -> Tuple[pd.DataFrame, Dict[str, str]]:
+    -> Tuple[pd.DataFrame, Dict[str, str]]:
     data = None
     metadata = {}
     logger.debug(f'result data has the following processes {q_data.keys()}')
@@ -600,7 +523,7 @@ def draw_graph_from_dotfile(model, file_type='pdf', show_variables=True, metric=
 
                     # for k, v in edge_variables.items():
                     #     import_variable_names[k].append(v)
-    #@todo check model name does not allow code execution
+    # @todo check model name does not allow code execution
     dot_file = f'{output_directory}/{model.name}.dot'
     pydot.write_dot(dot_file)
 
@@ -961,7 +884,8 @@ def configue_sim_control_from_yaml(sim_control: SimulationControl, yaml_struct, 
     sim_control._df_multi_index = pd.MultiIndex.from_product(iterables, names=sim_control.index_names)
 
 
-def prepare_simulation(directory, simulation_run_description, yaml_struct, scenario, sim_control=None, filename=None, IDs=False):
+def prepare_simulation(directory, simulation_run_description, yaml_struct, scenario, sim_control=None, filename=None,
+                       IDs=False):
     if not sim_control:
         sim_control = SimulationControl()
         configue_sim_control_from_yaml(sim_control, yaml_struct, directory)
