@@ -15,11 +15,6 @@ from eam_core.util import store_dataframe, \
     store_process_metadata, store_parameter_repo_variables, get_param_names, to_target_dimension, \
     pandas_series_dict_to_dataframe
 
-with open(resource_filename(Requirement.parse('eam-core'), "eam_core/logconf.yml"), 'r') as f:
-    log_config = yaml.safe_load(f.read())
-
-dictConfig(log_config)
-
 logger = logging.getLogger(__name__)
 
 

@@ -9,8 +9,6 @@ import matplotlib
 matplotlib.use('Agg')
 from matplotlib import pyplot as plt
 
-from pip._vendor.pkg_resources import resource_filename, Requirement
-
 import json as json
 
 from shutil import copyfile
@@ -44,12 +42,6 @@ except:
     config = {}
 
 import logging
-from logging.config import dictConfig
-
-with open(resource_filename(Requirement.parse('eam_core'), "eam_core/logconf.yml"), 'r') as f:
-    log_config = yaml.safe_load(f.read())
-dictConfig(log_config)
-
 logger = logging.getLogger(__name__)
 
 

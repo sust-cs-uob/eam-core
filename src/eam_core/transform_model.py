@@ -5,9 +5,7 @@ from pip._vendor.pkg_resources import resource_filename, Requirement
 from ruamel import yaml
 from ruamel.yaml.scalarstring import PreservedScalarString as pss
 
-with open(resource_filename(Requirement.parse('ngmodel'), "ngmodel/logconf.yml"), 'r') as f:
-    log_config = yaml.safe_load(f.read())
-dictConfig(log_config)
+import eam_core.log_configuration as logconf
 
 logger = logging.getLogger(__name__)
 
