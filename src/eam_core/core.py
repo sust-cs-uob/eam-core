@@ -92,7 +92,6 @@ class SimulationControl(object):
         :param variable:
         :return:
         """
-
         if not variable.name in self.cache:
             self.cache[process.name][variable.name] = variable.data_source.get_value(variable.name, self,
                                                                                      **{'process_name': process.name})
@@ -616,6 +615,8 @@ class ServiceModel(object):
                         var_values = [
                             simulation_control.get_variable_value(process_variable_tuple[1], process_variable_tuple[0])
                             for process_variable_tuple in process_var_list]
+                        # print("var values are")
+                        # print(var_values)
                         res = process_node.aggregation_functions[name](var_values)
                         v = Variable.static_variable(name, res)  # b/s * s = b
 

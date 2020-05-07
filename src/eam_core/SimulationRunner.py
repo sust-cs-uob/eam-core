@@ -146,7 +146,7 @@ class SimulationRunner(object):
         # evaluate model to get input variables
         model = create_model_func(sim_control=sim_control)
         fp = model.footprint(use_phase=True, embodied=embodied, simulation_control=sim_control)
-        print(fp)
+        # print(fp)
         variances = {}
         variances['all'] = SimulationRunner.get_stddev_and_mean(fp['use_phase_energy'], np.ones(2))
 
@@ -212,7 +212,7 @@ class SimulationRunner(object):
         self.footprint_result_dict = self.model.footprint(use_phase=True, embodied=embodied,
                                                           simulation_control=self.sim_control,
                                                           debug=debug)
-
+        traces: Dict[str, Dict[str, pd.Series]] = self.model.collect_calculation_traces()
         if output_persistence_config is None or not output_persistence_config:
             return self.model, self.footprint_result_dict
 
@@ -273,13 +273,15 @@ class SimulationRunner(object):
         :rtype:
         """
         traces: Dict[str, Dict[str, pd.Series]] = self.model.collect_calculation_traces()
+        # print(traces)
         #
         # store_calculation_debug_info(self.model, sim_control, store_input_vars=True, average=pickle_average,
         #                              target_units=target_units)
         for variable_name in variable_names:
             logger.info(f'storing results for variable {variable_name}')
             _variable_values: Dict[str, pd.Series] = traces[variable_name]
-
+            print("line 287")
+            print(_variable_values)
             store_dataframe(_variable_values, simulation_control=self.sim_control,
                             target_units=target_units, variable_name=variable_name)
 
@@ -301,6 +303,7 @@ class SimulationRunner(object):
                 var_dict[var_name] = val
 
         var_df = pd.DataFrame(var_dict, index=val.index)
-
+        print("line 310")
+        print(var_df)
         store_dataframe(var_df, simulation_control=self.sim_control, target_units=target_units,
                         variable_name='input_vars')
