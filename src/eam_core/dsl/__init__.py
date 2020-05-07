@@ -224,8 +224,13 @@ class EvalVisitor(MuVisitor):
 
             else:
                 import pandas
-                if isinstance(evaluated, pandas.DataFrame) or isinstance(evaluated, pandas.Series):
+                if isinstance(evaluated, pandas.DataFrame):
                     if evaluated.all().bool():
+                        evaluatedBlock = True
+                        self.visit(condition.stat_block())
+                        break
+                if isinstance(evaluated, pandas.Series):
+                    if evaluated.all():
                         evaluatedBlock = True
                         self.visit(condition.stat_block())
                         break

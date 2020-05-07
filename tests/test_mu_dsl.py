@@ -231,7 +231,7 @@ class NumberTestCase(unittest.TestCase):
 
         assert visitor.variables['a'] == 0 and not 'b' in visitor.variables
 
-    def test_basic_if_else_if(self):
+    def test_basic_if_else_if_else(self):
         block = """
                    a = 0 ;
                    b = 0 ;
@@ -643,6 +643,30 @@ class QuantityTestCase(unittest.TestCase):
         print(visitor.variables['b'])
         assert_series_equal(visitor.variables['b'], pd.Series([0., 0.]))
 
+    def test_short_if_series_false(self):
+        block = """
+                   if (s) {
+                        b = 1;
+                   } else {
+                        b = s;
+                   }
+               """
+        visitor = evaluate(block, variables={'s': pd.Series([0., 0.])})
+        print(visitor.variables['b'])
+        assert_series_equal(visitor.variables['b'], pd.Series([0., 0.]))
+
+    def test_short_if_series_true(self):
+        block = """
+                   if (s) {
+                        b = 1;
+                   } else {
+                        b = s;
+                   }
+               """
+        visitor = evaluate(block, variables={'s': pd.Series([2., 1.])})
+        print(visitor.variables['b'])
+        assert visitor.variables['b'], 1
+
     def test_basic_if_df(self):
         block = """
                    if (0 == df) and (df == 0) {
@@ -652,6 +676,28 @@ class QuantityTestCase(unittest.TestCase):
         visitor = evaluate(block, variables={'df': pd.DataFrame(data={'c': [0., 0.]})})
         print(visitor.variables['b'])
         assert_frame_equal(visitor.variables['b'], pd.DataFrame(data={'c': [0., 0.]}))
+
+    def test_short_if_df_true(self):
+        block = """
+                   if (df) {
+                        b = df;
+                   }
+               """
+        visitor = evaluate(block, variables={'df': pd.DataFrame(data={'c': [2., 1.]})})
+        print(visitor.variables['b'])
+        assert_frame_equal(visitor.variables['b'], pd.DataFrame(data={'c': [2., 1.]}))
+
+    def test_short_if_df_false(self):
+        block = """
+                   if (df) {
+                        b = 2;
+                   } else {
+                        b = df;
+                   }
+               """
+        visitor = evaluate(block, variables={'df': pd.DataFrame(data={'c': [0., 0.]})})
+        print(visitor.variables['b'])
+        assert visitor.variables['b'] == 2
 
     def test_basic_and(self):
         block = """
@@ -686,6 +732,66 @@ class QuantityTestCase(unittest.TestCase):
 
         assert_frame_equal(visitor.variables['a'], df_new)
         assert visitor.variables['a']['col1'].pint.units == 'watt'
+
+    def test_pint_pandas_df_basic_if_true(self):
+        d = {'col1': [1, 2]}
+        df = pd.DataFrame(data=d, dtype='pint[W]')
+
+        block = """
+                   if (df) {
+                        b = 2;
+                   } else {
+                        b = df;
+                   }
+               """
+        visitor = evaluate(block, variables={'df': df})
+        print(visitor.variables['b'])
+        assert visitor.variables['b'], 2
+
+    def test_pint_pandas_df_basic_if_false(self):
+        d = {'col1': [0, 0]}
+        df = pd.DataFrame(data=d, dtype='pint[W]')
+
+        block = """
+                   if (df) {
+                        b = df;
+                   } else {
+                        b = 2;
+                   }
+               """
+        visitor = evaluate(block, variables={'df': df})
+        print(visitor.variables['b'])
+        assert visitor.variables['b'], 2
+
+    def test_pint_pandas_series_basic_if_true(self):
+        d = {'col1': [1, 2]}
+        df = pd.Series(data=d, dtype='pint[W]')
+
+        block = """
+                   if (df) {
+                        b = 2;
+                   } else {
+                        b = df;
+                   }
+               """
+        visitor = evaluate(block, variables={'df': df})
+        print(visitor.variables['b'])
+        assert visitor.variables['b'] == 2
+
+    def test_pint_pandas_series_basic_if_false(self):
+        d = {'col1': [0, 0]}
+        df = pd.Series(data=d, dtype='pint[W]')
+
+        block = """
+                   if (df) {
+                        b = df;
+                   } else {
+                        b = 2;
+                   }
+               """
+        visitor = evaluate(block, variables={'df': df})
+        print(visitor.variables['b'])
+        assert visitor.variables['b'] == 2
 
     def test_pint_pandas_timeseries(self):
         start_date = '2010-01-01'
