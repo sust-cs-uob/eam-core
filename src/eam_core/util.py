@@ -31,12 +31,9 @@ from tabulate import tabulate
 import networkx as nx
 from networkx.drawing.nx_agraph import graphviz_layout, write_dot
 
-
 import errno
 
 logger = logging.getLogger(__name__)
-
-
 
 
 def find_node_by_name(model, name) -> FormulaProcess:
@@ -843,7 +840,7 @@ def store_sim_config(sim_control, directory, simulation_run_description):
     del sim_control___dict__['param_repo']
     del sim_control___dict__['_df_multi_index']
     sim_config = {'simulation_run_description': simulation_run_description, 'sim_config': sim_control___dict__}
-    with open(f'{directory}/sim_config.json', 'w') as outfile:
+    with open(f'{str(directory)}/sim_config.json', 'w') as outfile:
         simplejson.dump(sim_config, outfile, indent=4, sort_keys=True)
 
 

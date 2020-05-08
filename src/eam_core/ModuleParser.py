@@ -43,10 +43,13 @@ class ModuleParser(object):
                         param = {}
                         param['id'] = parameter_definition['id']
                         param['value'] = parameter_definition['ref value']
-                        param['name'] = parameter_definition['variable']
+                        param['name'] = parameter_definition['user name']
                         param['unit'] = parameter_definition['unit']
                         param['description'] = parameter_definition['description']
                         param['type'] = ModuleParser.param_type_map[parameter_definition['ui variable']]
+
+                        if 'override' in parameter_definition:
+                            param['is_override'] = True
                         result['params'].append(param)
         return result
 
