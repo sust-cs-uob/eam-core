@@ -48,8 +48,10 @@ class ModuleParser(object):
                         param['description'] = parameter_definition['description']
                         param['type'] = ModuleParser.param_type_map[parameter_definition['ui variable']]
 
-                        if 'override' in parameter_definition:
+                        override_flag = parameter_definition.get('override', "")
+                        if override_flag and override_flag.lower().strip() == "x":
                             param['is_override'] = True
+
                         result['params'].append(param)
         return result
 
