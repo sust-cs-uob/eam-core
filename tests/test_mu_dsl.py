@@ -235,16 +235,16 @@ class NumberTestCase(unittest.TestCase):
         block = """
                    a = 0 ;
                    b = 0 ;
-                   if (a){
+                   if (a != 0){
                         b = 2;
-                   } else if (b){
+                   } else if (b != 0){
                         c = 1;
                    } else {
-                        c = 2
+                        c = 2;
                    }
                """
         visitor = evaluate(block)
-        assert not visitor.variables['a'] and visitor.variables['b'] and visitor.variables['c'] == 2
+        assert visitor.variables['c'] == 2
 
     def test_basic_if_else_if(self):
         block = """
