@@ -17,7 +17,7 @@ class YamlLoader(object):
 
     def __init__(self, version=1):
         self.version = version
-        self.id_map={'process': {}, 'parameters': {}}
+        self.id_map = {'process': {}, 'parameters': {}}
 
     def create_formula_v1(self, formula_struct, yaml_structure, test=True):
         if 'ref' in formula_struct:
@@ -50,6 +50,7 @@ class YamlLoader(object):
         return formula
 
     def create_formula(self, formula_struct, yaml_structure, test=True):
+
         if self.version == 1:
             return self.create_formula_v1(formula_struct, yaml_structure, test)
         if self.version == 2:
@@ -57,10 +58,10 @@ class YamlLoader(object):
 
     @staticmethod
     def load_definitions(doc):
-        return yaml.load(doc)
+        return yaml.safe_load(doc)
 
     def create_variables_from_yaml_v1(self, variable_definitions, simulation_control, yaml_structure, constants) \
-            -> Dict[str, Variable]:
+        -> Dict[str, Variable]:
         vars = {}
 
         for var_def in variable_definitions:
@@ -125,7 +126,7 @@ class YamlLoader(object):
         return vars
 
     def create_variables_from_yaml_v2(self, variable_definitions, simulation_control, yaml_structure, constants) \
-            -> Dict[str, Variable]:
+        -> Dict[str, Variable]:
         vars = {}
 
         for var_defs_type, var_def in variable_definitions.items():
@@ -156,7 +157,7 @@ class YamlLoader(object):
         return vars
 
     def create_variables_from_yaml(self, variable_definitions, simulation_control, yaml_structure, constants) \
-            -> Dict[str, Variable]:
+        -> Dict[str, Variable]:
         if self.version == 1:
             return self.create_variables_from_yaml_v1(variable_definitions, simulation_control, yaml_structure,
                                                       constants)
@@ -176,7 +177,8 @@ class YamlLoader(object):
         quantity_variable = Variable.static_variable(name, quantity)
         return quantity_variable
 
-    def create_formula_process(self, definition, yaml_structure, sim_control, constants, prototypes):
+    def create_formula_process(self, definition, yaml_structure, sim_control, constants, prototypes,
+                               static_checks=False):
         if 'prototype' in definition:
             pt = copy.deepcopy(prototypes[definition['prototype']])
             for k, v in definition.items():
@@ -199,7 +201,7 @@ class YamlLoader(object):
         input_variables = {}
 
         if (self.version == 1 and 'input_variables' in definition) or \
-                self.version == 2:
+            self.version == 2:
 
             if self.version == 1:
                 variable_definitions = definition.get('input_variables', [])
@@ -245,11 +247,12 @@ class YamlLoader(object):
                            input_variables=input_variables,
                            export_variable_names=export_variable_names,
                            import_variable_names=import_variables,
-                           metadata=definition.get('metadata', {}))
+                           metadata=definition.get('metadata', {}), static_checks=static_checks)
 
         return p
 
-    def parse_yaml_structure(self, yaml_structure, sim_control) -> Tuple[Dict[str, FormulaProcess], Dict[str, str]]:
+    def parse_yaml_structure(self, yaml_structure, sim_control, **kwargs) -> Tuple[
+        Dict[str, FormulaProcess], Dict[str, str]]:
         yaml_process_structs = yaml_structure['Processes']
         yaml_constants_structs = yaml_structure.get('Constants', [])
 
@@ -273,13 +276,15 @@ class YamlLoader(object):
         prototypes = {}
 
         for definition in yaml_process_structs:
-            logger.info(f"parsing {definition['name']}")
+            logger.info(f"Parsing process {definition['name']}")
             if 'type' in definition and definition['type'] == 'prototype':
                 prototypes[definition['name']] = definition
                 continue
 
             processes[definition['name']] = self.create_formula_process(definition, yaml_structure, sim_control,
-                                                                        constants, prototypes)
+                                                                        constants, prototypes,
+                                                                        static_checks=kwargs.get('formula_checks',
+                                                                                                 False))
             if sim_control.process_ids:
                 if definition['name'] not in self.id_map['process'].keys() and 'id' in definition:
                     pid = definition['id']
@@ -309,11 +314,11 @@ class YamlLoader(object):
         return processes, link_map
 
     @staticmethod
-    def create_service(yaml_structure, sim_control) -> ServiceModel:
+    def create_service(yaml_structure, sim_control, **kwargs) -> ServiceModel:
 
         loader = YamlLoader(version=yaml_structure.get('variant', 1))
 
-        processes, link_map = loader.parse_yaml_structure(yaml_structure, sim_control)
+        processes, link_map = loader.parse_yaml_structure(yaml_structure, sim_control, **kwargs)
 
         s = ServiceModel(yaml_structure['Metadata']['model_name'])
         for p_name, process in processes.items():

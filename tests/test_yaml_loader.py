@@ -10,8 +10,8 @@ from eam_core.YamlLoader import YamlLoader
 
 
 class YamlLoader_v1(unittest.TestCase):
-    doc = u"""    
-Processes:    
+    doc = u"""
+Processes:
   - name: test formula process
     formula:
       text: |
@@ -23,21 +23,21 @@ Processes:
         type: StaticVariable
         value: 5
       - formula_name: custom_coefficient
-        type: ExcelVariable    
+        type: ExcelVariable
         file_alias: test_location
         sheet_name: Sheet1
         excel_var_name: a
     import_variables:
       - energy_intensity
-      - data_volume        
+      - data_volume
     export_variables:
-      energy_intensity: test_energy_intensity    
-      data_volume: test_data_volume    
-    link_to: 
+      energy_intensity: test_energy_intensity
+      data_volume: test_data_volume
+    link_to:
       - process a
   - name: process stub
 Formulas:
-  - name: unused intensity-volume formula  
+  - name: unused intensity-volume formula
     text: |
       energy = energy_intensity * data_volume
       return energy
@@ -45,16 +45,16 @@ Formulas:
 Metadata:
   model_name: test model
   file_locations:
-    - file_alias: test_location   
+    - file_alias: test_location
       file_name: data/test_data.xlsx
       type: google_spreadsheet
       google_id_alias: scenarios_public_params
     - file_alias: dummy_location
       file_name: _tmp_data/dummy.xlsx
-  start_date: 2016-01-01 
+  start_date: 2016-01-01
   end_date: 2032-01-01
   sample_size: 2
-  sample_mean: False 
+  sample_mean: False
 """
 
     def test_yaml_parsing(self):
@@ -108,7 +108,7 @@ Metadata:
 
     def test_excelvar_set(self):
         doc = u"""
-        Processes:        
+        Processes:
           - name: a
             formula:
               text: |
@@ -119,15 +119,15 @@ Metadata:
                 sheet_name: Sheet1
                 variables:
                   - a
-                  - b                                          
+                  - b
         Metadata:
           model_name: test model
           file_locations:
             - file_alias: test_location
-              file_name: tests/data/test_data.xlsx            
+              file_name: tests/data/test_data.xlsx
         """
 
-        yaml_def = yaml.load(doc)
+        yaml_def = yaml.safe_load(doc)
 
         formula_def = yaml_def['Processes'][0]
 
@@ -139,21 +139,21 @@ Metadata:
 
     def test_constants(self):
         doc = u"""
-        Processes:        
+        Processes:
           - name: pi square
             formula:
               text: |
                return pi * pi
-            input_variables:                          
+            input_variables:
               - type: Constants
                 variables:
                   - pi
         Constants:
           - type: StaticVariables
             variables:
-              pi: 3.14                              
+              pi: 3.14
         Metadata:
-          model_name: test model                      
+          model_name: test model
         """
 
         sim_control = SimulationControl()
@@ -173,7 +173,7 @@ Metadata:
 
     def test_complex_variables(self):
         doc = u"""
-        Processes:        
+        Processes:
           - name: DTT TV Amplifier
             import_variables:
               - formula_name: service_on_time_per_day_mins
@@ -182,10 +182,10 @@ Metadata:
                 external_name: num_hh_dtt_tv_amplifer
             link_to:
                - process a
-    
+
             formula:
               ref: TV viewing device
-            
+
             input_variables:
               - type: StaticVariables
                 variables:
@@ -193,7 +193,7 @@ Metadata:
                   service_active_standby_time_per_day_mins: 0
                   total_active_standby_time_per_day_mins: 0
                   total_on_time_per_day_mins: 1440
-          
+
               - type: ExcelVariableSet
                 file_alias: test_location
                 sheet_name: Sheet1
@@ -202,8 +202,8 @@ Metadata:
                   - power
                   - bitrate
                   - power_active_standby
-                  - power_passive_standby               
-          
+                  - power_passive_standby
+
           - name: a
             formula:
               text: |
@@ -214,15 +214,15 @@ Metadata:
                 sheet_name: Sheet1
                 variables:
                   - a
-                  - b                                          
+                  - b
         Metadata:
           model_name: test model
           file_locations:
             - file_alias: test_location
-              file_name: data/test_data.xlsx            
+              file_name: data/test_data.xlsx
         """
 
-        yaml_def = yaml.load(doc)
+        yaml_def = yaml.safe_load(doc)
 
         formula_def = yaml_def['Processes'][0]
 
@@ -235,19 +235,19 @@ Metadata:
 
     def test_staticvar_set(self):
         doc = u"""
-        Processes:        
+        Processes:
           - name: a
             formula:
               text: |
                return a + b
             input_variables:
               - type: StaticVariables
-                variables:          
+                variables:
                   a: 1
-                  b: 2                                       
+                  b: 2
         """
 
-        yaml_def = yaml.load(doc)
+        yaml_def = yaml.safe_load(doc)
 
         process_def = yaml_def['Processes'][0]
 
@@ -261,7 +261,7 @@ Metadata:
 
     def test_excelvar_set_with_sub(self):
         doc = u"""
-        Processes:        
+        Processes:
           - name: a
             formula:
               text: |
@@ -273,15 +273,15 @@ Metadata:
                 substitution: test
                 variables:
                   - a
-                  - b                                          
+                  - b
         Metadata:
           model_name: test model
           file_locations:
             - file_alias: test_location
-              file_name: tests/data/test_data.xlsx            
+              file_name: tests/data/test_data.xlsx
         """
 
-        yaml_def = yaml.load(doc)
+        yaml_def = yaml.safe_load(doc)
 
         formula_def = yaml_def['Processes'][0]
 
@@ -297,7 +297,7 @@ Metadata:
 
     def test_excelvar_set_with_sub_and_excel_var_stub(self):
         doc = u"""
-        Processes:        
+        Processes:
           - name: a
             formula:
               text: |
@@ -309,15 +309,15 @@ Metadata:
                 substitution: test
                 variables:
                   a: a_stub
-                  b: b_stub                                          
+                  b: b_stub
         Metadata:
           model_name: test model
           file_locations:
             - file_alias: test_location
-              file_name: tests/data/test_data.xlsx            
+              file_name: tests/data/test_data.xlsx
         """
 
-        yaml_def = yaml.load(doc)
+        yaml_def = yaml.safe_load(doc)
 
         formula_def = yaml_def['Processes'][0]
 
@@ -333,20 +333,20 @@ Metadata:
 
     def test_linkto_declaration(self):
         doc = u"""
-    Processes:        
+    Processes:
       - name: a
         formula:
           text: |
-           return 2            
+           return 2
       - name: b
         formula:
           text: |
-           return 2            
+           return 2
       - name: c
         formula:
           text: |
-            return 3                        
-        link_to: 
+            return 3
+        link_to:
           - a
           - b
     Metadata:
@@ -373,7 +373,7 @@ Metadata:
     @unittest.skip("old DSL. New does not return values - need review")
     def test_import_declaration(self):
         doc = u"""
-Processes:        
+Processes:
   - name: process a
     formula:
       text: |
@@ -383,17 +383,17 @@ Processes:
         type: StaticVariable
         value: 6
     import_variables:
-      - b        
-      - c        
+      - b
+      - c
   - name: process b
     formula:
       text: |
         c = 3
-        b = 2                
-    export_variables:      
-      - b   
-      - c 
-    link_to: 
+        b = 2
+    export_variables:
+      - b
+      - c
+    link_to:
       - process a
 Metadata:
   model_name: test
@@ -413,7 +413,7 @@ Metadata:
     @unittest.skip("old DSL. New does not return values - need review")
     def test_import_alias_declaration(self):
         doc = u"""
-Processes:        
+Processes:
   - name: process a
     formula:
       text: |
@@ -423,15 +423,15 @@ Processes:
         type: StaticVariable
         value: 6
     import_variables:
-      - formula_name: c        
+      - formula_name: c
         external_name: b
   - name: process b
     formula:
       text: |
-        b = 2                
-    export_variables:      
-      b: b    
-    link_to: 
+        b = 2                   ;
+    export_variables:
+      b: b
+    link_to:
       - process a
 Metadata:
   model_name: test
@@ -451,7 +451,7 @@ Metadata:
     @unittest.skip("old DSL. New does not return values - need review")
     def test_export_alias_declaration(self):
         doc = u"""
-Processes:        
+Processes:
   - name: process a
     formula:
       text: |
@@ -461,16 +461,16 @@ Processes:
         type: StaticVariable
         value: 6
     import_variables:
-      - b        
+      - b
   - name: process b
     formula:
       text: |
-        c = 2
-        a = 2                
-    export_variables:      
+        c = 2                   ;
+        a = 2                   ;
+    export_variables:
       c: b
-      a: d 
-    link_to: 
+      a: d
+    link_to:
       - process a
 Metadata:
   model_name: test
@@ -493,19 +493,19 @@ Metadata:
     @unittest.skip("old DSL. New does not return values - need review")
     def test_multiple_formula_process(self):
         doc = u"""
-Processes:        
+Processes:
   - name: process a
     formula:
-      ref: basic intensity-volume formula              
+      ref: basic intensity-volume formula
     input_variables:
       - formula_name: energy_intensity
         type: StaticVariable
         value: 6
-    import_variables:    
+    import_variables:
       - data_volume
   - name: process b
     formula:
-      ref: basic intensity-volume formula      
+      ref: basic intensity-volume formula
     input_variables:
       - formula_name: energy_intensity
         type: StaticVariable
@@ -513,13 +513,13 @@ Processes:
       - formula_name: data_volume
         type: StaticVariable
         value: 4
-    export_variables:      
+    export_variables:
       data_volume: data_volume
     test_result: 1
-    link_to: 
+    link_to:
       - process a
 Formulas:
-  - name: basic intensity-volume formula  
+  - name: basic intensity-volume formula
     text: |
       energy = energy_intensity * data_volume
       return energy
@@ -550,7 +550,7 @@ Metadata:
     @unittest.skip("old DSL. New does not return values - need review")
     def test_prototype_add_property(self):
         doc = u"""
-    Processes:        
+    Processes:
       - name: proto
         type: prototype
         metadata:
@@ -566,16 +566,16 @@ Metadata:
             type: StaticVariable
             value: 6
         import_variables:
-          - b        
+          - b
       - name: b
         formula:
           text: |
-            c = 2
-            a = 2                
-        export_variables:      
+            c = 2               ;
+            a = 2               ;
+        export_variables:
           c: b
-          a: d 
-        link_to: 
+          a: d
+        link_to:
           - a
     Metadata:
       model_name: test
@@ -603,14 +603,14 @@ Metadata:
     @unittest.skip("old DSL. New does not return values - need review")
     def test_prototype_overwrite_property(self):
         doc = u"""
-    Processes:        
+    Processes:
       - name: proto
         type: prototype
         metadata:
           device_type: User Device
         formula:
           text: |
-           return a         
+           return a
         input_variables:
           - formula_name: g
             type: StaticVariable
@@ -619,7 +619,7 @@ Metadata:
         prototype: proto
         formula:
           text: |
-           return a + b
+           return a + b             ;
         input_variables:
           - formula_name: a
             type: StaticVariable
@@ -628,20 +628,20 @@ Metadata:
             type: StaticVariable
             value: 7
         import_variables:
-          - b       
+          - b
         metadata:
           device_type: Router
           platform_name: DSL
-          
+
       - name: b
         formula:
           text: |
-            c = 2
-            a = 2                
-        export_variables:      
+            c = 2                 ;
+            a = 2                 ;
+        export_variables:
           c: b
-          a: d 
-        link_to: 
+          a: d
+        link_to:
           - a
     Metadata:
       model_name: test
@@ -679,8 +679,8 @@ variant: 2
 Processes:
 - name: UD
   formula: |-
-    energy = power * time
-    data = time * bitrate
+    energy = power * time;
+    data = time * bitrate;
   tableVariables:
   - value: power
   - value: bitrate
@@ -697,7 +697,7 @@ Processes:
   - Net
 - name: Net
   formula: |-
-    energy = data * intensity
+    energy = data * intensity;
   tableVariables:
   - value: intensity
   importVariables:
@@ -740,7 +740,7 @@ Metadata:
 
         for node in s.process_graph.nodes_iter():
             if node.name in ['Net']:
-                assert node.formulaModel.formula.text == 'energy = data * intensity'
+                assert node.formulaModel.formula.text == 'energy = data * intensity;'
                 assert s.process_graph.out_edges(node) == []
 
             if node.name == 'UD':
@@ -752,6 +752,32 @@ Metadata:
 
         fp = s.footprint(embodied=False, simulation_control=sim_control)
         print(fp)
+
+    def test_static_check(self):
+        doc = u"""
+variant: 2
+Processes:
+- name: P
+  formula: |-
+    energy = data * intensity;
+  tableVariables:
+  - value: intensity
+  staticVariables: []
+  exportVariables: []
+  metadata: []
+  link_to: []
+Metadata:
+  model_name: test
+  table_file_name: tests/data/yaml_loader_test_data.xlsx
+    """
+
+        sim_control = SimulationControl()
+        sim_control.sample_size = 1
+        sim_control.sample_mean_value = True
+        sim_control.use_time_series = True
+
+        yaml_structure = YamlLoader.load_definitions(doc)
+        self.assertRaises(Exception, YamlLoader.create_service, yaml_structure, sim_control, formula_checks=True)
 
 
 if __name__ == '__main__':

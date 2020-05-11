@@ -7,7 +7,7 @@ class TestDSLModels(unittest.TestCase):
 
     def test_formula_process(self):
         test_formula = """
-                energy = energy_intensity * data_volume
+                energy = energy_intensity * data_volume;
                 """
         sim_control = SimulationControl()
         sim_control.sample_size = 1
@@ -18,7 +18,7 @@ class TestDSLModels(unittest.TestCase):
         fmodel = FormulaModel(Formula(test_formula))
 
         result_variables = {'energy': 'test_energy'}
-        p = FormulaProcess('test', fmodel, process_variables, result_variables)
+        p = FormulaProcess('test', fmodel, process_variables, result_variables, import_variable_names={}, static_checks=False)
 
         ingress_variables = {'data_volume': generate_static_variable(sim_control, 'data_volume', 5, random=False)}
         result_variables = p.evaluate(sim_control, ingress_variables)

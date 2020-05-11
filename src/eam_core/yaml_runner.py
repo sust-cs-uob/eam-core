@@ -42,6 +42,7 @@ except:
     config = {}
 
 import logging
+
 logger = logging.getLogger(__name__)
 
 
@@ -60,6 +61,7 @@ def setup_parser(args):
     parser.add_argument('--sensitivity', '-n', help="run sensitivity analysis", action='store_true')
     parser.add_argument('--documentation', '-D', help="create documentation", action='store_false')
     parser.add_argument('--IDs', '-id', help="give each process and variable an ID", action='store_true')
+    parser.add_argument('--formula_checks', '-fc', help="perform checks on formulas and variables", action='store_true')
 
     args = parser.parse_args(args)
     # print(args)
@@ -196,7 +198,8 @@ def run_scenario(scenario, model_run_base_directory=None, simulation_run_descrip
         mean_run = run_mean(args, model_run_base_directory, simulation_run_description, yaml_struct, scenario)
     create_model_func, sim_control, yaml_struct = prepare_simulation(model_output_directory,
                                                                      simulation_run_description, yaml_struct,
-                                                                     scenario, filename=args.yamlfile, IDs=args.IDs)
+                                                                     scenario, filename=args.yamlfile, IDs=args.IDs,
+                                                                     formula_checks=args.formula_checks, args=args)
     if args.sensitivity:
         runner = SimulationRunner()
         model, variances = runner.run_SA(create_model_func=create_model_func, embodied=False, sim_control=sim_control)
