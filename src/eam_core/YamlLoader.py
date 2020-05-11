@@ -50,6 +50,7 @@ class YamlLoader(object):
         return formula
 
     def create_formula(self, formula_struct, yaml_structure, test=True):
+
         if self.version == 1:
             return self.create_formula_v1(formula_struct, yaml_structure, test)
         if self.version == 2:
@@ -57,7 +58,7 @@ class YamlLoader(object):
 
     @staticmethod
     def load_definitions(doc):
-        return yaml.load(doc)
+        return yaml.safe_load(doc)
 
     def create_variables_from_yaml_v1(self, variable_definitions, simulation_control, yaml_structure, constants) \
             -> Dict[str, Variable]:

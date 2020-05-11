@@ -210,6 +210,18 @@ class NumberTestCase(unittest.TestCase):
         visitor = evaluate(block)
         assert visitor.variables['a'] and visitor.variables['b']
 
+    def test_basic_error(self):
+        block = """
+                   a = 0 ;
+                   if (a){
+                        b = 2;
+                   } else {
+                        a = c;
+                   }
+               """
+        visitor = evaluate(block)
+        assert visitor.variables['a'] and visitor.variables['b']
+
     def test_basic_if_non_zero_is_true(self):
         block = """
                    a = 10000 ;

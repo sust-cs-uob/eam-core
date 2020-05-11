@@ -47,7 +47,7 @@ class CheckVisitor(MuVisitor):
 
         self.visit(ctx.expr())
         if name not in self.implicit_variables:
-            logger.info(
+            logger.debug(
                 "New variable " + name + " created at line " + str(ctx.start.line) + " column " + str(ctx.start.column))
             self.new_variables.add(name)
 
@@ -59,8 +59,8 @@ class CheckVisitor(MuVisitor):
         """
         name = ctx.getText()
         if name not in self.new_variables:
-            logger.info(
-                "Implicit variable reference" + name + " created at line " + str(ctx.start.line) + " column " + str(
+            logger.debug(
+                "Implicit variable reference " + name + " created at line " + str(ctx.start.line) + " column " + str(
                     ctx.start.column))
             self.implicit_variables.add(name)
 
