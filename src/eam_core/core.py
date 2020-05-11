@@ -5,6 +5,7 @@ from pint import UnitRegistry
 
 from eam_core import dsl
 from eam_core.dsl import EvalVisitor
+from eam_core.dsl.check_visitor import evaluate
 
 ureg = UnitRegistry(auto_reduce_dimensions=False)
 Q_ = ureg.Quantity
@@ -29,6 +30,7 @@ from networkx.readwrite import json_graph
 import logging
 
 import eam_core.log_configuration as logconf
+
 logconf.config_logging()
 
 logger = logging.getLogger(__name__)
@@ -406,7 +408,7 @@ class FormulaProcess(object):
 
     def __init__(self, name: str, formulaModel: FormulaModel, input_variables: Dict[str, Variable] = None,
                  export_variable_names: Dict[str, str] = None, import_variable_names: Dict[str, Any] = None,
-                 DSL_variable_dict=None, metadata=None):
+                 DSL_variable_dict=None, metadata=None, static_check=True):
         """
 
         :param name:
@@ -428,6 +430,13 @@ class FormulaProcess(object):
 
         self.aggregation_functions = defaultdict(lambda: sum)
         self.metadata = metadata if metadata is not None else {}
+
+        if static_check:
+            visitor = evaluate(self.formulaModel.formula.text)
+            for var_name in visitor.implicit_variables:
+                if var_name not in self.input_variables.keys() and var_name not in self.import_variable_names:
+                    raise Exception(
+                        f'variable name "{var_name}" referenced in formula but not defined in table variables or import variables')
 
     def evaluate(self, sim_control, ingress_variables: Dict[str, Variable], debug=False) -> Dict[str, Variable]:
         variables = {}
