@@ -218,7 +218,7 @@ class NumberTestCase(unittest.TestCase):
             a = 3 == 1;
         """
         visitor = evaluate(block)
-        assert not visitor.variables['a']
+        assert 'a' in visitor.new_variables
 
     def test_basic_gt(self):
         block = """
@@ -339,7 +339,7 @@ class NumberTestCase(unittest.TestCase):
                    if (a != 0){
                         b = 2;
                    } else if (b != 0){
-                        c = 1;
+                        c = d;
                    } else {
                         a = c;
                    }
@@ -348,8 +348,26 @@ class NumberTestCase(unittest.TestCase):
         assert 'a' in visitor.new_variables
         assert 'b' in visitor.implicit_variables
         assert 'c' in visitor.implicit_variables
+        assert 'd' in visitor.implicit_variables
         assert len(visitor.new_variables) == 1
-        assert len(visitor.implicit_variables) == 2
+        assert len(visitor.implicit_variables) == 3
+
+    def test_model_formula_if_else_if_else(self):
+        block = """
+      if (measured_carbon_CDN != 0){
+        carbon = measured_carbon_CDN;
+      } else if (measured_energy_CDN  != 0) {
+        energy = measured_energy_CDN;
+        x = test;
+        carbon = energy * carbon_intensity_uk;
+      } else {
+        energy = energy_intensity_cdn * total_fixed_line_data_volume_per_ref_duration;
+        carbon = energy * carbon_intensity_uk;
+      }
+               """
+        visitor = evaluate(block)
+
+        assert 'measured_energy_CDN' in visitor.implicit_variables
 
     def test_basic_any_implicit_in_stat_block_found(self):
         """

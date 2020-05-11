@@ -4,8 +4,8 @@ from functools import partial
 from pint import UnitRegistry
 
 from eam_core import dsl
-from eam_core.dsl import EvalVisitor
-from eam_core.dsl.check_visitor import evaluate
+from eam_core.dsl import EvalVisitor, DSLError
+import eam_core.dsl.check_visitor
 
 ureg = UnitRegistry(auto_reduce_dimensions=False)
 Q_ = ureg.Quantity
@@ -387,7 +387,10 @@ class FormulaModel(object):
             self.variable_cache[formula_name] = value
             d.variables[formula_name] = value
 
-        d = dsl.evaluate(self.formula.text, visitor=d)
+        try:
+            d = dsl.evaluate(self.formula.text, visitor=d)
+        except DSLError as e:
+            raise Exception(f"{e.message} while parsing formula \n\n{self.formula.text}")
 
         export_variables = {}
         if export_variable_names:
@@ -408,7 +411,7 @@ class FormulaProcess(object):
 
     def __init__(self, name: str, formulaModel: FormulaModel, input_variables: Dict[str, Variable] = None,
                  export_variable_names: Dict[str, str] = None, import_variable_names: Dict[str, Any] = None,
-                 DSL_variable_dict=None, metadata=None, static_check=True):
+                 DSL_variable_dict=None, metadata=None, static_checks=True):
         """
 
         :param name:
@@ -431,12 +434,17 @@ class FormulaProcess(object):
         self.aggregation_functions = defaultdict(lambda: sum)
         self.metadata = metadata if metadata is not None else {}
 
-        if static_check:
-            visitor = evaluate(self.formulaModel.formula.text)
-            for var_name in visitor.implicit_variables:
-                if var_name not in self.input_variables.keys() and var_name not in self.import_variable_names:
-                    raise Exception(
-                        f'variable name "{var_name}" referenced in formula but not defined in table variables or import variables')
+        if static_checks:
+            logger.debug("Performing static checks")
+            try:
+                visitor = eam_core.dsl.check_visitor.evaluate(self.formulaModel.formula.text)
+                for var_name in visitor.implicit_variables:
+                    if var_name not in self.input_variables.keys() and var_name not in self.import_variable_names:
+                        raise Exception(
+                            f'variable name "{var_name}" referenced in formula but not defined in table variables or import variables')
+            except DSLError as e:
+                # logger.error(f"Error {e.message} while parsing formula {self.formulaModel.formula.text}")
+                raise Exception(f"Error {e.message} while parsing formula \n\n{self.formulaModel.formula.text}")
 
     def evaluate(self, sim_control, ingress_variables: Dict[str, Variable], debug=False) -> Dict[str, Variable]:
         variables = {}

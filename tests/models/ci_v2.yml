@@ -17,8 +17,8 @@ Processes:
     exportVariables: []
     device_type: IP Networking
     formula: |2
-      energy = energy_intensity_network * data_volume
-      carbon = energy * carbon_intensity
+      energy = energy_intensity_network * data_volume;
+      carbon = energy * carbon_intensity;
       return energy
 
   - name: Internet Network
@@ -39,9 +39,9 @@ Processes:
     link_to:
       - CDN
     formula: |2
-      energy = data_volume_laptop * energy_intensity_network
-      carbon = energy * carbon_intensity
-      data_volume = data_volume_laptop
+      energy = data_volume_laptop * energy_intensity_network;
+      carbon = energy * carbon_intensity;
+      data_volume = data_volume_laptop;
       return energy
 
   - name: Laptop
@@ -60,9 +60,9 @@ Processes:
     exportVariables:
       - value: data_volume_laptop
     formula: |
-      energy = power_latop * time_laptop
-      data_volume_laptop = time_laptop * bitrate_laptop
-      carbon = energy * carbon_intensity
+      energy = power_latop * time_laptop;
+      data_volume_laptop = time_laptop * bitrate_laptop;
+      carbon = energy * carbon_intensity;
 
       return energy
     link_to:

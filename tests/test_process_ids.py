@@ -60,7 +60,7 @@ def get_ids(file, flag=True):
 class TestProcessIDs(unittest.TestCase):
 
     def test_existing_ids(self):
-        diff,id_map=get_ids("existing_ids")
+        diff, id_map = get_ids("existing_ids")
         assert (diff == {})
         assert id_map["process"] == {"CDN": 0, "Internet Network": 1, "Laptop": 2}
 
@@ -72,7 +72,8 @@ class TestProcessIDs(unittest.TestCase):
     def test_no_existing_ids(self):
         diff, id_map = get_ids("no_existing_ids")
         print(diff)
-        assert diff == {'dictionary_item_added': {"root['Processes'][0]['id']": 0, "root['Processes'][1]['id']": 1, "root['Processes'][2]['id']": 2}}
+        assert diff == {'dictionary_item_added': {"root['Processes'][0]['id']": 0, "root['Processes'][1]['id']": 1,
+                                                  "root['Processes'][2]['id']": 2}}
         assert id_map["process"] == {"CDN": 0, "Internet Network": 1, "Laptop": 2}
 
     def test_duplicate_ids(self):

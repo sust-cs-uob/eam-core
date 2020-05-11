@@ -2,9 +2,11 @@ import logging
 from collections import namedtuple
 
 from antlr4 import InputStream, CommonTokenStream
+from antlr4.error.ErrorListener import ConsoleErrorListener, ErrorListener
 
+from eam_core.dsl import SimpleErrorThrower, MyErrorStrategy
 from eam_core.dsl.MuLexer import MuLexer
-from eam_core.dsl.MuParser import MuParser
+from eam_core.dsl.MuParser import MuParser, BailErrorStrategy, Parser, RecognitionException
 from eam_core.dsl.MuVisitor import MuVisitor
 
 logger = logging.getLogger(__name__)
@@ -60,8 +62,8 @@ class CheckVisitor(MuVisitor):
         name = ctx.getText()
         if name not in self.new_variables:
             logger.debug(
-                "Implicit variable reference " + name + " created at line " + str(ctx.start.line) + " column " + str(
-                    ctx.start.column))
+                "Implicit variable <" + name + "> referenced at line " + str(ctx.start.line) +
+                " column " + str(ctx.start.column))
             self.implicit_variables.add(name)
 
     def visitIf_stat(self, ctx: MuParser.If_statContext):
@@ -154,6 +156,9 @@ def evaluate(block, visitor=None, **kwargs):
     lexer = MuLexer(InputStream(block))
     stream = CommonTokenStream(lexer)
     parser = MuParser(stream)
+    parser.removeErrorListeners()
+    parser.addErrorListener(SimpleErrorThrower())
+    parser._errHandler = MyErrorStrategy()
     tree = parser.parse()
     if visitor == None:
         visitor = CheckVisitor()

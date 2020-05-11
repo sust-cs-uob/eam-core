@@ -127,7 +127,7 @@ Metadata:
               file_name: tests/data/test_data.xlsx
         """
 
-        yaml_def = yaml.load(doc)
+        yaml_def = yaml.safe_load(doc)
 
         formula_def = yaml_def['Processes'][0]
 
@@ -222,7 +222,7 @@ Metadata:
               file_name: data/test_data.xlsx
         """
 
-        yaml_def = yaml.load(doc)
+        yaml_def = yaml.safe_load(doc)
 
         formula_def = yaml_def['Processes'][0]
 
@@ -247,7 +247,7 @@ Metadata:
                   b: 2
         """
 
-        yaml_def = yaml.load(doc)
+        yaml_def = yaml.safe_load(doc)
 
         process_def = yaml_def['Processes'][0]
 
@@ -281,7 +281,7 @@ Metadata:
               file_name: tests/data/test_data.xlsx
         """
 
-        yaml_def = yaml.load(doc)
+        yaml_def = yaml.safe_load(doc)
 
         formula_def = yaml_def['Processes'][0]
 
@@ -317,7 +317,7 @@ Metadata:
               file_name: tests/data/test_data.xlsx
         """
 
-        yaml_def = yaml.load(doc)
+        yaml_def = yaml.safe_load(doc)
 
         formula_def = yaml_def['Processes'][0]
 
@@ -428,7 +428,7 @@ Processes:
   - name: process b
     formula:
       text: |
-        b = 2
+        b = 2                   ;
     export_variables:
       b: b
     link_to:
@@ -465,8 +465,8 @@ Processes:
   - name: process b
     formula:
       text: |
-        c = 2
-        a = 2
+        c = 2                   ;
+        a = 2                   ;
     export_variables:
       c: b
       a: d
@@ -570,8 +570,8 @@ Metadata:
       - name: b
         formula:
           text: |
-            c = 2
-            a = 2
+            c = 2               ;
+            a = 2               ;
         export_variables:
           c: b
           a: d
@@ -619,7 +619,7 @@ Metadata:
         prototype: proto
         formula:
           text: |
-           return a + b
+           return a + b             ;
         input_variables:
           - formula_name: a
             type: StaticVariable
@@ -636,8 +636,8 @@ Metadata:
       - name: b
         formula:
           text: |
-            c = 2
-            a = 2
+            c = 2                 ;
+            a = 2                 ;
         export_variables:
           c: b
           a: d
@@ -679,8 +679,8 @@ variant: 2
 Processes:
 - name: UD
   formula: |-
-    energy = power * time
-    data = time * bitrate
+    energy = power * time;
+    data = time * bitrate;
   tableVariables:
   - value: power
   - value: bitrate
@@ -697,7 +697,7 @@ Processes:
   - Net
 - name: Net
   formula: |-
-    energy = data * intensity
+    energy = data * intensity;
   tableVariables:
   - value: intensity
   importVariables:
@@ -740,7 +740,7 @@ Metadata:
 
         for node in s.process_graph.nodes_iter():
             if node.name in ['Net']:
-                assert node.formulaModel.formula.text == 'energy = data * intensity'
+                assert node.formulaModel.formula.text == 'energy = data * intensity;'
                 assert s.process_graph.out_edges(node) == []
 
             if node.name == 'UD':
@@ -759,7 +759,7 @@ variant: 2
 Processes:
 - name: P
   formula: |-
-    energy = data * intensity
+    energy = data * intensity;
   tableVariables:
   - value: intensity
   staticVariables: []
@@ -777,7 +777,7 @@ Metadata:
         sim_control.use_time_series = True
 
         yaml_structure = YamlLoader.load_definitions(doc)
-        s = YamlLoader.create_service(yaml_structure, sim_control)
+        self.assertRaises(Exception, YamlLoader.create_service, yaml_structure, sim_control, formula_checks=True)
 
 
 if __name__ == '__main__':

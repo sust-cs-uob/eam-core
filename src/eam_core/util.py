@@ -834,12 +834,13 @@ def get_sim_run_description():
     return simulation_run_description
 
 
-def store_sim_config(sim_control, directory, simulation_run_description):
+def store_sim_config(sim_control, directory, simulation_run_description, **kwargs):
     sim_control___dict__ = copy.deepcopy(sim_control.__dict__)
     del sim_control___dict__['times']
     del sim_control___dict__['param_repo']
     del sim_control___dict__['_df_multi_index']
-    sim_config = {'simulation_run_description': simulation_run_description, 'sim_config': sim_control___dict__}
+    sim_config = {'simulation_run_description': simulation_run_description, 'sim_config': sim_control___dict__,
+                  'kwargs': kwargs}
     with open(f'{str(directory)}/sim_config.json', 'w') as outfile:
         simplejson.dump(sim_config, outfile, indent=4, sort_keys=True)
 
@@ -882,7 +883,7 @@ def configue_sim_control_from_yaml(sim_control: SimulationControl, yaml_struct, 
 
 
 def prepare_simulation(directory, simulation_run_description, yaml_struct, scenario, sim_control=None, filename=None,
-                       IDs=False):
+                       IDs=False, formula_checks=False, **kwargs):
     if not sim_control:
         sim_control = SimulationControl()
         configue_sim_control_from_yaml(sim_control, yaml_struct, directory)
@@ -890,6 +891,10 @@ def prepare_simulation(directory, simulation_run_description, yaml_struct, scena
     sim_control.variable_ids = IDs
     sim_control.filename = filename
     sim_control.scenario = scenario
-    store_sim_config(sim_control, directory, simulation_run_description)
-    create_model_func = partial(YamlLoader.create_service, yaml_struct)
+    args = kwargs.get('args', None)
+    _kwargs = {}
+    if args:
+        _kwargs = vars(args)
+    store_sim_config(sim_control, directory, simulation_run_description, kwargs=_kwargs)
+    create_model_func = partial(YamlLoader.create_service, yaml_struct, formula_checks=formula_checks)
     return create_model_func, sim_control, yaml_struct
