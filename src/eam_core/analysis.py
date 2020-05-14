@@ -39,17 +39,17 @@ from eam_core.util import generate_model_definition_markdown, load_trace_data, k
 def calculate_SRCs(input_variables, y):
     """
     Calculate standardised regression coefficients.
-    See p. 9 ff. in "Sensitivity analysis in practice : a guide to assessing scientific models". 
+    See p. 9 ff. in "Sensitivity analysis in practice : a guide to assessing scientific models".
                      Andrea Saltelli et al. 2004
-                      
-    For linear models, the SRCs (beta) are equal to $S^x_\sigma$ and the square of the SRCs sum up to 1: 
+
+    For linear models, the SRCs (beta) are equal to $S^x_\sigma$ and the square of the SRCs sum up to 1:
     $1 = \sum (S_x^\sigma )^2 = \sum (\beta \frac{\sigma_x}{\sigma_y})^2$
-     
+
     if the model coefficient of determination R^2_y is close to one (for monotone models) then the SRC^2 provide the percentage of output variance effected by the input variable
 
-    :param input_variables: 
-    :param y: 
-    :return: 
+    :param input_variables:
+    :param y:
+    :return:
     """
     X = np.array(input_variables)
     X = sm.add_constant(X)
@@ -240,7 +240,7 @@ def generate_plots_and_tables(scenario=None, metric='use_phase_energy', base_dir
     ws.column_dimensions["A"].width = '23'
     ws.column_dimensions["B"].width = '63'
     ws.column_dimensions["C"].width = '10'
-    print(xlsx_file_name)
+    # print(xlsx_file_name)
     wb.save(xlsx_file_name)
 
 

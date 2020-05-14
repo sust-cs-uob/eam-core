@@ -280,8 +280,8 @@ class SimulationRunner(object):
         for variable_name in variable_names:
             logger.info(f'storing results for variable {variable_name}')
             _variable_values: Dict[str, pd.Series] = traces[variable_name]
-            print("line 287")
-            print(_variable_values)
+            # print("line 287")
+            # print(_variable_values)
             store_dataframe(_variable_values, simulation_control=self.sim_control,
                             target_units=target_units, variable_name=variable_name)
 
@@ -303,7 +303,7 @@ class SimulationRunner(object):
                 var_dict[var_name] = val
 
         var_df = pd.DataFrame(var_dict, index=val.index)
-        print("line 310")
-        print(var_df)
+        # print("line 310")
+        # print(var_df)
         store_dataframe(var_df, simulation_control=self.sim_control, target_units=target_units,
                         variable_name='input_vars')

@@ -20,8 +20,8 @@ default_cycler = (cycler(color=['r', 'g', 'b', 'y']) +
 
 def plot_grid(df, file_name, xlabel, ylabel, title, base_dir, output_scenario_directory, **kwargs):
     countries=True
-    print("in plot grid")
-    print(df)
+    # print("in plot grid")
+    # print(df)
     temp = pd.DataFrame()
     if (countries):
         for key in df.keys():
@@ -34,7 +34,7 @@ def plot_grid(df, file_name, xlabel, ylabel, title, base_dir, output_scenario_di
                     d = d.add(new_df.droplevel(level=0))
             temp[key]=d
     df=temp
-    print(df)
+    # print(df)
     data = df.ix[:, df.groupby(level=['time']).quantile(.75).max().sort_values(ascending=False).index]
 
     maxima = data[data.columns[0]].groupby(level=['time']).quantile(.75).mean()

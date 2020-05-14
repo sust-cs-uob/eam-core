@@ -211,7 +211,6 @@ class RandomFunctionDataSource(DataSource):
     def get_value(self, name, simulation_control, **kwargs):
         params = dict(zip(['param_a', 'param_b', 'param_c'], self.params))
         params.update(simulation_control.__dict__)
-
         if simulation_control.use_time_series:
             # cagr = None, times = None, size = None, index_names = None, ref_date = None
             generator = GrowthTimeSeriesGenerator(module_name=self.module, distribution_name=self.function,
@@ -246,6 +245,8 @@ class ExcelDataSource(DataSource):
             loader.load_into_repo(repository=param_repo, id_flag= simulation_control.variable_ids)
 
         param = param_repo.get_parameter(self.variable_name, scenario_name=simulation_control.scenario)
+        print("param is")
+        print(param)
         if 'process_name' in kwargs:
             param.add_usage(kwargs['process_name'], name)
 
@@ -534,7 +535,8 @@ class ServiceModel(object):
     def footprint(self, simulation_control=None, embodied=True, **kwargs) -> Dict[str, Dict[str, float]]:
 
         assert simulation_control is not None
-
+        # print("dict is")
+        # print(simulation_control.__dict__)
         logger.info(f"calculating footprint for model {self.name}")
         G = self.process_graph
 
