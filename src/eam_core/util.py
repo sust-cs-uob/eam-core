@@ -346,7 +346,7 @@ def generate_model_definition_markdown(model, in_docker=False, output_directory=
             f.writelines(tabulate(items, ['variable', 'value', 'unit'], tablefmt='simple'))
 
             f.write('\n\n')
-
+    logger.info("writing pandoc")
     # if in_docker:
     #     ps = subprocess.Popen((
     #         f"docker run -v `pwd`:/source jagregory/pandoc -f markdown -t latex {simulation_control.output_directory}/{model.name}_model_documentation.md -o {simulation_control.output_directory}/{model.name}_model_documentation.pdf -V geometry:margin=0.2in, landscape"),
@@ -524,7 +524,7 @@ def draw_graph_from_dotfile(model, file_type='pdf', show_variables=True, metric=
     dot_file = f'{output_directory}/{model.name}.dot'
     pydot.write_dot(dot_file)
 
-    cmd = f'perl -p -i.regexp_bak -e \'s/lp="\d+\.?\d*,\d*\.?\d*",\n?//\' {dot_file}'
+    cmd = f'perl -p -i.regexp_bak -e \'s/lp="\d+\.?\d*,\d*\.?\d*",\n?//\' "{dot_file}"'
     # l_cmd = ["perl", "-p", "-i.regexp_bak", "-e", '\'s/lp="\d+\.?\d*,\d*\.?\d*",\n?//\'', "{dot_file}"]
 
     import shlex
@@ -532,7 +532,6 @@ def draw_graph_from_dotfile(model, file_type='pdf', show_variables=True, metric=
 
     logger.info(f'removing "lp" statements from {dot_file}')
     with subprocess.Popen(l_cmd, stdout=subprocess.PIPE) as proc:
-
         logger.info('output from shell process: ' + str(proc.stdout.read()))
 
     # time.sleep(2)
@@ -552,8 +551,8 @@ def draw_graph_from_dotfile(model, file_type='pdf', show_variables=True, metric=
             with subprocess.Popen(l_cmd, stdout=output) as proc:
                 pass
     else:
-        cmd = f"dot {dot_file} -T{file_type} -Gsplines=ortho -Grankdir=BT > {dot_render_filename}"
-        logger.info(f'running docker cmd {cmd}')
+        cmd = f"dot '{dot_file}' -T{file_type} -Gsplines=ortho -Grankdir=BT > '{dot_render_filename}'"
+        logger.info(f'running local cmd {cmd}')
         ps = subprocess.Popen((cmd), shell=True)
 
 
