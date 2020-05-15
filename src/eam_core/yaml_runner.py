@@ -223,6 +223,7 @@ def run_scenario(scenario, model_run_base_directory=None, simulation_run_descrip
     runner = SimulationRunner()
     runner.use_docker = args.docker
     runner.sim_control = sim_control
+
     runner.run(create_model_func=create_model_func, debug=True,
                target_units=YamlLoader.get_target_units(yaml_struct),
                result_variables=yaml_struct['Analysis'].get('result_variables', []),
@@ -503,7 +504,6 @@ def summary_analysis(scenario_paths, model_run_base_directory, analysis_config, 
 
 
 def analysis(runner, yaml_struct, analysis_config=None, mean_run=None, image_filetype=None):
-    countries=True
     if analysis_config is None or not analysis_config:
         return
     model = runner.model
@@ -563,33 +563,29 @@ def analysis(runner, yaml_struct, analysis_config=None, mean_run=None, image_fil
             df = pint_pandas_data.pint.dequantify()
             df.columns = df.columns.droplevel(1)
             data = df
+
             unit = next(iter(units))
 
+            # print(data)
             sheet_name = f'mean {variable} '
             sheet_descriptions[
                 sheet_name] = f'{sheet_name}: a direct load of the result data, monthly mean values. Unit: {unit}'
             logger.info("storing mean values to excel")
-            if countries:
-                mean = data.mean(level=['country','time']).mean(level='country')
-            else: mean = data.mean(level='time').mean()
+            mean = data.mean(level='time').mean()
             mean.to_excel(writer, sheet_name)
 
+            # print(data)
             sheet_name = f'25 quantiles {variable}'
             sheet_descriptions[
                 sheet_name] = f'{sheet_name}: a direct load of the result data, monthly mean values. Unit: {unit}'
             logger.info("storing quantile values to excel")
-            if countries:
-                low = data.abs().groupby(level=['country','time']).quantile(.25)
-            else: low = data.abs().groupby(level=['time']).quantile(.25)
+            low = data.abs().groupby(level=['time']).quantile(.25)
             low.to_excel(writer, sheet_name)
 
             sheet_name = f'75 quantiles {variable}'
             sheet_descriptions[
                 sheet_name] = f'{sheet_name}: a direct load of the result data, monthly mean values. Unit: {unit}'
-            if countries:
-                high = data.abs().groupby(level=['country','time']).quantile(.75)
-            else: high = data.abs().groupby(level=['time']).quantile(.75)
-            high.to_excel(writer, sheet_name)
+            data.abs().groupby(level=['time']).quantile(.75).to_excel(writer, sheet_name)
 
         # sum up monthly values to aggregate - duration depends on distance between start and end date
         #    load_data_aggegrate = lambda : load_data().sum(level='samples')
@@ -620,6 +616,7 @@ def analysis(runner, yaml_struct, analysis_config=None, mean_run=None, image_fil
                 df = pint_pandas_data.pint.dequantify()
                 df.columns = df.columns.droplevel(1)
                 data = df
+
                 # check all units are the same
                 units_set = set(units[p] for p in units.keys())
                 assert len(units_set) == 1
@@ -638,7 +635,6 @@ def analysis(runner, yaml_struct, analysis_config=None, mean_run=None, image_fil
                 common_args.update({'xlabel': xlabel, 'ylabel': ylabel})
 
                 kind = plot_def.get('kind', 'box')
-                print(kind)
                 if kind == 'area':
                     # for area charts if mean_run parameter is not null, we can assume this analysis here is of a run
                     # with random sampling. In this case, we need the results from a 'non-sampling' run so zero-values

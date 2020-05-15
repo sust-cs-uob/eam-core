@@ -268,6 +268,7 @@ def store_dataframe(q_dict: Dict[str, pd.Series], simulation_control=None, targe
                                                            simulation_control=simulation_control)
 
     filename = f'{simulation_control.output_directory}/{subdirectory}/result_data_{variable_name}.hdf5'
+
     if not os.path.exists(f'{simulation_control.output_directory}/{subdirectory}'):
         os.mkdir(f'{simulation_control.output_directory}/{subdirectory}')
 
@@ -956,12 +957,8 @@ def configue_sim_control_from_yaml(sim_control: SimulationControl, yaml_struct, 
 
     sim_control.output_directory = output_directory
     iterables = [sim_control.times, range(sim_control.sample_size)]
-    countries = ['UK', 'FR']
 
-    iterables = [countries,sim_control.times, range(sim_control.sample_size)]  # this should be sample number
-    index_names = ['country', 'time', 'samples']
-    sim_control._df_multi_index = pd.MultiIndex.from_product(iterables, names=index_names)
-   # sim_control._df_multi_index = pd.MultiIndex.from_product(iterables, names=sim_control.index_names)
+    sim_control._df_multi_index = pd.MultiIndex.from_product(iterables, names=sim_control.index_names)
 
 
 def prepare_simulation(directory, simulation_run_description, yaml_struct, scenario, sim_control=None, filename=None, IDs=False):

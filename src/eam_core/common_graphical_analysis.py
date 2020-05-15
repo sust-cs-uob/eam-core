@@ -19,22 +19,6 @@ default_cycler = (cycler(color=['r', 'g', 'b', 'y']) +
 
 
 def plot_grid(df, file_name, xlabel, ylabel, title, base_dir, output_scenario_directory, **kwargs):
-    countries=True
-    # print("in plot grid")
-    # print(df)
-    temp = pd.DataFrame()
-    if (countries):
-        for key in df.keys():
-            d = pd.DataFrame()
-            dfs = df[key].groupby(level=0)
-            for country, new_df in dfs:
-                if d.empty:
-                    d = new_df.droplevel(level=0)
-                else:
-                    d = d.add(new_df.droplevel(level=0))
-            temp[key]=d
-    df=temp
-    # print(df)
     data = df.ix[:, df.groupby(level=['time']).quantile(.75).max().sort_values(ascending=False).index]
 
     maxima = data[data.columns[0]].groupby(level=['time']).quantile(.75).mean()
@@ -71,6 +55,7 @@ def plot_grid(df, file_name, xlabel, ylabel, title, base_dir, output_scenario_di
         mean_ = process_data.mean(level='time')
 
         grouped_ = process_data.groupby(level=['time'])
+
         low = grouped_.quantile(.25)
         high = grouped_.quantile(.75)
 
@@ -91,6 +76,7 @@ def plot_grid(df, file_name, xlabel, ylabel, title, base_dir, output_scenario_di
                         edgecolor="k", linewidth=0.1,
                         alpha=0.1, interpolate=True, linestyle='-')
         ylim = high.max()
+
         if i % 3 == 0:
             ax.set_ylim([0, ylim * 1.3])
         #     print(f'{ylim}')
@@ -274,6 +260,7 @@ def plot_kind(df, base_dir='.', output_scenario_directory=None, file_name=None, 
 def plot_bar(df, file_name, xlabel, ylabel, figsize=(10, 7), title=None, base_dir='.', output_scenario_directory=None,
              **kwargs):
     plt.close('all')
+
     import copy
     rcParams_bkp = copy.deepcopy(plt.rcParams)
     plt.rcParams['axes.grid'] = True
