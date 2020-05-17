@@ -76,9 +76,9 @@ Metadata:
   datasource_version_hint: 2
   comparison_variable: energy
   start_date: 2019-01-01
-  end_date: 2036-01-01
-  sample_size: 2
-  sample_mean: false
+  end_date: 2020-01-01
+  sample_size: 1
+  sample_mean: true
   individual_process_graphs_variable: energy
   analysis_configs:
     - name: ci

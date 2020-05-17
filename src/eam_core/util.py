@@ -186,7 +186,7 @@ def store_dataframe(q_dict: Dict[str, pd.Series], simulation_control=None, targe
                     subdirectory=''):
     storage_df, metadata = pandas_series_dict_to_dataframe(q_dict, target_units=target_units, var_name=variable_name,
                                                            simulation_control=simulation_control)
-
+    logger.info(f'metadata is {metadata}')
     filename = f'{simulation_control.output_directory}/{subdirectory}/result_data_{variable_name}.hdf5'
 
     if not os.path.exists(f'{simulation_control.output_directory}/{subdirectory}'):
@@ -838,8 +838,9 @@ def store_sim_config(sim_control, directory, simulation_run_description, **kwarg
     del sim_control___dict__['times']
     del sim_control___dict__['param_repo']
     del sim_control___dict__['_df_multi_index']
-    sim_config = {'simulation_run_description': simulation_run_description, 'sim_config': sim_control___dict__,
-                  'kwargs': kwargs}
+    sim_config = {'simulation_run_description': simulation_run_description, **sim_control___dict__,
+                  }
+    sim_config.update(kwargs)
     with open(f'{str(directory)}/sim_config.json', 'w') as outfile:
         simplejson.dump(sim_config, outfile, indent=4, sort_keys=True)
 
@@ -894,6 +895,8 @@ def prepare_simulation(directory, simulation_run_description, yaml_struct, scena
     _kwargs = {}
     if args:
         _kwargs = vars(args)
-    store_sim_config(sim_control, directory, simulation_run_description, kwargs=_kwargs)
+        del kwargs['args']
+    _kwargs.update(kwargs)
+    store_sim_config(sim_control, directory, simulation_run_description, **_kwargs)
     create_model_func = partial(YamlLoader.create_service, yaml_struct, formula_checks=formula_checks)
     return create_model_func, sim_control, yaml_struct

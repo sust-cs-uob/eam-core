@@ -30,7 +30,6 @@ from networkx.readwrite import json_graph
 import logging
 
 import eam_core.log_configuration as logconf
-
 logconf.config_logging()
 
 logger = logging.getLogger(__name__)
