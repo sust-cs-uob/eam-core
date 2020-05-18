@@ -403,9 +403,9 @@ def get_unit_by_name(name):
 
 
 def draw_graph_from_dotfile(model, file_type='pdf', show_variables=True, metric=None, start_date=None, end_date=None,
-                            colour_def=None, skip_update_barcharts=False, in_docker=False, output_directory=None,
+                            colour_def=None, show_histograms=True, in_docker=False, output_directory=None,
                             edge_labels=False, target_units=None):
-    if not skip_update_barcharts:
+    if show_histograms:
         generate_graph_node_barcharts(model.name, metric, start_date=start_date, end_date=end_date,
                                       base_directory=output_directory)
 

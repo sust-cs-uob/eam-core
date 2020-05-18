@@ -531,13 +531,16 @@ def analysis(runner, yaml_struct, analysis_config=None, mean_run=None, image_fil
             if 'process_tree' in analysis_config:
                 process_group_colour_defs = analysis_config['process_tree'].get('process_group_colours', {})
                 show_variables = analysis_config['process_tree'].get('show_variables', True)
+                histograms = analysis_config['process_tree'].get('histograms', True)
 
                 draw_graph_from_dotfile(model, show_variables=show_variables,
                                         file_type=image_filetype, metric='energy',
                                         start_date=start_date, end_date=end_date, colour_def=process_group_colour_defs,
                                         in_docker=runner.use_docker,
                                         output_directory=output_directory,
-                                        target_units=YamlLoader.get_target_units(yaml_struct), edge_labels=show_variables,
+                                        target_units=YamlLoader.get_target_units(yaml_struct),
+                                        edge_labels=show_variables,
+                                        show_histograms=histograms
                                         )
         logger.info('generating plots and tables')
         # generate_plots_and_tables(scenario=scenario, metric='use_phase_energy', base_dir='.', start_date=start_date,
@@ -655,7 +658,8 @@ def analysis(runner, yaml_struct, analysis_config=None, mean_run=None, image_fil
 
                 data.to_pickle(f'{output_directory}/graph_data_{name}.pdpkl')
 
-                d = plot_kind(data, figsize=(15, 12), file_name=f'{scenario}_{name}_{variable}.{image_filetype}', title=title,
+                d = plot_kind(data, figsize=(15, 12), file_name=f'{scenario}_{name}_{variable}.{image_filetype}',
+                              title=title,
                               kind=kind, **common_args)
             else:
                 logger.warning(f"Named plot {plot_def['name']} not found")
