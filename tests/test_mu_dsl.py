@@ -219,8 +219,8 @@ class NumberTestCase(unittest.TestCase):
                         a = c;
                    }
                """
-        evaluate(block)
-        # self.assertRaises(Exception, evaluate, block)
+        # evaluate(block)
+        self.assertRaises(Exception, evaluate, block)
 
     def test_basic_if_non_zero_is_true(self):
         block = """
