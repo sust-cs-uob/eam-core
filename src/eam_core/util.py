@@ -541,9 +541,8 @@ def draw_graph_from_dotfile(model, file_type='pdf', show_variables=True, metric=
     if in_docker:
 
         cwd = os.getcwd()
-        cmd = f"docker run -v {cwd}:{project_dir} -w {project_dir} markfletcher/graphviz dot {dot_file} -T{file_type} -Gsplines=ortho -Grankdir=LR -Gnodesep=0.1 -Gratio=compress"
-        # cmd = f"docker run -v {cwd}:{project_dir} -w {project_dir} markfletcher/graphviz dot {dot_file} -T{file_type} -Gsplines=ortho -Grankdir=BT"
-        # cmd = f"docker run -v {cwd}:{project_dir} -w {project_dir} markfletcher/graphviz dot {dot_file} -T{file_type} -Gsplines=ortho -Grankdir=BT > {dot_render_filename}"
+        cmd = f"docker run -v {cwd}:{project_dir} -w {project_dir} markfletcher/graphviz dot '{dot_file}' -T{file_type} -Gsplines=ortho -Grankdir=LR -Gnodesep=0.1 -Gratio=compress"
+
         logger.info(f'running docker cmd {cmd}')
         l_cmd = shlex.split(cmd)
         logger.info(f'running docker cmd {l_cmd}')
