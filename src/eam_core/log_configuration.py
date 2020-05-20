@@ -65,22 +65,8 @@ class ColoredFormatter(logging.Formatter):
         levelname = record.levelname
         if self.use_color and levelname in COLORS:
             levelname_color = COLOR_SEQ % (30 + COLORS[levelname]) + levelname + RESET_SEQ
+            lvl_bkp = record.levelname
             record.levelname = levelname_color
-        return logging.Formatter.format(self, record)
-
-
-# Custom logger class with multiple destinations
-class ColoredLogger(logging.Logger):
-    FORMAT = "[$BOLD%(name)-20s$RESET][%(levelname)-18s]  %(message)s ($BOLD%(filename)s$RESET:%(lineno)d)"
-    COLOR_FORMAT = formatter_message(FORMAT, True)
-
-    def __init__(self, name):
-        logging.Logger.__init__(self, name, logging.DEBUG)
-
-        color_formatter = ColoredFormatter(self.COLOR_FORMAT)
-
-        console = logging.StreamHandler()
-        console.setFormatter(color_formatter)
-
-        self.addHandler(console)
-        return
+            formatter_format = logging.Formatter.format(self, record)
+            record.levelname = lvl_bkp
+        return formatter_format

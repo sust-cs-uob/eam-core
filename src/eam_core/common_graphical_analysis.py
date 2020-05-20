@@ -59,11 +59,13 @@ def plot_grid(df, file_name, xlabel, ylabel, title, base_dir, output_scenario_di
         low = grouped_.quantile(.25)
         high = grouped_.quantile(.75)
 
+        mean = high.mean()
+        logger.debug(mean)
         mean_.plot(ax=ax,
                    kind='line',
                    legend=False,
                    linewidth=1,
-                   color=mapper.to_rgba(high.mean())
+                   color=mapper.to_rgba(mean)
                    )
 
         low.plot(ax=ax, color='k', alpha=0.2, linestyle=':')
@@ -294,7 +296,7 @@ def plot_bar(df, file_name, xlabel, ylabel, figsize=(10, 7), title=None, base_di
     ax.set_xlabel(xlabel)
 
     df = sum_interval(df, kwargs['start_date'], kwargs['end_date'])
-    df.reindex_axis(df.mean().sort_values().index, axis=1)
+    df.reindex(df.mean().sort_values().index, axis=1)
     df.T.plot(ax=ax, kind='barh', legend=False, color='w', edgecolor='k', align='center', width=0.5,
               linewidth=0.5)
     bars = ax.patches
@@ -425,10 +427,11 @@ def plot_box(ax, df, figsize, file_name, kind, x_limit, xlabel, ylabel, title=No
     :param kwargs:
     :return:
     """
-    plt.close('all')
+    if file_name:
+        plt.close('all')
     # order columns by their mean value
     # http://stackoverflow.com/questions/17712163/pandas-sorting-columns-by-their-mean-value
-    sorted_data = df.reindex_axis(df.mean().sort_values().index, axis=1)
+    sorted_data = df.reindex(df.mean().sort_values().index, axis=1)
     if not x_limit:
         x_limit = 0
     x_limit = max(get_max(sorted_data), x_limit) * 1.1

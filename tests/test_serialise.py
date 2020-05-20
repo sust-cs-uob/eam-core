@@ -13,7 +13,7 @@ class MyTestCase(unittest.TestCase):
 
     def test_to_json(self):
             doc = u"""
-        Processes:        
+        Processes:
           - name: process a
             formula:
               text: |
@@ -23,17 +23,17 @@ class MyTestCase(unittest.TestCase):
                 type: StaticVariable
                 value: 6
             import_variables:
-              - b        
-              - c        
+              - b
+              - c
           - name: process b
             formula:
               text: |
-                c = 3
-                b = 2                
-            export_variables:      
-              - b   
-              - c 
-            link_to: 
+                c = 3;
+                b = 2;
+            export_variables:
+              - b
+              - c
+            link_to:
               - process a
         Metadata:
           model_name: test
@@ -57,16 +57,14 @@ class MyTestCase(unittest.TestCase):
 
         input_variables = {
             'data_volume_var': generate_static_variable(sim_control, 'data_volume_var', 5, random=False)}
-        dvpm = FormulaModel(Formula("data_volume = data_volume_var"), )
+        dvpm = FormulaModel(Formula("data_volume = data_volume_var;"), )
         # todo - define return variables
         export_variables = {'data_volume': 'data_volume'}
         dvp = FormulaProcess('test', dvpm, input_variables=input_variables, export_variable_names=export_variables)
 
         test_formula = """
-                energy = energy_intensity * data_volume
-                return energy
+                energy = energy_intensity * data_volume;
                 """
-
         input_variables = {
             'energy_intensity': generate_static_variable(sim_control, 'energy_intensity', 5, random=False)}
 

@@ -42,6 +42,7 @@ except:
     config = {}
 
 import logging
+
 logger = logging.getLogger(__name__)
 
 
@@ -60,6 +61,7 @@ def setup_parser(args):
     parser.add_argument('--sensitivity', '-n', help="run sensitivity analysis", action='store_true')
     parser.add_argument('--documentation', '-D', help="create documentation", action='store_false')
     parser.add_argument('--IDs', '-id', help="give each process and variable an ID", action='store_true')
+    parser.add_argument('--formula_checks', '-fc', help="perform checks on formulas and variables", action='store_true')
 
     args = parser.parse_args(args)
     # print(args)
@@ -140,6 +142,7 @@ def create_documentation(runner):
             f.write('\n\n')
 
     if runner.use_docker:
+        logger.info("writing pandoc")
         cwd = os.getcwd()
         # cmd = f"docker run -v {cwd}:{project_dir} -w {project_dir} markfletcher/graphviz dot {dot_file} -T{file_type} -Gsplines=ortho -Grankdir=LR -Gnodesep=0.1 -Gratio=compress"
         # cmd = f"docker run -v {cwd}:{project_dir} -w {project_dir} markfletcher/graphviz dot {dot_file} -T{file_type} -Gsplines=ortho -Grankdir=BT"
@@ -154,6 +157,7 @@ def create_documentation(runner):
         #         pass
         ps = subprocess.Popen(cmd, shell=True)
     else:
+        logger.info("writing pandoc")
         output = pypandoc.convert_file(f'{output_directory}/{model.name}_model_documentation.md', 'pdf',
                                        outputfile=f'{output_directory}/{model.name}_model_documentation.pdf',
                                        extra_args=['-V', 'geometry:margin=0.2in, landscape'])
@@ -196,7 +200,8 @@ def run_scenario(scenario, model_run_base_directory=None, simulation_run_descrip
         mean_run = run_mean(args, model_run_base_directory, simulation_run_description, yaml_struct, scenario)
     create_model_func, sim_control, yaml_struct = prepare_simulation(model_output_directory,
                                                                      simulation_run_description, yaml_struct,
-                                                                     scenario, filename=args.yamlfile, IDs=args.IDs)
+                                                                     scenario, filename=args.yamlfile, IDs=args.IDs,
+                                                                     formula_checks=args.formula_checks, args=args)
     if args.sensitivity:
         runner = SimulationRunner()
         model, variances = runner.run_SA(create_model_func=create_model_func, embodied=False, sim_control=sim_control)
@@ -497,6 +502,7 @@ def summary_analysis(scenario_paths, model_run_base_directory, analysis_config, 
 
 def analysis(runner, yaml_struct, analysis_config=None, mean_run=None, image_filetype=None):
     if analysis_config is None or not analysis_config:
+        logger.info(f'analysis_config not provided, nothing to analyse')
         return
     model = runner.model
     sim_control = runner.sim_control
@@ -525,13 +531,16 @@ def analysis(runner, yaml_struct, analysis_config=None, mean_run=None, image_fil
             if 'process_tree' in analysis_config:
                 process_group_colour_defs = analysis_config['process_tree'].get('process_group_colours', {})
                 show_variables = analysis_config['process_tree'].get('show_variables', True)
+                histograms = analysis_config['process_tree'].get('histograms', True)
 
                 draw_graph_from_dotfile(model, show_variables=show_variables,
                                         file_type=image_filetype, metric='energy',
                                         start_date=start_date, end_date=end_date, colour_def=process_group_colour_defs,
                                         in_docker=runner.use_docker,
                                         output_directory=output_directory,
-                                        target_units=YamlLoader.get_target_units(yaml_struct), edge_labels=True,
+                                        target_units=YamlLoader.get_target_units(yaml_struct),
+                                        edge_labels=show_variables,
+                                        show_histograms=histograms
                                         )
         logger.info('generating plots and tables')
         # generate_plots_and_tables(scenario=scenario, metric='use_phase_energy', base_dir='.', start_date=start_date,
@@ -649,7 +658,8 @@ def analysis(runner, yaml_struct, analysis_config=None, mean_run=None, image_fil
 
                 data.to_pickle(f'{output_directory}/graph_data_{name}.pdpkl')
 
-                d = plot_kind(data, figsize=(15, 12), file_name=f'{scenario}_{name}.{image_filetype}', title=title,
+                d = plot_kind(data, figsize=(15, 12), file_name=f'{scenario}_{name}_{variable}.{image_filetype}',
+                              title=title,
                               kind=kind, **common_args)
             else:
                 logger.warning(f"Named plot {plot_def['name']} not found")

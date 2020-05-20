@@ -2,7 +2,7 @@ version: 1
 disable_existing_loggers: False
 formatters:
     simple:
-        format:  "%(levelname)s - %(asctime)s - %(processName)s %(threadName)s - %(name)s - %(lineno)d - %(message)s"
+        format:  "%(levelname)s - %(asctime)s - %(name)s:%(lineno)d - %(message)s"
 #        format: "%(asctime)s - %(filename)s - %(lineno)d - %(levelname)s - %(message)s"
     coloredFormatter:
         '()': eam_core.log_configuration.ColoredFormatter
@@ -42,6 +42,7 @@ handlers:
 #        propagate: no
 ##
 root:
-    level: DEBUG
+    level: INFO
+#    handlers: [console]
     handlers: [console, info_file_handler, error_file_handler]
 #    handlers: [console, info_file_handler, error_file_handler]

@@ -11,8 +11,8 @@ from eam_core import SimulationControl, Variable
 from eam_core.YamlLoader import YamlLoader
 from ruamel.yaml.scalarstring import PreservedScalarString as pss
 
-'''Create an encoder subclassing JSON.encoder. 
-Make this encoder aware of our classes (e.g. datetime.datetime objects) 
+'''Create an encoder subclassing JSON.encoder.
+Make this encoder aware of our classes (e.g. datetime.datetime objects)
 '''
 
 
@@ -64,7 +64,7 @@ class MyTestCase(unittest.TestCase):
     @unittest.skip("old DSL. New does not return values - need review")
     def test_prototype_add_property(self):
         doc = u"""
-    Processes:        
+    Processes:
       - name: proto
         type: prototype
         metadata:
@@ -80,16 +80,16 @@ class MyTestCase(unittest.TestCase):
             type: StaticVariable
             value: 6
         import_variables:
-          - b        
+          - b
       - name: b
         formula:
           text: |
             c = 2
-            a = 2                
-        export_variables:      
+            a = 2
+        export_variables:
           c: b
-          a: d 
-        link_to: 
+          a: d
+        link_to:
           - a
     Metadata:
       model_name: test
@@ -120,7 +120,7 @@ class MyTestCase(unittest.TestCase):
 
     def test_model_to_ymal(self):
         doc = u"""
-    Processes:        
+    Processes:
       - name: proto
         type: prototype
         metadata:
@@ -136,16 +136,16 @@ class MyTestCase(unittest.TestCase):
             type: StaticVariable
             value: 6
         import_variables:
-          - b        
+          - b
       - name: b
         formula:
           text: |
-            c = 2
-            a = 2                
-        export_variables:      
+            c = 2;
+            a = 2;
+        export_variables:
           c: b
-          a: d 
-        link_to: 
+          a: d
+        link_to:
           - a
     Metadata:
       model_name: test

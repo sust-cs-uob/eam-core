@@ -8,7 +8,6 @@ Processes:
       description: |
           ignored
     tableVariables:
-      - value: energy_intensity_network
       - value: carbon_intensity
     constants: []
     importVariables:
@@ -17,8 +16,9 @@ Processes:
     exportVariables: []
     device_type: IP Networking
     formula: |2
-      energy = energy_intensity_network * data_volume;
-      carbon = energy * carbon_intensity;
+#      energy_intensity_network is not defined --> expect error
+      energy = energy_intensity_network * data_volume
+      carbon = energy * carbon_intensity
       return energy
 
   - name: Internet Network
@@ -39,9 +39,9 @@ Processes:
     link_to:
       - CDN
     formula: |2
-      energy = data_volume_laptop * energy_intensity_network;
-      carbon = energy * carbon_intensity;
-      data_volume = data_volume_laptop;
+      energy = data_volume_laptop * energy_intensity_network
+      carbon = energy * carbon_intensity
+      data_volume = data_volume_laptop
       return energy
 
   - name: Laptop
@@ -60,9 +60,9 @@ Processes:
     exportVariables:
       - value: data_volume_laptop
     formula: |
-      energy = power_latop * time_laptop;
-      data_volume_laptop = time_laptop * bitrate_laptop;
-      carbon = energy * carbon_intensity;
+      energy = power_latop * time_laptop
+      data_volume_laptop = time_laptop * bitrate_laptop
+      carbon = energy * carbon_intensity
 
       return energy
     link_to:
@@ -76,9 +76,9 @@ Metadata:
   datasource_version_hint: 2
   comparison_variable: energy
   start_date: 2019-01-01
-  end_date: 2020-01-01
-  sample_size: 1
-  sample_mean: true
+  end_date: 2036-01-01
+  sample_size: 2
+  sample_mean: false
   individual_process_graphs_variable: energy
   analysis_configs:
     - name: ci

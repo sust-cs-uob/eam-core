@@ -4,12 +4,14 @@ import numbers
 from distutils.util import strtobool
 
 from antlr4 import InputStream, CommonTokenStream
+from antlr4.error.ErrorListener import ErrorListener
 from pint.quantity import _Quantity
 
 from eam_core.dsl import MuParser
 from eam_core.dsl.MuLexer import MuLexer
-from eam_core.dsl.MuParser import MuParser
+from eam_core.dsl.MuParser import MuParser, RecognitionException, Parser, BailErrorStrategy
 from eam_core.dsl.MuVisitor import MuVisitor
+import numpy as np
 
 logger = logging.getLogger(__name__)
 
@@ -121,8 +123,8 @@ class EvalVisitor(MuVisitor):
         _optype = ctx.op.type
 
         import pandas
-        if isinstance(left, pandas.DataFrame) or isinstance(left, pandas.Series)\
-                or isinstance(right, pandas.DataFrame) or isinstance(right, pandas.Series):
+        if isinstance(left, pandas.DataFrame) or isinstance(left, pandas.Series) \
+            or isinstance(right, pandas.DataFrame) or isinstance(right, pandas.Series):
             if _optype == MuParser.LT:
                 return (left < right).all().bool()
             if _optype == MuParser.LTEQ:
@@ -177,8 +179,8 @@ class EvalVisitor(MuVisitor):
         left = self.visit(ctx.expr(0))
         right = self.visit(ctx.expr(1))
 
-        if (isinstance(left, numbers.Real) or isinstance(left, bool)) and (
-                isinstance(right, numbers.Real) or isinstance(right, bool)):
+        if (isinstance(left, numbers.Real) or isinstance(left, bool) or isinstance(left, np.bool_)) and (
+            isinstance(right, numbers.Real) or isinstance(right, bool) or isinstance(right, np.bool_)):
             return left and right
         else:
             import pandas
@@ -193,7 +195,7 @@ class EvalVisitor(MuVisitor):
         right = self.visit(ctx.expr(1))
 
         if (isinstance(left, numbers.Real) or isinstance(left, bool)) and (
-                isinstance(right, numbers.Real) or isinstance(right, bool)):
+            isinstance(right, numbers.Real) or isinstance(right, bool)):
             return left or right
 
         else:
@@ -216,7 +218,7 @@ class EvalVisitor(MuVisitor):
         for condition in conditions:
             evaluated = self.visit(condition.expr())
 
-            if isinstance(evaluated, numbers.Real) or isinstance(evaluated, bool):
+            if isinstance(evaluated, numbers.Real) or isinstance(evaluated, bool) or isinstance(evaluated, np.bool_):
                 if evaluated:
                     evaluatedBlock = True
                     self.visit(condition.stat_block())
@@ -260,10 +262,32 @@ class EvalVisitor(MuVisitor):
         return value
 
 
+class MyErrorStrategy(BailErrorStrategy):
+    def recover(self, recognizer: Parser, e: RecognitionException):
+        recognizer._errHandler.reportError(recognizer, e)
+        super().recover(recognizer, e)
+
+
+class DSLError(Exception):
+
+    def __init__(self, message):
+        Exception.__init__(self)
+        self.message = message
+
+
+class SimpleErrorThrower(ErrorListener):
+    def syntaxError(self, recognizer, offendingSymbol, line, column, msg, e):
+        msg = msg.replace('\n', '\\n')
+        raise DSLError("Error at [%s:%s] : %s" % (line, column, msg))
+
+
 def evaluate(block, visitor=None, **kwargs):
     lexer = MuLexer(InputStream(block))
     stream = CommonTokenStream(lexer)
     parser = MuParser(stream)
+    parser.removeErrorListeners()
+    parser.addErrorListener(SimpleErrorThrower())
+    parser._errHandler = MyErrorStrategy()
     tree = parser.parse()
     if visitor == None:
         visitor = EvalVisitor(variables=kwargs.get('variables', {}))

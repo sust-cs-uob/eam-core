@@ -186,7 +186,7 @@ def store_dataframe(q_dict: Dict[str, pd.Series], simulation_control=None, targe
                     subdirectory=''):
     storage_df, metadata = pandas_series_dict_to_dataframe(q_dict, target_units=target_units, var_name=variable_name,
                                                            simulation_control=simulation_control)
-
+    logger.info(f'metadata is {metadata}')
     filename = f'{simulation_control.output_directory}/{subdirectory}/result_data_{variable_name}.hdf5'
 
     if not os.path.exists(f'{simulation_control.output_directory}/{subdirectory}'):
@@ -346,7 +346,7 @@ def generate_model_definition_markdown(model, in_docker=False, output_directory=
             f.writelines(tabulate(items, ['variable', 'value', 'unit'], tablefmt='simple'))
 
             f.write('\n\n')
-
+    logger.info("writing pandoc")
     # if in_docker:
     #     ps = subprocess.Popen((
     #         f"docker run -v `pwd`:/source jagregory/pandoc -f markdown -t latex {simulation_control.output_directory}/{model.name}_model_documentation.md -o {simulation_control.output_directory}/{model.name}_model_documentation.pdf -V geometry:margin=0.2in, landscape"),
@@ -403,9 +403,9 @@ def get_unit_by_name(name):
 
 
 def draw_graph_from_dotfile(model, file_type='pdf', show_variables=True, metric=None, start_date=None, end_date=None,
-                            colour_def=None, skip_update_barcharts=False, in_docker=False, output_directory=None,
+                            colour_def=None, show_histograms=True, in_docker=False, output_directory=None,
                             edge_labels=False, target_units=None):
-    if not skip_update_barcharts:
+    if show_histograms:
         generate_graph_node_barcharts(model.name, metric, start_date=start_date, end_date=end_date,
                                       base_directory=output_directory)
 
@@ -524,7 +524,7 @@ def draw_graph_from_dotfile(model, file_type='pdf', show_variables=True, metric=
     dot_file = f'{output_directory}/{model.name}.dot'
     pydot.write_dot(dot_file)
 
-    cmd = f'perl -p -i.regexp_bak -e \'s/lp="\d+\.?\d*,\d*\.?\d*",\n?//\' {dot_file}'
+    cmd = f'perl -p -i.regexp_bak -e \'s/lp="\d+\.?\d*,\d*\.?\d*",\n?//\' "{dot_file}"'
     # l_cmd = ["perl", "-p", "-i.regexp_bak", "-e", '\'s/lp="\d+\.?\d*,\d*\.?\d*",\n?//\'', "{dot_file}"]
 
     import shlex
@@ -532,7 +532,6 @@ def draw_graph_from_dotfile(model, file_type='pdf', show_variables=True, metric=
 
     logger.info(f'removing "lp" statements from {dot_file}')
     with subprocess.Popen(l_cmd, stdout=subprocess.PIPE) as proc:
-
         logger.info('output from shell process: ' + str(proc.stdout.read()))
 
     # time.sleep(2)
@@ -552,8 +551,8 @@ def draw_graph_from_dotfile(model, file_type='pdf', show_variables=True, metric=
             with subprocess.Popen(l_cmd, stdout=output) as proc:
                 pass
     else:
-        cmd = f"dot {dot_file} -T{file_type} -Gsplines=ortho -Grankdir=BT > {dot_render_filename}"
-        logger.info(f'running docker cmd {cmd}')
+        cmd = f"dot '{dot_file}' -T{file_type} -Gsplines=ortho -Grankdir=BT > '{dot_render_filename}'"
+        logger.info(f'running local cmd {cmd}')
         ps = subprocess.Popen((cmd), shell=True)
 
 
@@ -834,12 +833,14 @@ def get_sim_run_description():
     return simulation_run_description
 
 
-def store_sim_config(sim_control, directory, simulation_run_description):
+def store_sim_config(sim_control, directory, simulation_run_description, **kwargs):
     sim_control___dict__ = copy.deepcopy(sim_control.__dict__)
     del sim_control___dict__['times']
     del sim_control___dict__['param_repo']
     del sim_control___dict__['_df_multi_index']
-    sim_config = {'simulation_run_description': simulation_run_description, 'sim_config': sim_control___dict__}
+    sim_config = {'simulation_run_description': simulation_run_description, **sim_control___dict__,
+                  }
+    sim_config.update(kwargs)
     with open(f'{str(directory)}/sim_config.json', 'w') as outfile:
         simplejson.dump(sim_config, outfile, indent=4, sort_keys=True)
 
@@ -882,7 +883,7 @@ def configue_sim_control_from_yaml(sim_control: SimulationControl, yaml_struct, 
 
 
 def prepare_simulation(directory, simulation_run_description, yaml_struct, scenario, sim_control=None, filename=None,
-                       IDs=False):
+                       IDs=False, formula_checks=False, **kwargs):
     if not sim_control:
         sim_control = SimulationControl()
         configue_sim_control_from_yaml(sim_control, yaml_struct, directory)
@@ -890,6 +891,12 @@ def prepare_simulation(directory, simulation_run_description, yaml_struct, scena
     sim_control.variable_ids = IDs
     sim_control.filename = filename
     sim_control.scenario = scenario
-    store_sim_config(sim_control, directory, simulation_run_description)
-    create_model_func = partial(YamlLoader.create_service, yaml_struct)
+    args = kwargs.get('args', None)
+    _kwargs = {}
+    if args:
+        _kwargs = vars(args)
+        del kwargs['args']
+    _kwargs.update(kwargs)
+    store_sim_config(sim_control, directory, simulation_run_description, **_kwargs)
+    create_model_func = partial(YamlLoader.create_service, yaml_struct, formula_checks=formula_checks)
     return create_model_func, sim_control, yaml_struct
