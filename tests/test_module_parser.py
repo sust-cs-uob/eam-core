@@ -27,6 +27,7 @@ Processes:
   id: 0
 
 Metadata:
+  status: testing
   model_name: CI_model
   description: |
     bla bla

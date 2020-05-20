@@ -68,6 +68,7 @@ Processes:
     link_to:
       - Internet Network
 Metadata:
+  status: testing
   model_name: CI_model
   description: |
     bla bla
