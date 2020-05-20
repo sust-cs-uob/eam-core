@@ -524,7 +524,7 @@ def draw_graph_from_dotfile(model, file_type='pdf', show_variables=True, metric=
     dot_file = f'{output_directory}/{model.name}.dot'
     pydot.write_dot(dot_file)
 
-    cmd = f'perl -p -i.regexp_bak -e \'s/lp="\d+\.?\d*,\d*\.?\d*",\n?//\' "{dot_file}"'
+    cmd = r'perl -p -i.regexp_bak -e \'s/lp="\d+\.?\d*,\d*\.?\d*",\n?//\' "' + dot_file + '"'
     # l_cmd = ["perl", "-p", "-i.regexp_bak", "-e", '\'s/lp="\d+\.?\d*,\d*\.?\d*",\n?//\'', "{dot_file}"]
 
     import shlex
