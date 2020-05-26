@@ -26,7 +26,7 @@ def read(*names, **kwargs):
 
 setup(
     name='eam-core',
-    version='0.1.1',
+    version='0.2.0',
     description='EAM core framework',
     long_description='%s\n%s' % (
         re.compile('^.. start-badges.*^.. end-badges', re.M | re.S).sub('', read('README.rst')),
