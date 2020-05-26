@@ -259,7 +259,7 @@ def plot_kind(df, base_dir='.', output_scenario_directory=None, file_name=None, 
                          output_scenario_directory=output_scenario_directory, **kwargs)
 
 
-def plot_bar(df, file_name, xlabel, ylabel, figsize=(10, 30), title=None, base_dir='.', output_scenario_directory=None,
+def plot_bar(df, file_name, xlabel, ylabel, title=None, base_dir='.', output_scenario_directory=None,
              **kwargs):
     plt.close('all')
 
@@ -276,9 +276,17 @@ def plot_bar(df, file_name, xlabel, ylabel, figsize=(10, 30), title=None, base_d
     plt.rcParams['lines.linewidth'] = .1
     plt.rcParams['hatch.linewidth'] = 0.3
 
-    # fig = plt.figure()
-    fig = plt.figure(figsize=figsize)
-    ax = fig.add_subplot(111)
+    leftmargin = 0.5  # inches
+    rightmargin = 0.3  # inches
+    categorysize = 0.2
+
+    n = len(df.columns)
+
+    figwidth = leftmargin + rightmargin + (n + 1) * categorysize
+
+    fig, ax = plt.subplots(figsize=(10, figwidth))
+    fig.subplots_adjust(left=leftmargin / figwidth, right=1 - rightmargin / figwidth,
+                        top=0.94, bottom=0.1)
 
     title = f'{title} ({kwargs["start_date"]} - {kwargs["end_date"]})'
     import matplotlib.font_manager as fm
@@ -288,7 +296,7 @@ def plot_bar(df, file_name, xlabel, ylabel, figsize=(10, 30), title=None, base_d
 
     for label in (ax.get_xticklabels() + ax.get_yticklabels()):
         label.set_fontproperties(prop)
-        label.set_fontsize('medium')  # Size here overrides font_prop
+        label.set_fontsize('small')  # Size here overrides font_prop
 
     ax.set_ylabel('y', fontproperties=prop)
     ax.set_xlabel('x', fontproperties=prop)
@@ -297,7 +305,9 @@ def plot_bar(df, file_name, xlabel, ylabel, figsize=(10, 30), title=None, base_d
     ax.set_xlabel(xlabel)
 
     df = sum_interval(df, kwargs['start_date'], kwargs['end_date'])
-    df.reindex(df.mean().sort_values().index, axis=1)
+    df = df.reindex(df.mean().sort_index(ascending=True).sort_values(ascending=True).index, axis=1)
+
+    # df = df.reindex(df.mean().sort_values().index, axis=1)
     df.T.plot(ax=ax, kind='barh', legend=False, color='#0f0f0f80', edgecolor='k', align='center', width=0.5,
               linewidth=0.5)
 
@@ -307,9 +317,9 @@ def plot_bar(df, file_name, xlabel, ylabel, figsize=(10, 30), title=None, base_d
         hatches = [p for p in patterns for i in range(len(df))]
         for bar, hatch in zip(bars, hatches):
             bar.set_hatch(hatch)
-
+    # ax.set_xlim(-0.5, n - 0.5)
     from textwrap import wrap
-    ax.set_yticklabels(['\n'.join(wrap(l.get_text(), 10)) for l in ax.get_yticklabels()])
+    # ax.set_yticklabels(['\n'.join(wrap(l.get_text(), 10)) for l in ax.get_yticklabels()])
     plt.tight_layout()
     if file_name:
         if not os.path.exists(f'{base_dir}/{output_scenario_directory}'):
