@@ -1,0 +1,124 @@
+variant: 2
+Processes:
+- constants: []
+  exportVariables: []
+  formula: |
+  importVariables: []
+  link_to:
+  - a_a
+  metadata: []
+  name: a
+  tableVariables: []
+
+- constants: []
+  exportVariables: []
+  formula: |
+  importVariables: []
+  link_to:
+  - b_a
+  - b_b
+  metadata: []
+  name: b
+  tableVariables: []
+
+- constants: []
+  exportVariables: []
+  formula: |
+  importVariables: []
+  link_to: []
+  metadata: []
+  name: o_a
+  tableVariables: []
+
+- constants: []
+  exportVariables: []
+  formula: |
+  importVariables: []
+  link_to:
+  - a_a_a
+  metadata: []
+  name: a_a
+  tableVariables: []
+
+- constants: []
+  exportVariables: []
+  formula: |
+  importVariables: []
+  link_to:
+  - a_a_a_a
+  metadata: []
+  name: a_a_a
+  tableVariables: []
+
+- constants: []
+  exportVariables: []
+  formula: |
+  importVariables: []
+  link_to:
+  - b_a_a
+  - b_b_b
+  metadata: []
+  name: b_b
+  tableVariables: []
+
+- constants: []
+  exportVariables: []
+  formula: |
+  importVariables: []
+  link_to:
+  - b_a_a
+  metadata: []
+  name: b_a
+  tableVariables: []
+
+- name: b_a_a
+  formula: |
+  tableVariables: []
+  importVariables: []
+  constants: []
+  exportVariables: []
+  metadata: []
+
+  link_to:
+  - a_a_a_a
+- name: a_a_a_a
+  formula: |
+  tableVariables: []
+  importVariables: []
+  constants: []
+  exportVariables: []
+  metadata: []
+
+
+  link_to: []
+- name: b_b_b
+  formula: |
+  tableVariables: []
+  importVariables: []
+  constants: []
+  exportVariables: []
+  metadata: []
+
+  link_to:
+  - b_b_b_a
+- name: b_b_b_a
+  formula: |
+  tableVariables: []
+  importVariables: []
+  constants: []
+  exportVariables: []
+  metadata: []
+
+  link_to: []
+Analysis:
+  result_variables:
+  - energy
+  units:
+  - endswith: energy
+    to_unit: J
+Metadata:
+  model_name: structure test
+  table_file_name: table.csv
+  start_date: '2000-01-01'
+  end_date: '2001-01-01'
+Constants: []

@@ -805,6 +805,22 @@ if (0 == df) && (df == 0) {
         # print(visitor.variables['b'])
         assert visitor.variables['b'] == 2
 
+    def test_pint_pandas_series_ignore_units(self):
+        d = [0, 0]
+        df = pd.Series(data=d, dtype='pint[W]')
+        df2 = pd.Series(data=d, dtype='pint[dimensionless]')
+
+        block = """
+                   if (a != b) {
+                        c = 1;
+                   } else {
+                        c = 2;
+                   }
+               """
+        visitor = evaluate(block, variables={'a': df, 'b' : df2})
+        # print(visitor.variables['b'])
+        assert visitor.variables['c'] == 1
+
     def test_pint_pandas_timeseries(self):
         start_date = '2010-01-01'
         end_date = '2030-12-01'

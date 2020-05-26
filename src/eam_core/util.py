@@ -863,7 +863,7 @@ Y_M_D_H_M_S = "%Y%m%d-%H%M%S"
 
 
 def configue_sim_control_from_yaml(sim_control: SimulationControl, yaml_struct, output_directory):
-    sim_control.sample_size = yaml_struct['Metadata']['sample_size']
+    sim_control.sample_size = yaml_struct['Metadata'].get('sample_size',1)
     sim_control.use_time_series = False
 
     if 'start_date' in yaml_struct['Metadata']:

@@ -33,6 +33,10 @@ from functools import partial
 import itertools
 import configparser
 
+import eam_core.log_configuration as logconf
+
+logconf.config_logging()
+
 try:
     CONFIG_FILE = "local.cfg"
     cfg = configparser.ConfigParser()
@@ -43,7 +47,7 @@ except:
 
 import logging
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(__file__)
 
 
 def setup_parser(args):
@@ -59,9 +63,10 @@ def setup_parser(args):
     parser.add_argument('--verbose', '-v', help="enable debug level logging", action='store_true')
     parser.add_argument('yamlfile', help="yaml file to run")
     parser.add_argument('--sensitivity', '-n', help="run sensitivity analysis", action='store_true')
-    parser.add_argument('--documentation', '-D', help="create documentation", action='store_false')
+    parser.add_argument('--skip_documentation', '-sd', help="create documentation", action='store_true')
     parser.add_argument('--IDs', '-id', help="give each process and variable an ID", action='store_true')
     parser.add_argument('--formula_checks', '-fc', help="perform checks on formulas and variables", action='store_true')
+    parser.add_argument('--skip_storage', '-ss', help="do not store results", action='store_true')
 
     args = parser.parse_args(args)
     # print(args)
@@ -194,7 +199,7 @@ def run_scenario(scenario, model_run_base_directory=None, simulation_run_descrip
 
     mean_run = None
 
-    if yaml_struct['Metadata']['sample_mean'] == False:
+    if yaml_struct['Metadata'].get('sample_mean', True) == False:
         # run with just mean values, so that we can deal with 'sub-zero' values during analysis
         # this is needed because of sampling effect when uncertainty is very high
         mean_run = run_mean(args, model_run_base_directory, simulation_run_description, yaml_struct, scenario)
@@ -229,7 +234,7 @@ def run_scenario(scenario, model_run_base_directory=None, simulation_run_descrip
     analysis(runner, yaml_struct, analysis_config=analysis_config, mean_run=mean_run, image_filetype=args.filetype)
     # analysis model results
 
-    if args.documentation:
+    if not args.skip_documentation:
         create_documentation(runner)
 
     return (scenario, runner)
@@ -297,7 +302,9 @@ def run(args, analysis_config=None):
     # 'default' is implicit
     scenarios.append('default')
     # define aspects/data to store
-    output_persistence_config = {'store_traces': True}
+
+    logger.info(f'Skip store results set to {args.skip_storage}')
+    output_persistence_config = {'store_traces': not args.skip_storage}
 
     # a partial to invoke for each scenario
     run_scenario_f = partial(run_scenario, model_run_base_directory=model_run_base_directory,
@@ -324,8 +331,9 @@ def run(args, analysis_config=None):
 
     scenario_paths = {scenario_name: run_data.sim_control.output_directory for scenario_name, run_data in
                       runners.items()}
-    summary_analysis(scenario_paths, model_run_base_directory, analysis_config, yaml_struct,
-                     image_filetype=args.filetype)
+    if args.analysis_config:
+        summary_analysis(scenario_paths, model_run_base_directory, analysis_config, yaml_struct,
+                         image_filetype=args.filetype)
     return runners
 
 
@@ -565,7 +573,7 @@ def analysis(runner, yaml_struct, analysis_config=None, mean_run=None, image_fil
             df.columns = df.columns.droplevel(1)
             data = df
 
-            unit = next(iter(units))
+            unit = list(units.values())[0]
 
             # print(data)
             sheet_name = f'mean {variable} '
@@ -806,9 +814,9 @@ if __name__ == '__main__':
     logger.info(f"Running with parameters {args}")
     if args.verbose:
         level = logging.DEBUG
-        logger = logging.getLogger('ngmodel')
+        logger = logging.getLogger()
         logger.setLevel(level)
         for handler in logger.handlers:
             handler.setLevel(level)
 
-    run(args)
+    runners = run(args)
