@@ -5,6 +5,7 @@ import sys
 import time
 
 import matplotlib
+from openpyxl.styles import Alignment
 
 matplotlib.use('Agg')
 from matplotlib import pyplot as plt
@@ -450,7 +451,8 @@ def summary_analysis(scenario_paths, model_run_base_directory, analysis_config, 
         numeric_vals.to_excel(writer, f'mean {scenario} (comp)')
 
     # ======================== GO ================
-    for variable in analysis_config.get('numerical', []):
+    variables = analysis_config.get('numerical', [])
+    for variable in variables:
         data = None
         unit = None
 
@@ -486,11 +488,14 @@ def summary_analysis(scenario_paths, model_run_base_directory, analysis_config, 
         logger.info("storing mean values to excel")
 
         data.to_excel(writer, sheet_name)
-        # data.mean(level='time').mean().to_excel(writer, f'mean {variable} ')
-        # writer.sheets[f'mean {variable}'].column_dimensions['A'].width = 30
+
 
     writer.save()
 
+    write_TOC_to_excel(sheet_descriptions, variables, xlsx_file_name)
+
+
+def write_TOC_to_excel(sheet_descriptions, variables, xlsx_file_name):
     logger.info("writing TOC")
     from openpyxl import load_workbook
     wb = load_workbook(xlsx_file_name)
@@ -498,14 +503,23 @@ def summary_analysis(scenario_paths, model_run_base_directory, analysis_config, 
     # ----------------------------------------------------- TV vs STB
     # ------------------ TOC ----------------
     for row, (name, desc) in enumerate(sheet_descriptions.items(), start=1):
-        ws[f'A{row}'].value = name
-        ws[f'B{row}'].value = desc
-        ws[f'C{row}'].value = f'=HYPERLINK("#\'{name}\'!A1", "Link")'
-    ws.column_dimensions["A"].width = '23'
-    ws.column_dimensions["B"].width = '63'
-    ws.column_dimensions["C"].width = '10'
+        ws[f'A{row}'].value = desc
+        ws[f'B{row}'].value = f'=HYPERLINK("#\'{name}\'!A1", "Link")'
+    ws.column_dimensions["A"].width = '75'
+    ws.column_dimensions["B"].width = '10'
+    for ws_name in [sheet for sheet in wb.sheetnames if not sheet == 'toc']:
+        ws = wb[ws_name]
+        style_result_worksheet(ws)
     logger.debug(xlsx_file_name)
     wb.save(xlsx_file_name)
+
+
+def style_result_worksheet(ws):
+    ws.column_dimensions["A"].width = '60'
+    ws.column_dimensions["B"].width = '14'
+
+    for cell in ws['A']:
+        cell.alignment = Alignment(horizontal='left')
 
 
 def analysis(runner, yaml_struct, analysis_config=None, mean_run=None, image_filetype=None):

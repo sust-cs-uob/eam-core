@@ -1,6 +1,5 @@
 variant: 2
 Processes:
-
   - name: CDN
     id: 0
     metadata:
@@ -84,9 +83,10 @@ Metadata:
   analysis_configs:
     - name: ci
       named_plots:
+        - all_box_energy
 #        - all_area
-        - individual_processes
-        - input_vars
+#        - individual_processes
+#        - input_vars
       individual_process_graphs:
         - Laptop
       standard_plots:
@@ -112,12 +112,19 @@ Analysis:
     to_unit: GWh
 
   plots:
-  - name: individual_processes
-    variable: energy
-    kind: grid
-    title: Monthly Energy Consumption per Process
-    xlabel: Time
-    ylabel: Energy per Month [{unit}]
+    - name: all_box_energy
+      variable: energy
+      kind: bar
+      title: 'Annual Energy Consumption'
+      xlabel: 'Energy Consumption [{unit}]'
+      ylabel: 'Process name'
+
+    - name: individual_processes
+      variable: energy
+      kind: grid
+      title: Monthly Energy Consumption per Process
+      xlabel: Time
+      ylabel: Energy per Month [{unit}]
 Constants:
 - name: ref_duration
   value: 2628000s
