@@ -219,8 +219,8 @@ class NumberTestCase(unittest.TestCase):
                         a = c;
                    }
                """
-        evaluate(block)
-        # self.assertRaises(Exception, evaluate, block)
+        # evaluate(block)
+        self.assertRaises(Exception, evaluate, block)
 
     def test_basic_if_non_zero_is_true(self):
         block = """
@@ -804,6 +804,22 @@ if (0 == df) && (df == 0) {
         visitor = evaluate(block, variables={'s': df})
         # print(visitor.variables['b'])
         assert visitor.variables['b'] == 2
+
+    def test_pint_pandas_series_ignore_units(self):
+        d = [0, 0]
+        df = pd.Series(data=d, dtype='pint[W]')
+        df2 = pd.Series(data=d, dtype='pint[dimensionless]')
+
+        block = """
+                   if (a != b) {
+                        c = 1;
+                   } else {
+                        c = 2;
+                   }
+               """
+        visitor = evaluate(block, variables={'a': df, 'b' : df2})
+        # print(visitor.variables['b'])
+        assert visitor.variables['c'] == 1
 
     def test_pint_pandas_timeseries(self):
         start_date = '2010-01-01'

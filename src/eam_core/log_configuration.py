@@ -6,8 +6,16 @@ from pip._vendor.pkg_resources import resource_filename, Requirement
 from ruamel import yaml
 import os
 
+configured = False
+
 
 def config_logging():
+    global configured
+    if configured:
+        logging.info(f"Logging already configured.")
+        return
+    configured = True
+
     log_conf_file = os.getenv('LOG_CONFIG')  # None
 
     if not log_conf_file:

@@ -5,6 +5,7 @@ import sys
 import time
 
 import matplotlib
+from openpyxl.styles import Alignment
 
 matplotlib.use('Agg')
 from matplotlib import pyplot as plt
@@ -33,6 +34,10 @@ from functools import partial
 import itertools
 import configparser
 
+import eam_core.log_configuration as logconf
+
+logconf.config_logging()
+
 try:
     CONFIG_FILE = "local.cfg"
     cfg = configparser.ConfigParser()
@@ -43,7 +48,7 @@ except:
 
 import logging
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(__file__)
 
 
 def setup_parser(args):
@@ -59,9 +64,10 @@ def setup_parser(args):
     parser.add_argument('--verbose', '-v', help="enable debug level logging", action='store_true')
     parser.add_argument('yamlfile', help="yaml file to run")
     parser.add_argument('--sensitivity', '-n', help="run sensitivity analysis", action='store_true')
-    parser.add_argument('--documentation', '-D', help="create documentation", action='store_false')
+    parser.add_argument('--skip_documentation', '-sd', help="create documentation", action='store_true')
     parser.add_argument('--IDs', '-id', help="give each process and variable an ID", action='store_true')
     parser.add_argument('--formula_checks', '-fc', help="perform checks on formulas and variables", action='store_true')
+    parser.add_argument('--skip_storage', '-ss', help="do not store results", action='store_true')
 
     args = parser.parse_args(args)
     # print(args)
@@ -194,7 +200,7 @@ def run_scenario(scenario, model_run_base_directory=None, simulation_run_descrip
 
     mean_run = None
 
-    if yaml_struct['Metadata']['sample_mean'] == False:
+    if yaml_struct['Metadata'].get('sample_mean', True) == False:
         # run with just mean values, so that we can deal with 'sub-zero' values during analysis
         # this is needed because of sampling effect when uncertainty is very high
         mean_run = run_mean(args, model_run_base_directory, simulation_run_description, yaml_struct, scenario)
@@ -229,7 +235,7 @@ def run_scenario(scenario, model_run_base_directory=None, simulation_run_descrip
     analysis(runner, yaml_struct, analysis_config=analysis_config, mean_run=mean_run, image_filetype=args.filetype)
     # analysis model results
 
-    if args.documentation:
+    if not args.skip_documentation:
         create_documentation(runner)
 
     return (scenario, runner)
@@ -297,7 +303,9 @@ def run(args, analysis_config=None):
     # 'default' is implicit
     scenarios.append('default')
     # define aspects/data to store
-    output_persistence_config = {'store_traces': True}
+
+    logger.info(f'Skip store results set to {args.skip_storage}')
+    output_persistence_config = {'store_traces': not args.skip_storage}
 
     # a partial to invoke for each scenario
     run_scenario_f = partial(run_scenario, model_run_base_directory=model_run_base_directory,
@@ -324,8 +332,9 @@ def run(args, analysis_config=None):
 
     scenario_paths = {scenario_name: run_data.sim_control.output_directory for scenario_name, run_data in
                       runners.items()}
-    summary_analysis(scenario_paths, model_run_base_directory, analysis_config, yaml_struct,
-                     image_filetype=args.filetype)
+    if args.analysis_config:
+        summary_analysis(scenario_paths, model_run_base_directory, analysis_config, yaml_struct,
+                         image_filetype=args.filetype)
     return runners
 
 
@@ -442,7 +451,8 @@ def summary_analysis(scenario_paths, model_run_base_directory, analysis_config, 
         numeric_vals.to_excel(writer, f'mean {scenario} (comp)')
 
     # ======================== GO ================
-    for variable in analysis_config.get('numerical', []):
+    variables = analysis_config.get('numerical', [])
+    for variable in variables:
         data = None
         unit = None
 
@@ -478,11 +488,12 @@ def summary_analysis(scenario_paths, model_run_base_directory, analysis_config, 
         logger.info("storing mean values to excel")
 
         data.to_excel(writer, sheet_name)
-        # data.mean(level='time').mean().to_excel(writer, f'mean {variable} ')
-        # writer.sheets[f'mean {variable}'].column_dimensions['A'].width = 30
 
     writer.save()
+    write_TOC_to_excel(sheet_descriptions, variables, xlsx_file_name)
 
+
+def write_TOC_to_excel(sheet_descriptions, variables, xlsx_file_name):
     logger.info("writing TOC")
     from openpyxl import load_workbook
     wb = load_workbook(xlsx_file_name)
@@ -490,14 +501,24 @@ def summary_analysis(scenario_paths, model_run_base_directory, analysis_config, 
     # ----------------------------------------------------- TV vs STB
     # ------------------ TOC ----------------
     for row, (name, desc) in enumerate(sheet_descriptions.items(), start=1):
-        ws[f'A{row}'].value = name
-        ws[f'B{row}'].value = desc
-        ws[f'C{row}'].value = f'=HYPERLINK("#\'{name}\'!A1", "Link")'
-    ws.column_dimensions["A"].width = '23'
-    ws.column_dimensions["B"].width = '63'
-    ws.column_dimensions["C"].width = '10'
-    logger.debug(xlsx_file_name)
+        ws[f'A{row}'].value = desc
+        ws[f'B{row}'].value = f'=HYPERLINK("#\'{name}\'!A1", "Link")'
+    ws.column_dimensions["A"].width = '75'
+    ws.column_dimensions["B"].width = '10'
+
+    for ws_name in [sheet for sheet in wb.sheetnames if not sheet == 'toc']:
+        logger.debug(f'applying column styles to {ws_name}')
+        ws = wb[ws_name]
+        style_result_worksheet(ws)
     wb.save(xlsx_file_name)
+
+
+def style_result_worksheet(ws):
+    ws.column_dimensions["A"].width = '60'
+    ws.column_dimensions["B"].width = '14'
+
+    for cell in ws['A']:
+        cell.alignment = Alignment(horizontal='left')
 
 
 def analysis(runner, yaml_struct, analysis_config=None, mean_run=None, image_filetype=None):
@@ -556,7 +577,8 @@ def analysis(runner, yaml_struct, analysis_config=None, mean_run=None, image_fil
         load_data = load_as_df_qantity
 
         # ======================== GO ================
-        for variable in yaml_struct['Analysis'].get('numerical', []):
+        variables = yaml_struct['Analysis'].get('numerical', [])
+        for variable in variables:
             logger.info(f'numerical analysis for var {variable}')
 
             pint_pandas_data, m = load_data(f'{output_directory}/result_data_{variable}.hdf5')
@@ -565,7 +587,7 @@ def analysis(runner, yaml_struct, analysis_config=None, mean_run=None, image_fil
             df.columns = df.columns.droplevel(1)
             data = df
 
-            unit = next(iter(units))
+            unit = list(units.values())[0]
 
             # print(data)
             sheet_name = f'mean {variable} '
@@ -785,20 +807,7 @@ def analysis(runner, yaml_struct, analysis_config=None, mean_run=None, image_fil
         logger.info("writing TOC")
         writer.save()
 
-        from openpyxl import load_workbook
-        wb = load_workbook(xlsx_file_name)
-        ws = wb['toc']
-        # ----------------------------------------------------- TV vs STB
-        # ------------------ TOC ----------------
-        for row, (name, desc) in enumerate(sheet_descriptions.items(), start=1):
-            ws[f'A{row}'].value = desc
-            ws[f'B{row}'].value = desc
-            ws[f'D{row}'].value = f'=HYPERLINK("#\'{name}\'!A1", "Link")'
-        ws.column_dimensions["A"].width = '23'
-        ws.column_dimensions["B"].width = '63'
-        ws.column_dimensions["C"].width = '10'
-        # print(xlsx_file_name)
-        wb.save(xlsx_file_name)
+        write_TOC_to_excel(sheet_descriptions, variables, xlsx_file_name)
 
 
 if __name__ == '__main__':
@@ -806,9 +815,9 @@ if __name__ == '__main__':
     logger.info(f"Running with parameters {args}")
     if args.verbose:
         level = logging.DEBUG
-        logger = logging.getLogger('ngmodel')
+        logger = logging.getLogger()
         logger.setLevel(level)
         for handler in logger.handlers:
             handler.setLevel(level)
 
-    run(args)
+    runners = run(args)

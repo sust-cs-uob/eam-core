@@ -213,15 +213,15 @@ class SimulationRunner(object):
 
         self.store_metadata()
 
-        if 'store_traces' in output_persistence_config:
+        if output_persistence_config.get('store_traces', True):
             self.store_process_variables(result_variables, target_units)
             # self.store_process_input_variables(target_units)
 
+            self.store_input_var_csv(target_units)
+
+            self.store_parameterrepository_variables()
+
         self.store_json_graph()
-
-        self.store_input_var_csv(target_units)
-
-        self.store_parameterrepository_variables()
 
         return self.model, self.footprint_result_dict
 

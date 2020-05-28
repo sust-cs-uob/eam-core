@@ -524,7 +524,7 @@ def draw_graph_from_dotfile(model, file_type='pdf', show_variables=True, metric=
     dot_file = f'{output_directory}/{model.name}.dot'
     pydot.write_dot(dot_file)
 
-    cmd = f'perl -p -i.regexp_bak -e \'s/lp="\d+\.?\d*,\d*\.?\d*",\n?//\' "{dot_file}"'
+    cmd = r'perl -p -i.regexp_bak -e \'s/lp="\d+\.?\d*,\d*\.?\d*",\n?//\' "' + dot_file + '"'
     # l_cmd = ["perl", "-p", "-i.regexp_bak", "-e", '\'s/lp="\d+\.?\d*,\d*\.?\d*",\n?//\'', "{dot_file}"]
 
     import shlex
@@ -863,7 +863,7 @@ Y_M_D_H_M_S = "%Y%m%d-%H%M%S"
 
 
 def configue_sim_control_from_yaml(sim_control: SimulationControl, yaml_struct, output_directory):
-    sim_control.sample_size = yaml_struct['Metadata']['sample_size']
+    sim_control.sample_size = yaml_struct['Metadata'].get('sample_size',1)
     sim_control.use_time_series = False
 
     if 'start_date' in yaml_struct['Metadata']:

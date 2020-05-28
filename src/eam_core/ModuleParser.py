@@ -77,6 +77,7 @@ class ModuleParser(object):
         result['name'] = yaml_structure['Metadata']['model_name']
         result['version'] = yaml_structure['Metadata']['model_version']
         result['description'] = yaml_structure['Metadata']['description']
+        result['status'] = yaml_structure['Metadata']['status']
         result['processes'] = loader.parse_yaml_structure(yaml_structure)
 
         return result
