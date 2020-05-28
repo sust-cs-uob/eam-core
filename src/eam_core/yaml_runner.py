@@ -489,9 +489,7 @@ def summary_analysis(scenario_paths, model_run_base_directory, analysis_config, 
 
         data.to_excel(writer, sheet_name)
 
-
     writer.save()
-
     write_TOC_to_excel(sheet_descriptions, variables, xlsx_file_name)
 
 
@@ -507,10 +505,11 @@ def write_TOC_to_excel(sheet_descriptions, variables, xlsx_file_name):
         ws[f'B{row}'].value = f'=HYPERLINK("#\'{name}\'!A1", "Link")'
     ws.column_dimensions["A"].width = '75'
     ws.column_dimensions["B"].width = '10'
+
     for ws_name in [sheet for sheet in wb.sheetnames if not sheet == 'toc']:
+        logger.debug(f'applying column styles to {ws_name}')
         ws = wb[ws_name]
         style_result_worksheet(ws)
-    logger.debug(xlsx_file_name)
     wb.save(xlsx_file_name)
 
 
@@ -578,7 +577,8 @@ def analysis(runner, yaml_struct, analysis_config=None, mean_run=None, image_fil
         load_data = load_as_df_qantity
 
         # ======================== GO ================
-        for variable in yaml_struct['Analysis'].get('numerical', []):
+        variables = yaml_struct['Analysis'].get('numerical', [])
+        for variable in variables:
             logger.info(f'numerical analysis for var {variable}')
 
             pint_pandas_data, m = load_data(f'{output_directory}/result_data_{variable}.hdf5')
@@ -807,20 +807,7 @@ def analysis(runner, yaml_struct, analysis_config=None, mean_run=None, image_fil
         logger.info("writing TOC")
         writer.save()
 
-        from openpyxl import load_workbook
-        wb = load_workbook(xlsx_file_name)
-        ws = wb['toc']
-        # ----------------------------------------------------- TV vs STB
-        # ------------------ TOC ----------------
-        for row, (name, desc) in enumerate(sheet_descriptions.items(), start=1):
-            ws[f'A{row}'].value = desc
-            ws[f'B{row}'].value = desc
-            ws[f'D{row}'].value = f'=HYPERLINK("#\'{name}\'!A1", "Link")'
-        ws.column_dimensions["A"].width = '23'
-        ws.column_dimensions["B"].width = '63'
-        ws.column_dimensions["C"].width = '10'
-        # print(xlsx_file_name)
-        wb.save(xlsx_file_name)
+        write_TOC_to_excel(sheet_descriptions, variables, xlsx_file_name)
 
 
 if __name__ == '__main__':
