@@ -270,15 +270,19 @@ class MyErrorStrategy(BailErrorStrategy):
 
 class DSLError(Exception):
 
-    def __init__(self, message):
+    def __init__(self, message, offending_symbol, line, column, msg):
         Exception.__init__(self)
+        self.msg = msg
+        self.column = column
+        self.line = line
+        self.offending_symbol = offending_symbol
         self.message = message
 
 
 class SimpleErrorThrower(ErrorListener):
     def syntaxError(self, recognizer, offendingSymbol, line, column, msg, e):
         msg = msg.replace('\n', '\\n')
-        raise DSLError("Error at [%s:%s] : %s" % (line, column, msg))
+        raise DSLError("Error at [%s:%s] : %s" % (line, column, msg), offendingSymbol, line, column, msg)
 
 
 def evaluate(block, visitor=None, **kwargs):

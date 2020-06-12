@@ -1,5 +1,6 @@
 import copy
 import logging
+from pathlib import Path
 from typing import Dict, Tuple
 
 import numpy as np
@@ -144,7 +145,8 @@ class YamlLoader(object):
                 for var in var_def:
                     logger.debug(f"parsing var {var['value']}")
                     var__ = {}
-                    var__['excel_file_name'] = yaml_structure['Metadata']['table_file_name']
+                    # make absolute
+                    var__['excel_file_name'] = str(Path(simulation_control.filename).parent / yaml_structure['Metadata']['table_file_name'])
                     var__['name'] = var['value']
                     logger.debug(var)
                     vars[var__['name']] = ExcelVariable(**var__)

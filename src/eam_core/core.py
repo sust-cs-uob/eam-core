@@ -80,6 +80,7 @@ class SimulationControl(object):
         self.process_ids = False
         self.variable_ids = False
         self.filename = None
+        self.table_version = None
 
     def reset(self):
         logger.info("Resetting Simulation Control Parameters")
@@ -244,7 +245,11 @@ class ExcelDataSource(DataSource):
 
         if not param_repo.exists(self.variable_name):
             logger.debug('opening excel file')
-            loader = TableParameterLoader(filename=self.file_name, table_handler=simulation_control.excel_handler)
+            kwargs = {}
+            if simulation_control.table_version:
+                kwargs['version'] = simulation_control.table_version
+            loader = TableParameterLoader(filename=self.file_name, table_handler=simulation_control.excel_handler,
+                                          **kwargs)
             loader.load_into_repo(repository=param_repo, id_flag=simulation_control.variable_ids)
 
         param = param_repo.get_parameter(self.variable_name, scenario_name=simulation_control.scenario)
