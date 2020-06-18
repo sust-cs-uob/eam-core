@@ -352,6 +352,7 @@ def generate_model_definition_markdown(model, in_docker=False, output_directory=
     #         f"docker run -v `pwd`:/source jagregory/pandoc -f markdown -t latex {simulation_control.output_directory}/{model.name}_model_documentation.md -o {simulation_control.output_directory}/{model.name}_model_documentation.pdf -V geometry:margin=0.2in, landscape"),
     #         shell=True)
     # else:
+    logger.info(f'converting model doc at {output_directory}/{model.name}_model_documentation.md')
     output = pypandoc.convert_file(f'{output_directory}/{model.name}_model_documentation.md', 'pdf',
                                    outputfile=f'{output_directory}/{model.name}_model_documentation.pdf',
                                    extra_args=['-V', 'geometry:margin=0.2in, landscape'])
@@ -863,7 +864,7 @@ Y_M_D_H_M_S = "%Y%m%d-%H%M%S"
 
 
 def configue_sim_control_from_yaml(sim_control: SimulationControl, yaml_struct, output_directory):
-    sim_control.sample_size = yaml_struct['Metadata'].get('sample_size',1)
+    sim_control.sample_size = yaml_struct['Metadata'].get('sample_size', 1)
     sim_control.use_time_series = False
 
     if 'start_date' in yaml_struct['Metadata']:
@@ -875,17 +876,24 @@ def configue_sim_control_from_yaml(sim_control: SimulationControl, yaml_struct, 
     if 'sample_mean' in yaml_struct['Metadata']:
         sim_control.sample_mean_value = bool(yaml_struct['Metadata']['sample_mean'])
 
+    if yaml_struct['Metadata'].get('table_file_name', '').endswith('csv'):
+        sim_control.excel_handler = 'csv'
+
+    if 'table_format_version' in yaml_struct['Metadata']:
+        sim_control.table_version = yaml_struct['Metadata']['table_format_version']
+
     sim_control.output_directory = output_directory
     iterables = [sim_control.times, range(sim_control.sample_size)]
 
     sim_control._df_multi_index = pd.MultiIndex.from_product(iterables, names=sim_control.index_names)
 
 
-def prepare_simulation(directory, simulation_run_description, yaml_struct, scenario, sim_control=None, filename=None,
+def prepare_simulation(model_output_directory, simulation_run_description, yaml_struct, scenario, sim_control=None,
+                       filename=None,
                        IDs=False, formula_checks=False, **kwargs):
     if not sim_control:
         sim_control = SimulationControl()
-        configue_sim_control_from_yaml(sim_control, yaml_struct, directory)
+        configue_sim_control_from_yaml(sim_control, yaml_struct, model_output_directory)
     sim_control.process_ids = IDs
     sim_control.variable_ids = IDs
     sim_control.filename = filename
@@ -896,6 +904,6 @@ def prepare_simulation(directory, simulation_run_description, yaml_struct, scena
         _kwargs = vars(args)
         del kwargs['args']
     _kwargs.update(kwargs)
-    store_sim_config(sim_control, directory, simulation_run_description, **_kwargs)
+    store_sim_config(sim_control, model_output_directory, simulation_run_description, **_kwargs)
     create_model_func = partial(YamlLoader.create_service, yaml_struct, formula_checks=formula_checks)
     return create_model_func, sim_control, yaml_struct
