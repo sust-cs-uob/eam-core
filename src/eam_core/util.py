@@ -956,7 +956,8 @@ def configue_sim_control_from_yaml(sim_control: SimulationControl, yaml_struct, 
         sim_control.sample_mean_value = bool(yaml_struct['Metadata']['sample_mean'])
 
     sim_control.output_directory = output_directory
-    iterables = [sim_control.times, range(sim_control.sample_size)]
+    countries = ['UK', 'DE']
+    iterables = [countries,sim_control.times, range(sim_control.sample_size)]
 
     sim_control._df_multi_index = pd.MultiIndex.from_product(iterables, names=sim_control.index_names)
 

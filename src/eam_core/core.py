@@ -65,7 +65,7 @@ class SimulationControl(object):
         self.output_directory = None
         self._df_multi_index = None
         self.trace = None
-        self.index_names = ['time', 'samples']
+        self.index_names = ['time', 'samples','country']
         self.cache = defaultdict(dict)
         self.param_repo = ParameterRepository()
         self.use_time_series = False
@@ -75,6 +75,7 @@ class SimulationControl(object):
         self.excel_handler = 'openpyxl'
         self.times = pd.date_range('2009-01-01', '2017-01-01', freq='MS')
         self.sample_size = 100
+        self.countries = ["UK", "DE"]
         self.with_pint_units = True
         self.process_ids = False
         self.variable_ids = False
@@ -128,12 +129,13 @@ def gen_static_multi_index_df(val, name, settings, distribution=None, unit=None)
     times = settings['times']
     samples = settings['sample_size']
 
-    iterables = [times, range(0, samples)]
+    countries = ['UK', 'DE']
+    iterables = [countries,times, range(0, samples)]
     index_names = settings['index_names']
     _multi_index = pd.MultiIndex.from_product(iterables, names=index_names)
 
     if distribution is None:
-        distribution = np.full((len(times), samples), val)
+        distribution = np.full((countries,len(times), samples), val)
     # else:
     #     assert distribution.shape == (len(times) * samples,)
     #
@@ -809,7 +811,7 @@ def sample_value_for_simulation(value, sim_control, name, random=False, unit=Non
     if random:
         value = np.random.normal(value, value / 10, size=size)
     else:
-        value = np.full(size, value)
+        value = np.full(size*len(sim_control.countries), value)
     if sim_control.use_time_series:
         value = gen_static_multi_index_df(None, name, sim_control.__dict__, distribution=value, unit=unit)
     else:

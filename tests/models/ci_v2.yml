@@ -66,7 +66,7 @@ Metadata:
   description: |
     bla bla
   model_version: 0.0.1
-  table_file_name: tests/data/ci_v2_data.xlsx
+  table_file_name: tests/data/countries_data.xlsx
   datasource_version_hint: 2
   comparison_variable: energy
   start_date: 2019-01-01
@@ -76,19 +76,19 @@ Metadata:
   individual_process_graphs_variable: energy
   analysis_configs:
     - name: ci
-      named_plots:
+#      named_plots:
 #        - all_area
-        - individual_processes
-        - input_vars
-      individual_process_graphs:
-        - Laptop
-      standard_plots:
-        - process_tree
+#        - individual_processes
+#        - input_vars
+#      individual_process_graphs:
+#        - Laptop
+#      standard_plots:
+#        - process_tree
 Analysis:
   result_variables:
     - energy
-  scenarios:
-    - S1
+#  scenarios:
+#    - S1
 
   numerical:
     - energy
@@ -104,13 +104,13 @@ Analysis:
   - __eq__: result
     to_unit: GWh
 
-  plots:
-  - name: individual_processes
-    variable: energy
-    kind: grid
-    title: Monthly Energy Consumption per Process
-    xlabel: Time
-    ylabel: Energy per Month [{unit}]
+#  plots:
+#  - name: individual_processes
+#    variable: energy
+#    kind: grid
+#    title: Monthly Energy Consumption per Process
+#    xlabel: Time
+#    ylabel: Energy per Month [{unit}]
 Constants:
 - name: ref_duration
   value: 2628000s
