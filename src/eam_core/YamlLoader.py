@@ -146,7 +146,7 @@ class YamlLoader(object):
                     logger.debug(f"parsing var {var['value']}")
                     var__ = {}
                     # make absolute
-                    var__['excel_file_name'] = str(Path(simulation_control.filename).parent / yaml_structure['Metadata']['table_file_name'])
+                    var__['excel_file_name'] = yaml_structure['Metadata']['table_file_name']
                     var__['name'] = var['value']
                     logger.debug(var)
                     vars[var__['name']] = ExcelVariable(**var__)
