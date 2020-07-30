@@ -63,9 +63,10 @@ class SimulationControl(object):
     def __init__(self):
         self.scenario = 'default'
         self.output_directory = None
+        self.country_df_multi_index = None
         self._df_multi_index = None
         self.trace = None
-        self.index_names = ['time', 'samples','country']
+        self.index_names = ['time', 'samples']
         self.cache = defaultdict(dict)
         self.param_repo = ParameterRepository()
         self.use_time_series = False
@@ -75,7 +76,8 @@ class SimulationControl(object):
         self.excel_handler = 'openpyxl'
         self.times = pd.date_range('2009-01-01', '2017-01-01', freq='MS')
         self.sample_size = 100
-        self.countries = ["UK", "DE"]
+        self.countries = []
+        self.country_vars = []
         self.with_pint_units = True
         self.process_ids = False
         self.variable_ids = False
@@ -129,13 +131,12 @@ def gen_static_multi_index_df(val, name, settings, distribution=None, unit=None)
     times = settings['times']
     samples = settings['sample_size']
 
-    countries = ['UK', 'DE']
-    iterables = [countries,times, range(0, samples)]
+    iterables = [times, range(0, samples)]
     index_names = settings['index_names']
     _multi_index = pd.MultiIndex.from_product(iterables, names=index_names)
 
     if distribution is None:
-        distribution = np.full((countries,len(times), samples), val)
+        distribution = np.full((len(times), samples), val)
     # else:
     #     assert distribution.shape == (len(times) * samples,)
     #
@@ -246,7 +247,7 @@ class ExcelDataSource(DataSource):
         if not param_repo.exists(self.variable_name):
             logger.debug('opening excel file')
             loader = TableParameterLoader(filename=self.file_name, table_handler=simulation_control.excel_handler)
-            loader.load_into_repo(repository=param_repo, id_flag= simulation_control.variable_ids)
+            loader.load_into_repo(repository=param_repo, id_flag= simulation_control.variable_ids, countries=simulation_control.countries)
 
         param = param_repo.get_parameter(self.variable_name, scenario_name=simulation_control.scenario)
         if 'process_name' in kwargs:
@@ -811,7 +812,7 @@ def sample_value_for_simulation(value, sim_control, name, random=False, unit=Non
     if random:
         value = np.random.normal(value, value / 10, size=size)
     else:
-        value = np.full(size*len(sim_control.countries), value)
+        value = np.full(size, value)
     if sim_control.use_time_series:
         value = gen_static_multi_index_df(None, name, sim_control.__dict__, distribution=value, unit=unit)
     else:
