@@ -247,7 +247,7 @@ class ExcelDataSource(DataSource):
         if not param_repo.exists(self.variable_name):
             logger.debug('opening excel file')
             loader = TableParameterLoader(filename=self.file_name, table_handler=simulation_control.excel_handler)
-            loader.load_into_repo(repository=param_repo, id_flag= simulation_control.variable_ids, countries=simulation_control.countries)
+            loader.load_into_repo(repository=param_repo, id_flag= simulation_control.variable_ids, countries=simulation_control.countries, country_vars=simulation_control.country_vars)
 
         param = param_repo.get_parameter(self.variable_name, scenario_name=simulation_control.scenario)
         if 'process_name' in kwargs:

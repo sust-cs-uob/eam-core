@@ -313,7 +313,10 @@ def pandas_series_dict_to_dataframe(data: Dict[str, pd.Series], target_units=Non
 
     """
     metadata = {}
-    results_df = pd.DataFrame(index=simulation_control._df_multi_index)
+    if len(simulation_control.countries)!=0:
+        results_df = pd.DataFrame(index=simulation_control.country_df_multi_index)
+    else:
+        results_df = pd.DataFrame(index=simulation_control._df_multi_index)
     for process, variable in data.items():
         logger.debug(f'converting results for process {process}')
         if target_units:

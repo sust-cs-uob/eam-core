@@ -50,8 +50,10 @@ Metadata:
     - UK
     - DE
   country_vars:
-    - CDN
-    - Internet Network
+    - power_B
+    - time_B
+    - power_A
+    - time_A
   analysis_configs:
     - name: ci
 Analysis:
