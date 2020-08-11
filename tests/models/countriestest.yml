@@ -38,7 +38,7 @@ Metadata:
   description: |
     bla bla
   model_version: 0.0.1
-  table_file_name: tests/data/full_country_data.xlsx
+  table_file_name: tests/data/some_country_data.xlsx
   datasource_version_hint: 2
   comparison_variable: energy
   start_date: 2019-01-01
@@ -52,8 +52,8 @@ Metadata:
   country_vars:
     - power_B
     - time_B
-    - power_A
-    - time_A
+#    - power_A
+#    - time_A
   analysis_configs:
     - name: ci
 Analysis:
