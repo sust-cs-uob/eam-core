@@ -27,6 +27,7 @@ class ModuleParser(object):
         result['name'] = definition['name']
         result['description'] = definition['metadata']['description']
         result['category'] = definition['metadata']['ui_category']
+        result['order'] = definition['order']
 
         table_file_name = yaml_structure['Metadata']['table_file_name']
         if self.yaml_file_location:
@@ -45,6 +46,7 @@ class ModuleParser(object):
                         param['value'] = parameter_definition['ref value']
                         param['name'] = parameter_definition['user name']
                         param['unit'] = parameter_definition['unit']
+                        param['order'] = parameter_definition['order']
                         param['description'] = parameter_definition['description']
                         param['type'] = ModuleParser.param_type_map[parameter_definition['ui variable']]
 
@@ -78,6 +80,7 @@ class ModuleParser(object):
         result['version'] = yaml_structure['Metadata']['model_version']
         result['description'] = yaml_structure['Metadata']['description']
         result['status'] = yaml_structure['Metadata']['status']
+        result['process_map'] = yaml_structure['Metadata']['process_map']
         result['processes'] = loader.parse_yaml_structure(yaml_structure)
 
         return result
