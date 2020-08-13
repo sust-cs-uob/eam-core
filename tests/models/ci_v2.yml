@@ -2,6 +2,7 @@ variant: 2
 Processes:
   - name: CDN
     id: 0
+    order: 1
     metadata:
       ui_category: User Device
       description: |
@@ -22,6 +23,7 @@ Processes:
 
   - name: Internet Network
     id: 1
+    order: 2
     metadata:
       ui_category: User Device
       description: |
@@ -45,6 +47,7 @@ Processes:
 
   - name: Laptop
     id: 2
+    order: 3
     metadata:
       ui_category: User Device
       description: |

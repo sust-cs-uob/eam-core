@@ -10,7 +10,7 @@ syntax_variant: 2
 
 Processes:
 - name: CDN
-
+  order: 1
   metadata:
     ui_category: Datacentre
     description: |
@@ -28,6 +28,7 @@ Processes:
 
 Metadata:
   status: testing
+  process_map: foo
   model_name: CI_model
   description: |
     bla bla
