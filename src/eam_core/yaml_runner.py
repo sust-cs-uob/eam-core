@@ -5,11 +5,10 @@ import sys
 import time
 
 import matplotlib
+from openpyxl.styles import Alignment
 
 matplotlib.use('Agg')
 from matplotlib import pyplot as plt
-
-from pip._vendor.pkg_resources import resource_filename, Requirement
 
 import json as json
 
@@ -35,6 +34,10 @@ from functools import partial
 import itertools
 import configparser
 
+import eam_core.log_configuration as logconf
+
+logconf.config_logging()
+
 try:
     CONFIG_FILE = "local.cfg"
     cfg = configparser.ConfigParser()
@@ -44,13 +47,8 @@ except:
     config = {}
 
 import logging
-from logging.config import dictConfig
 
-with open(resource_filename(Requirement.parse('eam_core'), "eam_core/logconf.yml"), 'r') as f:
-    log_config = yaml.safe_load(f.read())
-dictConfig(log_config)
-
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(__file__)
 
 
 def setup_parser(args):
@@ -66,8 +64,10 @@ def setup_parser(args):
     parser.add_argument('--verbose', '-v', help="enable debug level logging", action='store_true')
     parser.add_argument('yamlfile', help="yaml file to run")
     parser.add_argument('--sensitivity', '-n', help="run sensitivity analysis", action='store_true')
-    parser.add_argument('--documentation', '-D', help="create documentation", action='store_false')
+    parser.add_argument('--skip_documentation', '-sd', help="create documentation", action='store_true')
     parser.add_argument('--IDs', '-id', help="give each process and variable an ID", action='store_true')
+    parser.add_argument('--formula_checks', '-fc', help="perform checks on formulas and variables", action='store_true')
+    parser.add_argument('--skip_storage', '-ss', help="do not store results", action='store_true')
 
     args = parser.parse_args(args)
     # print(args)
@@ -148,12 +148,14 @@ def create_documentation(runner):
             f.write('\n\n')
 
     if runner.use_docker:
+        logger.info("writing pandoc")
         cwd = os.getcwd()
         # cmd = f"docker run -v {cwd}:{project_dir} -w {project_dir} markfletcher/graphviz dot {dot_file} -T{file_type} -Gsplines=ortho -Grankdir=LR -Gnodesep=0.1 -Gratio=compress"
         # cmd = f"docker run -v {cwd}:{project_dir} -w {project_dir} markfletcher/graphviz dot {dot_file} -T{file_type} -Gsplines=ortho -Grankdir=BT"
         # cmd = f"docker run -v {cwd}:{project_dir} -w {project_dir} markfletcher/graphviz dot {dot_file} -T{file_type} -Gsplines=ortho -Grankdir=BT > {dot_render_filename}"
         pdf_file_name = f"{runner.sim_control.output_directory}/{model.name}_model_documentation.pdf"
-        cmd = f"docker run -v `pwd`:/source jagregory/pandoc -f markdown -t latex {runner.sim_control.output_directory}/{model.name}_model_documentation.md -o {pdf_file_name} -V geometry:margin=0.2in, landscape"
+
+        cmd = f"docker run -v  $(pwd):/source jagregory/pandoc -f markdown -t latex {runner.sim_control.output_directory}/{model.name}_model_documentation.md -o {pdf_file_name} -V geometry:margin=0.2in, landscape"
         logger.info(f'running docker cmd {cmd}')
         l_cmd = shlex.split(cmd)
         logger.info(f'running docker cmd {l_cmd}')
@@ -162,8 +164,9 @@ def create_documentation(runner):
         #         pass
         ps = subprocess.Popen(cmd, shell=True)
     else:
-        output = pypandoc.convert_file(f'{output_directory}/{model.name}_model_documentation.md', 'pdf',
-                                       outputfile=f'{output_directory}/{model.name}_model_documentation.pdf',
+        logger.info("writing pandoc")
+        output = pypandoc.convert_file(f'"{output_directory}/{model.name}_model_documentation.md"', 'pdf',
+                                       outputfile=f'"{output_directory}/{model.name}_model_documentation.pdf"',
                                        extra_args=['-V', 'geometry:margin=0.2in, landscape'])
 
 
@@ -198,13 +201,14 @@ def run_scenario(scenario, model_run_base_directory=None, simulation_run_descrip
 
     mean_run = None
 
-    if yaml_struct['Metadata']['sample_mean'] == False:
+    if yaml_struct['Metadata'].get('sample_mean', True) == False:
         # run with just mean values, so that we can deal with 'sub-zero' values during analysis
         # this is needed because of sampling effect when uncertainty is very high
         mean_run = run_mean(args, model_run_base_directory, simulation_run_description, yaml_struct, scenario)
     create_model_func, sim_control, yaml_struct = prepare_simulation(model_output_directory,
                                                                      simulation_run_description, yaml_struct,
-                                                                     scenario, filename=args.yamlfile, IDs=args.IDs)
+                                                                     scenario, filename=args.yamlfile, IDs=args.IDs,
+                                                                     formula_checks=args.formula_checks, args=args)
     if args.sensitivity:
         runner = SimulationRunner()
         model, variances = runner.run_SA(create_model_func=create_model_func, embodied=False, sim_control=sim_control)
@@ -232,7 +236,7 @@ def run_scenario(scenario, model_run_base_directory=None, simulation_run_descrip
     analysis(runner, yaml_struct, analysis_config=analysis_config, mean_run=mean_run, image_filetype=args.filetype)
     # analysis model results
 
-    if args.documentation:
+    if not args.skip_documentation:
         create_documentation(runner)
 
     return (scenario, runner)
@@ -300,7 +304,9 @@ def run(args, analysis_config=None):
     # 'default' is implicit
     scenarios.append('default')
     # define aspects/data to store
-    output_persistence_config = {'store_traces': True}
+
+    logger.info(f'Skip store results set to {args.skip_storage}')
+    output_persistence_config = {'store_traces': not args.skip_storage}
 
     # a partial to invoke for each scenario
     run_scenario_f = partial(run_scenario, model_run_base_directory=model_run_base_directory,
@@ -327,8 +333,9 @@ def run(args, analysis_config=None):
 
     scenario_paths = {scenario_name: run_data.sim_control.output_directory for scenario_name, run_data in
                       runners.items()}
-    summary_analysis(scenario_paths, model_run_base_directory, analysis_config, yaml_struct,
-                     image_filetype=args.filetype)
+    if args.analysis_config:
+        summary_analysis(scenario_paths, model_run_base_directory, analysis_config, yaml_struct,
+                         image_filetype=args.filetype)
     return runners
 
 
@@ -445,7 +452,8 @@ def summary_analysis(scenario_paths, model_run_base_directory, analysis_config, 
         numeric_vals.to_excel(writer, f'mean {scenario} (comp)')
 
     # ======================== GO ================
-    for variable in analysis_config.get('numerical', []):
+    variables = analysis_config.get('numerical', [])
+    for variable in variables:
         data = None
         unit = None
 
@@ -481,11 +489,12 @@ def summary_analysis(scenario_paths, model_run_base_directory, analysis_config, 
         logger.info("storing mean values to excel")
 
         data.to_excel(writer, sheet_name)
-        # data.mean(level='time').mean().to_excel(writer, f'mean {variable} ')
-        # writer.sheets[f'mean {variable}'].column_dimensions['A'].width = 30
 
     writer.save()
+    write_TOC_to_excel(sheet_descriptions, variables, xlsx_file_name)
 
+
+def write_TOC_to_excel(sheet_descriptions, variables, xlsx_file_name):
     logger.info("writing TOC")
     from openpyxl import load_workbook
     wb = load_workbook(xlsx_file_name)
@@ -493,18 +502,29 @@ def summary_analysis(scenario_paths, model_run_base_directory, analysis_config, 
     # ----------------------------------------------------- TV vs STB
     # ------------------ TOC ----------------
     for row, (name, desc) in enumerate(sheet_descriptions.items(), start=1):
-        ws[f'A{row}'].value = name
-        ws[f'B{row}'].value = desc
-        ws[f'C{row}'].value = f'=HYPERLINK("#\'{name}\'!A1", "Link")'
-    ws.column_dimensions["A"].width = '23'
-    ws.column_dimensions["B"].width = '63'
-    ws.column_dimensions["C"].width = '10'
-    logger.debug(xlsx_file_name)
+        ws[f'A{row}'].value = desc
+        ws[f'B{row}'].value = f'=HYPERLINK("#\'{name}\'!A1", "Link")'
+    ws.column_dimensions["A"].width = '75'
+    ws.column_dimensions["B"].width = '10'
+
+    for ws_name in [sheet for sheet in wb.sheetnames if not sheet == 'toc']:
+        logger.debug(f'applying column styles to {ws_name}')
+        ws = wb[ws_name]
+        style_result_worksheet(ws)
     wb.save(xlsx_file_name)
+
+
+def style_result_worksheet(ws):
+    ws.column_dimensions["A"].width = '60'
+    ws.column_dimensions["B"].width = '14'
+
+    for cell in ws['A']:
+        cell.alignment = Alignment(horizontal='left')
 
 
 def analysis(runner, yaml_struct, analysis_config=None, mean_run=None, image_filetype=None):
     if analysis_config is None or not analysis_config:
+        logger.info(f'analysis_config not provided, nothing to analyse')
         return
     model = runner.model
     sim_control = runner.sim_control
@@ -533,13 +553,16 @@ def analysis(runner, yaml_struct, analysis_config=None, mean_run=None, image_fil
             if 'process_tree' in analysis_config:
                 process_group_colour_defs = analysis_config['process_tree'].get('process_group_colours', {})
                 show_variables = analysis_config['process_tree'].get('show_variables', True)
+                histograms = analysis_config['process_tree'].get('histograms', True)
 
                 draw_graph_from_dotfile(model, show_variables=show_variables,
                                         file_type=image_filetype, metric='energy',
                                         start_date=start_date, end_date=end_date, colour_def=process_group_colour_defs,
                                         in_docker=runner.use_docker,
                                         output_directory=output_directory,
-                                        target_units=YamlLoader.get_target_units(yaml_struct), edge_labels=True,
+                                        target_units=YamlLoader.get_target_units(yaml_struct),
+                                        edge_labels=show_variables,
+                                        show_histograms=histograms
                                         )
         logger.info('generating plots and tables')
         # generate_plots_and_tables(scenario=scenario, metric='use_phase_energy', base_dir='.', start_date=start_date,
@@ -555,7 +578,8 @@ def analysis(runner, yaml_struct, analysis_config=None, mean_run=None, image_fil
         load_data = load_as_df_qantity
 
         # ======================== GO ================
-        for variable in yaml_struct['Analysis'].get('numerical', []):
+        variables = yaml_struct['Analysis'].get('numerical', [])
+        for variable in variables:
             logger.info(f'numerical analysis for var {variable}')
 
             pint_pandas_data, m = load_data(f'{output_directory}/result_data_{variable}.hdf5')
@@ -564,7 +588,7 @@ def analysis(runner, yaml_struct, analysis_config=None, mean_run=None, image_fil
             df.columns = df.columns.droplevel(1)
             data = df
 
-            unit = next(iter(units))
+            unit = list(units.values())[0]
 
             # print(data)
             sheet_name = f'mean {variable} '
@@ -657,7 +681,8 @@ def analysis(runner, yaml_struct, analysis_config=None, mean_run=None, image_fil
 
                 data.to_pickle(f'{output_directory}/graph_data_{name}.pdpkl')
 
-                d = plot_kind(data, figsize=(15, 12), file_name=f'{scenario}_{name}.{image_filetype}', title=title,
+                d = plot_kind(data, figsize=(15, 12), file_name=f'{scenario}_{name}_{variable}.{image_filetype}',
+                              title=title,
                               kind=kind, **common_args)
             else:
                 logger.warning(f"Named plot {plot_def['name']} not found")
@@ -783,20 +808,7 @@ def analysis(runner, yaml_struct, analysis_config=None, mean_run=None, image_fil
         logger.info("writing TOC")
         writer.save()
 
-        from openpyxl import load_workbook
-        wb = load_workbook(xlsx_file_name)
-        ws = wb['toc']
-        # ----------------------------------------------------- TV vs STB
-        # ------------------ TOC ----------------
-        for row, (name, desc) in enumerate(sheet_descriptions.items(), start=1):
-            ws[f'A{row}'].value = desc
-            ws[f'B{row}'].value = desc
-            ws[f'D{row}'].value = f'=HYPERLINK("#\'{name}\'!A1", "Link")'
-        ws.column_dimensions["A"].width = '23'
-        ws.column_dimensions["B"].width = '63'
-        ws.column_dimensions["C"].width = '10'
-        # print(xlsx_file_name)
-        wb.save(xlsx_file_name)
+        write_TOC_to_excel(sheet_descriptions, variables, xlsx_file_name)
 
 
 if __name__ == '__main__':
@@ -804,9 +816,9 @@ if __name__ == '__main__':
     logger.info(f"Running with parameters {args}")
     if args.verbose:
         level = logging.DEBUG
-        logger = logging.getLogger('ngmodel')
+        logger = logging.getLogger()
         logger.setLevel(level)
         for handler in logger.handlers:
             handler.setLevel(level)
 
-    run(args)
+    runners = run(args)

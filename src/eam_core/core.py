@@ -4,7 +4,8 @@ from functools import partial
 from pint import UnitRegistry
 
 from eam_core import dsl
-from eam_core.dsl import EvalVisitor
+from eam_core.dsl import EvalVisitor, DSLError
+import eam_core.dsl.check_visitor
 
 ureg = UnitRegistry(auto_reduce_dimensions=False)
 Q_ = ureg.Quantity
@@ -28,10 +29,10 @@ from networkx.readwrite import json_graph
 
 import logging
 
-# with open("logconf.yml", 'r') as f:
-#     log_config = yaml.safe_load(f.read())
+import eam_core.log_configuration as logconf
 
-# dictConfig(log_config)
+logconf.config_logging()
+
 logger = logging.getLogger(__name__)
 
 CARBON_INTENSITY_kg_kWh = 0.41205  # kg/kWh
@@ -82,6 +83,7 @@ class SimulationControl(object):
         self.process_ids = False
         self.variable_ids = False
         self.filename = None
+        self.table_version = None
 
     def reset(self):
         logger.info("Resetting Simulation Control Parameters")
@@ -246,7 +248,10 @@ class ExcelDataSource(DataSource):
 
         if not param_repo.exists(self.variable_name):
             logger.debug('opening excel file')
-            loader = TableParameterLoader(filename=self.file_name, table_handler=simulation_control.excel_handler)
+            kwargs = {}
+            if simulation_control.table_version:
+                kwargs['version'] = simulation_control.table_version
+            loader = TableParameterLoader(filename=self.file_name, table_handler=simulation_control.excel_handler, **kwargs)
             loader.load_into_repo(repository=param_repo, id_flag= simulation_control.variable_ids, countries=simulation_control.countries, country_vars=simulation_control.country_vars)
 
         param = param_repo.get_parameter(self.variable_name, scenario_name=simulation_control.scenario)
@@ -359,7 +364,7 @@ class FormulaModel(object):
     def evaluate(self, sim_control, input_variables: Dict[str, Variable] = None,
                  export_variable_names: Dict[str, str] = None,
                  DSL_variable_dict=None, **kwargs) -> \
-            Tuple[Dict[str, Variable], EvalVisitor]:
+        Tuple[Dict[str, Variable], EvalVisitor]:
         """
         1. variables and add to DSL
         2. evaluate
@@ -374,9 +379,10 @@ class FormulaModel(object):
         :return: tuple of (1) return value of formula, (2) set of result variables, (3) the DSL object
         :rtype:
         """
-
-        value_gen_partial = partial(
-            lambda val: sample_value_for_simulation(float(val), sim_control, "inline constant"))
+        value_gen_partial = None
+        if kwargs.get('use_value_generator', False):
+            value_gen_partial = partial(
+                lambda val: sample_value_for_simulation(float(val), sim_control, "inline constant"))
 
         d = dsl.EvalVisitor(variables=DSL_variable_dict, value_generator=value_gen_partial)
 
@@ -389,7 +395,10 @@ class FormulaModel(object):
             self.variable_cache[formula_name] = value
             d.variables[formula_name] = value
 
-        d = dsl.evaluate(self.formula.text, visitor=d)
+        try:
+            d = dsl.evaluate(self.formula.text, visitor=d)
+        except DSLError as e:
+            raise Exception(f"{e.message} while parsing formula \n\n{self.formula.text}")
 
         export_variables = {}
         if export_variable_names:
@@ -410,7 +419,7 @@ class FormulaProcess(object):
 
     def __init__(self, name: str, formulaModel: FormulaModel, input_variables: Dict[str, Variable] = None,
                  export_variable_names: Dict[str, str] = None, import_variable_names: Dict[str, Any] = None,
-                 DSL_variable_dict=None, metadata=None):
+                 DSL_variable_dict=None, metadata=None, static_checks=True):
         """
 
         :param name:
@@ -432,6 +441,18 @@ class FormulaProcess(object):
 
         self.aggregation_functions = defaultdict(lambda: sum)
         self.metadata = metadata if metadata is not None else {}
+
+        if static_checks:
+            logger.debug("Performing static checks")
+            try:
+                visitor = eam_core.dsl.check_visitor.evaluate(self.formulaModel.formula.text)
+                for var_name in visitor.implicit_variables:
+                    if var_name not in self.input_variables.keys() and var_name not in self.import_variable_names:
+                        raise Exception(
+                            f'variable name "{var_name}" referenced in formula but not defined in table variables or import variables')
+            except DSLError as e:
+                # logger.error(f"Error {e.message} while parsing formula {self.formulaModel.formula.text}")
+                raise Exception(f"Error {e.message} while parsing formula \n\n{self.formulaModel.formula.text}")
 
     def evaluate(self, sim_control, ingress_variables: Dict[str, Variable], debug=False) -> Dict[str, Variable]:
         variables = {}
@@ -582,7 +603,7 @@ class ServiceModel(object):
             logger.debug(f"Unprocessed queue: {[n.name for n in unprocessed]}")
 
             process_node = unprocessed.pop(0)
-
+            logger.debug(f"Checking {process_node.name}")
             if process_node not in processed:
                 next_up = [process_node]
                 while next_up:
@@ -590,7 +611,8 @@ class ServiceModel(object):
 
                     node_trace_obj = {"group": "nodes", "data": {'id': process_node.name}}
 
-                    logger.debug(f"Taking next node from next up queue. New state: {[n.name for n in next_up]}")
+                    logger.debug(
+                        f"Taking next node ({process_node.name}) from next up queue. New state: {[n.name for n in next_up]}")
 
                     # any in-edges not processed? i.e. other subtrees incomplete
                     if any([edge for edge in self.process_graph.in_edges(process_node, data=True) if
@@ -654,7 +676,7 @@ class ServiceModel(object):
                     # _, input_vars = collect_process_variables(process_node)
                     # node_trace_obj['data']['input_vars'] = {
                     #     k: {'value': v, 'unit': str(v.pint.units)} for k, v in input_vars.items()}
-                    # simulation_control.trace.append(node_trace_obj)
+                    simulation_control.trace.append(node_trace_obj)
 
                     # @todo this does not work - result is never None as the DSL parser does not support return values
                     # @todo https://bitbucket.org/dschien/ngmodel_generic/issues/10/parser-allow-return-values
@@ -688,8 +710,10 @@ class ServiceModel(object):
                         logger.debug(f"Adding node {edge[1].name} to next_up.")
                         next_up.append(edge[1])
                         logger.debug(f"Next_up queue state: {[n.name for n in next_up]}")
+                    logger.debug(f"Adding {process_node.name} to processed list")
                     processed.append(process_node)
-
+            else:
+                logger.debug(f"node {process_node.name} already processed")
         # collect results
         return {'use_phase_energy': results}
 

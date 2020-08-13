@@ -15,11 +15,6 @@ from eam_core.util import store_dataframe, \
     store_process_metadata, store_parameter_repo_variables, get_param_names, to_target_dimension, \
     pandas_series_dict_to_dataframe
 
-with open(resource_filename(Requirement.parse('eam-core'), "eam_core/logconf.yml"), 'r') as f:
-    log_config = yaml.safe_load(f.read())
-
-dictConfig(log_config)
-
 logger = logging.getLogger(__name__)
 
 
@@ -218,15 +213,15 @@ class SimulationRunner(object):
 
         self.store_metadata()
 
-        if 'store_traces' in output_persistence_config:
+        if output_persistence_config.get('store_traces', True):
             self.store_process_variables(result_variables, target_units)
             # self.store_process_input_variables(target_units)
 
+            self.store_input_var_csv(target_units)
+
+            self.store_parameterrepository_variables()
+
         self.store_json_graph()
-
-        self.store_input_var_csv(target_units)
-
-        self.store_parameterrepository_variables()
 
         return self.model, self.footprint_result_dict
 

@@ -4,6 +4,7 @@ from functools import partial
 
 import matplotlib
 import pint
+import os
 from pint.quantity import _Quantity
 
 from eam_core.YamlLoader import YamlLoader
@@ -16,7 +17,6 @@ import csv
 import inspect
 import logging
 
-logger = logging.getLogger(__name__)
 import subprocess
 from operator import itemgetter
 from typing import Dict, Any, Optional, Tuple
@@ -31,89 +31,9 @@ from tabulate import tabulate
 import networkx as nx
 from networkx.drawing.nx_agraph import graphviz_layout, write_dot
 
-import logging.handlers
-import os
 import errno
 
 logger = logging.getLogger(__name__)
-
-
-def mkdir_p(path):
-    """http://stackoverflow.com/a/600612/190597 (tzot)"""
-    try:
-        os.makedirs(path, exist_ok=True)  # Python>3.2
-    except TypeError:
-        try:
-            os.makedirs(path)
-        except OSError as exc:  # Python >2.5
-            if exc.errno == errno.EEXIST and os.path.isdir(path):
-                pass
-            else:
-                raise
-
-
-class MakeFileHandler(logging.handlers.RotatingFileHandler):
-    def __init__(self, filename, mode='a', maxBytes=0, backupCount=0, encoding=None, delay=False):
-        mkdir_p(os.path.dirname(filename))
-        logging.handlers.RotatingFileHandler.__init__(self, filename, mode, maxBytes, backupCount, encoding, delay)
-
-
-BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE = range(8)
-
-# The background is set with 40 plus the number of the color, and the foreground with 30
-
-# These are the sequences need to get colored ouput
-RESET_SEQ = "\033[0m"
-COLOR_SEQ = "\033[1;%dm"
-BOLD_SEQ = "\033[1m"
-
-
-def formatter_message(message, use_color=True):
-    if use_color:
-        message = message.replace("$RESET", RESET_SEQ).replace("$BOLD", BOLD_SEQ)
-    else:
-        message = message.replace("$RESET", "").replace("$BOLD", "")
-    return message
-
-
-COLORS = {
-    'WARNING': YELLOW,
-    'INFO': GREEN,
-    'DEBUG': WHITE,
-    'CRITICAL': YELLOW,
-    'ERROR': RED
-}
-
-
-class ColoredFormatter(logging.Formatter):
-    def __init__(self, use_color=True):
-        logging.Formatter.__init__(self,
-                                   "[\033[1m%(name)-20s\033[0m][%(levelname)-18s]  %(message)s (\033[1m%(filename)s\033[0m:%(lineno)d)")
-        self.use_color = use_color
-
-    def format(self, record):
-        levelname = record.levelname
-        if self.use_color and levelname in COLORS:
-            levelname_color = COLOR_SEQ % (30 + COLORS[levelname]) + levelname + RESET_SEQ
-            record.levelname = levelname_color
-        return logging.Formatter.format(self, record)
-
-
-# Custom logger class with multiple destinations
-class ColoredLogger(logging.Logger):
-    FORMAT = "[$BOLD%(name)-20s$RESET][%(levelname)-18s]  %(message)s ($BOLD%(filename)s$RESET:%(lineno)d)"
-    COLOR_FORMAT = formatter_message(FORMAT, True)
-
-    def __init__(self, name):
-        logging.Logger.__init__(self, name, logging.DEBUG)
-
-        color_formatter = ColoredFormatter(self.COLOR_FORMAT)
-
-        console = logging.StreamHandler()
-        console.setFormatter(color_formatter)
-
-        self.addHandler(console)
-        return
 
 
 def find_node_by_name(model, name) -> FormulaProcess:
@@ -266,7 +186,7 @@ def store_dataframe(q_dict: Dict[str, pd.Series], simulation_control=None, targe
                     subdirectory=''):
     storage_df, metadata = pandas_series_dict_to_dataframe(q_dict, target_units=target_units, var_name=variable_name,
                                                            simulation_control=simulation_control)
-
+    logger.info(f'metadata is {metadata}')
     filename = f'{simulation_control.output_directory}/{subdirectory}/result_data_{variable_name}.hdf5'
 
     if not os.path.exists(f'{simulation_control.output_directory}/{subdirectory}'):
@@ -328,7 +248,7 @@ def pandas_series_dict_to_dataframe(data: Dict[str, pd.Series], target_units=Non
 
 def quantity_dict_to_dataframe(q_data: Dict[str, _Quantity], target_units=None, var_name=None,
                                simulation_control: SimulationControl = None) \
-        -> Tuple[pd.DataFrame, Dict[str, str]]:
+    -> Tuple[pd.DataFrame, Dict[str, str]]:
     data = None
     metadata = {}
     logger.debug(f'result data has the following processes {q_data.keys()}')
@@ -429,12 +349,13 @@ def generate_model_definition_markdown(model, in_docker=False, output_directory=
             f.writelines(tabulate(items, ['variable', 'value', 'unit'], tablefmt='simple'))
 
             f.write('\n\n')
-
+    logger.info("writing pandoc")
     # if in_docker:
     #     ps = subprocess.Popen((
     #         f"docker run -v `pwd`:/source jagregory/pandoc -f markdown -t latex {simulation_control.output_directory}/{model.name}_model_documentation.md -o {simulation_control.output_directory}/{model.name}_model_documentation.pdf -V geometry:margin=0.2in, landscape"),
     #         shell=True)
     # else:
+    logger.info(f'converting model doc at {output_directory}/{model.name}_model_documentation.md')
     output = pypandoc.convert_file(f'{output_directory}/{model.name}_model_documentation.md', 'pdf',
                                    outputfile=f'{output_directory}/{model.name}_model_documentation.pdf',
                                    extra_args=['-V', 'geometry:margin=0.2in, landscape'])
@@ -486,9 +407,9 @@ def get_unit_by_name(name):
 
 
 def draw_graph_from_dotfile(model, file_type='pdf', show_variables=True, metric=None, start_date=None, end_date=None,
-                            colour_def=None, skip_update_barcharts=False, in_docker=False, output_directory=None,
+                            colour_def=None, show_histograms=True, in_docker=False, output_directory=None,
                             edge_labels=False, target_units=None):
-    if not skip_update_barcharts:
+    if show_histograms:
         generate_graph_node_barcharts(model.name, metric, start_date=start_date, end_date=end_date,
                                       base_directory=output_directory)
 
@@ -603,11 +524,11 @@ def draw_graph_from_dotfile(model, file_type='pdf', show_variables=True, metric=
 
                     # for k, v in edge_variables.items():
                     #     import_variable_names[k].append(v)
-    #@todo check model name does not allow code execution
+    # @todo check model name does not allow code execution
     dot_file = f'{output_directory}/{model.name}.dot'
     pydot.write_dot(dot_file)
 
-    cmd = f'perl -p -i.regexp_bak -e \'s/lp="\d+\.?\d*,\d*\.?\d*",\n?//\' {dot_file}'
+    cmd = r'perl -p -i.regexp_bak -e \'s/lp="\d+\.?\d*,\d*\.?\d*",\n?//\' "' + dot_file + '"'
     # l_cmd = ["perl", "-p", "-i.regexp_bak", "-e", '\'s/lp="\d+\.?\d*,\d*\.?\d*",\n?//\'', "{dot_file}"]
 
     import shlex
@@ -615,7 +536,6 @@ def draw_graph_from_dotfile(model, file_type='pdf', show_variables=True, metric=
 
     logger.info(f'removing "lp" statements from {dot_file}')
     with subprocess.Popen(l_cmd, stdout=subprocess.PIPE) as proc:
-
         logger.info('output from shell process: ' + str(proc.stdout.read()))
 
     # time.sleep(2)
@@ -625,9 +545,8 @@ def draw_graph_from_dotfile(model, file_type='pdf', show_variables=True, metric=
     if in_docker:
 
         cwd = os.getcwd()
-        cmd = f"docker run -v {cwd}:{project_dir} -w {project_dir} markfletcher/graphviz dot {dot_file} -T{file_type} -Gsplines=ortho -Grankdir=LR -Gnodesep=0.1 -Gratio=compress"
-        # cmd = f"docker run -v {cwd}:{project_dir} -w {project_dir} markfletcher/graphviz dot {dot_file} -T{file_type} -Gsplines=ortho -Grankdir=BT"
-        # cmd = f"docker run -v {cwd}:{project_dir} -w {project_dir} markfletcher/graphviz dot {dot_file} -T{file_type} -Gsplines=ortho -Grankdir=BT > {dot_render_filename}"
+        cmd = f"docker run -v {cwd}:{project_dir} -w {project_dir} markfletcher/graphviz dot '{dot_file}' -T{file_type} -Gsplines=ortho -Grankdir=LR -Gnodesep=0.1 -Gratio=compress"
+
         logger.info(f'running docker cmd {cmd}')
         l_cmd = shlex.split(cmd)
         logger.info(f'running docker cmd {l_cmd}')
@@ -635,8 +554,8 @@ def draw_graph_from_dotfile(model, file_type='pdf', show_variables=True, metric=
             with subprocess.Popen(l_cmd, stdout=output) as proc:
                 pass
     else:
-        cmd = f"dot {dot_file} -T{file_type} -Gsplines=ortho -Grankdir=BT > {dot_render_filename}"
-        logger.info(f'running docker cmd {cmd}')
+        cmd = f"dot '{dot_file}' -T{file_type} -Gsplines=ortho -Grankdir=BT > '{dot_render_filename}'"
+        logger.info(f'running local cmd {cmd}')
         ps = subprocess.Popen((cmd), shell=True)
 
 
@@ -917,7 +836,7 @@ def get_sim_run_description():
     return simulation_run_description
 
 
-def store_sim_config(sim_control, directory, simulation_run_description):
+def store_sim_config(sim_control, directory, simulation_run_description, **kwargs):
     sim_control___dict__ = copy.deepcopy(sim_control.__dict__)
     del sim_control___dict__['times']
     del sim_control___dict__['param_repo']
@@ -947,7 +866,7 @@ Y_M_D_H_M_S = "%Y%m%d-%H%M%S"
 
 
 def configue_sim_control_from_yaml(sim_control: SimulationControl, yaml_struct, output_directory):
-    sim_control.sample_size = yaml_struct['Metadata']['sample_size']
+    sim_control.sample_size = yaml_struct['Metadata'].get('sample_size', 1)
     sim_control.use_time_series = False
 
     if 'start_date' in yaml_struct['Metadata']:
@@ -958,6 +877,12 @@ def configue_sim_control_from_yaml(sim_control: SimulationControl, yaml_struct, 
 
     if 'sample_mean' in yaml_struct['Metadata']:
         sim_control.sample_mean_value = bool(yaml_struct['Metadata']['sample_mean'])
+
+    if yaml_struct['Metadata'].get('table_file_name', '').endswith('csv'):
+        sim_control.excel_handler = 'csv'
+
+    if 'table_format_version' in yaml_struct['Metadata']:
+        sim_control.table_version = yaml_struct['Metadata']['table_format_version']
 
     if 'countries' in yaml_struct['Metadata']:
         sim_control.countries = yaml_struct['Metadata']['countries']
@@ -973,14 +898,22 @@ def configue_sim_control_from_yaml(sim_control: SimulationControl, yaml_struct, 
     sim_control._df_multi_index = pd.MultiIndex.from_product(iterables, names=sim_control.index_names)
 
 
-def prepare_simulation(directory, simulation_run_description, yaml_struct, scenario, sim_control=None, filename=None, IDs=False):
+def prepare_simulation(model_output_directory, simulation_run_description, yaml_struct, scenario, sim_control=None,
+                       filename=None,
+                       IDs=False, formula_checks=False, **kwargs):
     if not sim_control:
         sim_control = SimulationControl()
-        configue_sim_control_from_yaml(sim_control, yaml_struct, directory)
+        configue_sim_control_from_yaml(sim_control, yaml_struct, model_output_directory)
     sim_control.process_ids = IDs
     sim_control.variable_ids = IDs
     sim_control.filename = filename
     sim_control.scenario = scenario
-    store_sim_config(sim_control, directory, simulation_run_description)
-    create_model_func = partial(YamlLoader.create_service, yaml_struct)
+    args = kwargs.get('args', None)
+    _kwargs = {}
+    if args:
+        _kwargs = vars(args)
+        del kwargs['args']
+    _kwargs.update(kwargs)
+    store_sim_config(sim_control, model_output_directory, simulation_run_description, **_kwargs)
+    create_model_func = partial(YamlLoader.create_service, yaml_struct, formula_checks=formula_checks)
     return create_model_func, sim_control, yaml_struct

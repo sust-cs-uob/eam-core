@@ -59,11 +59,13 @@ def plot_grid(df, file_name, xlabel, ylabel, title, base_dir, output_scenario_di
         low = grouped_.quantile(.25)
         high = grouped_.quantile(.75)
 
+        mean = high.mean()
+        logger.debug(mean)
         mean_.plot(ax=ax,
                    kind='line',
                    legend=False,
                    linewidth=1,
-                   color=mapper.to_rgba(high.mean())
+                   color=mapper.to_rgba(mean)
                    )
 
         low.plot(ax=ax, color='k', alpha=0.2, linestyle=':')
@@ -149,8 +151,8 @@ def plot_input_var_for_process(proc_name_vars_tupel, base_dir=None, data=None, f
 
     # print (analysis_config)
     if analysis_config is not None \
-            and 'individual_process_graphs' in analysis_config \
-            and not proc_name in analysis_config['individual_process_graphs']:
+        and 'individual_process_graphs' in analysis_config \
+        and not proc_name in analysis_config['individual_process_graphs']:
         logger.debug(f"skipping individual process plot for {proc_name}")
         return (False, None)
 
@@ -244,7 +246,7 @@ def plot_input_var_for_process(proc_name_vars_tupel, base_dir=None, data=None, f
 def plot_kind(df, base_dir='.', output_scenario_directory=None, file_name=None, title=None, x_limit=None, ax=None,
               xlabel=None, figsize=(10, 7), ylabel=None, kind='box', **kwargs) -> pd.DataFrame:
     if kind == 'box':
-        return plot_box(ax, df, figsize, file_name, kind, x_limit, xlabel, ylabel, base_dir=base_dir,
+        return plot_box(ax, df, figsize, file_name, kind, x_limit, xlabel, ylabel, base_dir=base_dir, title=title,
                         output_scenario_directory=output_scenario_directory, **kwargs)
     elif kind == 'bar':
         return plot_bar(df, file_name, xlabel, ylabel, title=title, base_dir=base_dir,
@@ -257,7 +259,7 @@ def plot_kind(df, base_dir='.', output_scenario_directory=None, file_name=None, 
                          output_scenario_directory=output_scenario_directory, **kwargs)
 
 
-def plot_bar(df, file_name, xlabel, ylabel, figsize=(10, 7), title=None, base_dir='.', output_scenario_directory=None,
+def plot_bar(df, file_name, xlabel, ylabel, title=None, base_dir='.', output_scenario_directory=None,
              **kwargs):
     plt.close('all')
 
@@ -274,18 +276,27 @@ def plot_bar(df, file_name, xlabel, ylabel, figsize=(10, 7), title=None, base_di
     plt.rcParams['lines.linewidth'] = .1
     plt.rcParams['hatch.linewidth'] = 0.3
 
-    fig = plt.figure(figsize=figsize)
-    ax = fig.add_subplot(111)
+    leftmargin = 0.5  # inches
+    rightmargin = 0.3  # inches
+    categorysize = 0.2
+
+    n = len(df.columns)
+
+    figwidth = leftmargin + rightmargin + (n + 1) * categorysize
+
+    fig, ax = plt.subplots(figsize=(10, figwidth))
+    fig.subplots_adjust(left=leftmargin / figwidth, right=1 - rightmargin / figwidth,
+                        top=0.94, bottom=0.1)
 
     title = f'{title} ({kwargs["start_date"]} - {kwargs["end_date"]})'
     import matplotlib.font_manager as fm
 
-    prop = fm.FontProperties(fname='/Users/csxds/Library/Fonts/LinLibertine_R.otf')
-    ax.set_title(title, fontproperties=prop, size=20)
+    prop = fm.FontProperties()
+    ax.set_title(title, fontproperties=prop, size='large')
 
     for label in (ax.get_xticklabels() + ax.get_yticklabels()):
         label.set_fontproperties(prop)
-        label.set_fontsize(18)  # Size here overrides font_prop
+        label.set_fontsize('small')  # Size here overrides font_prop
 
     ax.set_ylabel('y', fontproperties=prop)
     ax.set_xlabel('x', fontproperties=prop)
@@ -294,18 +305,22 @@ def plot_bar(df, file_name, xlabel, ylabel, figsize=(10, 7), title=None, base_di
     ax.set_xlabel(xlabel)
 
     df = sum_interval(df, kwargs['start_date'], kwargs['end_date'])
-    df.reindex_axis(df.mean().sort_values().index, axis=1)
-    df.T.plot(ax=ax, kind='barh', legend=False, color='w', edgecolor='k', align='center', width=0.5,
+    df = df.reindex(df.mean().sort_index(ascending=True).sort_values(ascending=True).index, axis=1)
+
+    # df = df.reindex(df.mean().sort_values().index, axis=1)
+    df.T.plot(ax=ax, kind='barh', legend=False, color='#0f0f0f80', edgecolor='k', align='center', width=0.5,
               linewidth=0.5)
-    bars = ax.patches
-    patterns = ['///', '--', '...', '\///', 'xxx', '\\\\']
-    hatches = [p for p in patterns for i in range(len(df))]
-    for bar, hatch in zip(bars, hatches):
-        bar.set_hatch(hatch)
 
+    if kwargs.get('use_hatch', False):
+        bars = ax.patches
+        patterns = ['///', '--', '...', '\///', 'xxx', '\\\\']
+        hatches = [p for p in patterns for i in range(len(df))]
+        for bar, hatch in zip(bars, hatches):
+            bar.set_hatch(hatch)
+    # ax.set_xlim(-0.5, n - 0.5)
     from textwrap import wrap
-    ax.set_yticklabels(['\n'.join(wrap(l.get_text(), 10)) for l in ax.get_yticklabels()])
-
+    # ax.set_yticklabels(['\n'.join(wrap(l.get_text(), 10)) for l in ax.get_yticklabels()])
+    plt.tight_layout()
     if file_name:
         if not os.path.exists(f'{base_dir}/{output_scenario_directory}'):
             os.makedirs(f'{base_dir}/{output_scenario_directory}')
@@ -425,10 +440,11 @@ def plot_box(ax, df, figsize, file_name, kind, x_limit, xlabel, ylabel, title=No
     :param kwargs:
     :return:
     """
-    plt.close('all')
+    if file_name:
+        plt.close('all')
     # order columns by their mean value
     # http://stackoverflow.com/questions/17712163/pandas-sorting-columns-by-their-mean-value
-    sorted_data = df.reindex_axis(df.mean().sort_values().index, axis=1)
+    sorted_data = df.reindex(df.mean().sort_values().index, axis=1)
     if not x_limit:
         x_limit = 0
     x_limit = max(get_max(sorted_data), x_limit) * 1.1

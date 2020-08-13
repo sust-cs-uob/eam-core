@@ -7,8 +7,6 @@ networkx==1.11
 pydotplus==2.0.2
 pypandoc>=1.4
 
-xlrd
-
 PyYAML
 ruamel.yaml
 
@@ -21,6 +19,8 @@ tzlocal
 numpy>=1.14.5
 pandas==0.24.2
 
+openpyxl
+Pint-Pandas-Fork
 # pint>=0.12
 # git+https://github.com/hgrecco/pint.git@f356379c15c1cb5d211c795872ac9e9284d2358f#egg=pint
 # git+https://github.com/crusaderky/pint.git@81cabd67722c657b3dae3c2d884b48f30313d9bd#egg=pint

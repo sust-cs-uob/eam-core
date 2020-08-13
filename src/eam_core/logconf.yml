@@ -2,10 +2,10 @@ version: 1
 disable_existing_loggers: False
 formatters:
     simple:
-        format:  "%(levelname)s - %(asctime)s - %(processName)s %(threadName)s - %(name)s - %(lineno)d - %(message)s"
+        format:  "%(levelname)s - %(asctime)s - %(name)s:%(lineno)d - %(message)s"
 #        format: "%(asctime)s - %(filename)s - %(lineno)d - %(levelname)s - %(message)s"
     coloredFormatter:
-        '()': eam_core.util.ColoredFormatter
+        '()': eam_core.log_configuration.ColoredFormatter
 handlers:
     console:
         class: logging.StreamHandler
@@ -14,7 +14,7 @@ handlers:
         stream: ext://sys.stdout
 
     info_file_handler:
-        class: eam_core.util.MakeFileHandler
+        class: eam_core.log_configuration.MakeFileHandler
         level: DEBUG
         formatter: simple
         filename: logs/debug.log
@@ -23,7 +23,7 @@ handlers:
         encoding: utf8
 
     error_file_handler:
-        class: eam_core.util.MakeFileHandler
+        class: eam_core.log_configuration.MakeFileHandler
         level: ERROR
         formatter: simple
         filename: logs/errors.log
@@ -43,5 +43,6 @@ handlers:
 ##
 root:
     level: INFO
+#    handlers: [console]
     handlers: [console, info_file_handler, error_file_handler]
 #    handlers: [console, info_file_handler, error_file_handler]
