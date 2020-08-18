@@ -233,7 +233,7 @@ def pandas_series_dict_to_dataframe(data: Dict[str, pd.Series], target_units=Non
 
     """
     metadata = {}
-    if len(simulation_control.countries)!=0:
+    if len(simulation_control.countries) != 0:
         results_df = pd.DataFrame(index=simulation_control.country_df_multi_index)
     else:
         results_df = pd.DataFrame(index=simulation_control._df_multi_index)
@@ -886,8 +886,8 @@ def configue_sim_control_from_yaml(sim_control: SimulationControl, yaml_struct, 
 
     if 'countries' in yaml_struct['Metadata']:
         sim_control.countries = yaml_struct['Metadata']['countries']
-        iterables = [sim_control.countries, sim_control.times, range(sim_control.sample_size)]
-        index=sim_control.index_names.copy()
+        iterables = [sim_control.times, range(sim_control.sample_size), sim_control.countries]
+        index = sim_control.index_names.copy()
         index.append("country")
         sim_control.country_df_multi_index = pd.MultiIndex.from_product(iterables, names=index)
         sim_control.country_vars = yaml_struct['Metadata']['country_vars']
