@@ -7,6 +7,8 @@ import time
 import matplotlib
 from openpyxl.styles import Alignment
 
+from eam_core import SimulationControl
+
 matplotlib.use('Agg')
 from matplotlib import pyplot as plt
 
@@ -14,7 +16,8 @@ import json as json
 
 from shutil import copyfile
 from eam_core.util import get_sim_run_description, create_output_folder, \
-    draw_graph_from_dotfile, load_as_df_qantity, load_as_plain_df, prepare_simulation, find_node_by_name
+    draw_graph_from_dotfile, load_as_df_qantity, load_as_plain_df, find_node_by_name, store_sim_config, \
+    prepare_simulation
 
 from eam_core.YamlLoader import YamlLoader
 from eam_core.common_graphical_analysis import load_metadata, plot_kind, plot_process_with_input_vars
@@ -59,15 +62,15 @@ def setup_parser(args):
                         help="Provide a comment to this simulation run. This will skip a UI prompt and can be used for headless environments.")
     parser.add_argument('--docker', '-d', help="generate graphviz graphs in a docker container", action='store_true')
     parser.add_argument('--filetype', '-f', help="generate graphviz graphs in a docker container", default='pdf')
-    parser.add_argument('--local', '-l', help="don't check for updates cloud spreadsheets", action='store_true')
-    parser.add_argument('--singlethread', '-s', help="don't use multicore speed ups", action='store_true')
-    parser.add_argument('--verbose', '-v', help="enable debug level logging", action='store_true')
-    parser.add_argument('yamlfile', help="yaml file to run")
+    parser.add_argument('--formula_checks', '-fc', help="perform checks on formulas and variables", action='store_true')
+    parser.add_argument('--local', '-l', help="When using cloud datasources, don't check for updates cloud spreadsheets", action='store_true')
+    parser.add_argument('--IDs', '-id', help="give each process and variable an ID", action='store_true')
+    parser.add_argument('--multithreaded', '-m', help="use multicore speed ups", action='store_true')
     parser.add_argument('--sensitivity', '-n', help="run sensitivity analysis", action='store_true')
     parser.add_argument('--skip_documentation', '-sd', help="create documentation", action='store_true')
-    parser.add_argument('--IDs', '-id', help="give each process and variable an ID", action='store_true')
-    parser.add_argument('--formula_checks', '-fc', help="perform checks on formulas and variables", action='store_true')
     parser.add_argument('--skip_storage', '-ss', help="do not store results", action='store_true')
+    parser.add_argument('--verbose', '-v', help="enable debug level logging", action='store_true')
+    parser.add_argument('yamlfile', help="yaml file to run")
 
     args = parser.parse_args(args)
     # print(args)
@@ -313,17 +316,17 @@ def run(args, analysis_config=None):
                              simulation_run_description=simulation_run_description, yaml_struct=yaml_struct, args=args,
                              output_persistence_config=output_persistence_config, analysis_config=analysis_config)
 
-    if True:
-        results = []
-        for scenario in scenarios:
-            results.append(run_scenario_f(scenario))
-    else:
+    if args.multithreaded:
         logger.info("Running in parallel")
         from pathos.multiprocessing import ThreadPool
         import multiprocessing
         num_cores = multiprocessing.cpu_count()
         results = ThreadPool(processes=num_cores).map(run_scenario_f, scenarios)
         # results = Parallel(n_jobs=num_cores)(delayed(run_scenario_f)(i) for i in scenarios)
+    else:
+        results = []
+        for scenario in scenarios:
+            results.append(run_scenario_f(scenario))
 
     # combine all run results
     runners = dict((x, y) for x, y in results)
@@ -593,22 +596,31 @@ def analysis(runner, yaml_struct, analysis_config=None, mean_run=None, image_fil
             # print(data)
             sheet_name = f'mean {variable} '
             sheet_descriptions[
-                sheet_name] = f'{sheet_name}: a direct load of the result data, monthly mean values. Unit: {unit}'
+                sheet_name] = f'{sheet_name}: monthly mean values. Unit: {unit}'
             logger.info("storing mean values to excel")
             mean = data.mean(level='time').mean()
             mean.to_excel(writer, sheet_name)
 
+            if sim_control.with_countries:
+                sheet_name = f'total {variable} '
+                sheet_descriptions[
+                    sheet_name] = f'{sheet_name}: total over assessment period. Unit: {unit}'
+                logger.info("storing total values to excel")
+                mean = data.reorder_levels([2, 0, 1]).sort_index(level=['country', 'time']).mean(level=[0, 1]).sum(
+                    level=0).T
+                mean.to_excel(writer, sheet_name)
+
             # print(data)
             sheet_name = f'25 quantiles {variable}'
             sheet_descriptions[
-                sheet_name] = f'{sheet_name}: a direct load of the result data, monthly mean values. Unit: {unit}'
+                sheet_name] = f'{sheet_name}: monthly mean values. Unit: {unit}'
             logger.info("storing quantile values to excel")
             low = data.abs().groupby(level=['time']).quantile(.25)
             low.to_excel(writer, sheet_name)
 
             sheet_name = f'75 quantiles {variable}'
             sheet_descriptions[
-                sheet_name] = f'{sheet_name}: a direct load of the result data, monthly mean values. Unit: {unit}'
+                sheet_name] = f'{sheet_name}: monthly mean values. Unit: {unit}'
             data.abs().groupby(level=['time']).quantile(.75).to_excel(writer, sheet_name)
 
         # sum up monthly values to aggregate - duration depends on distance between start and end date
@@ -822,3 +834,4 @@ if __name__ == '__main__':
             handler.setLevel(level)
 
     runners = run(args)
+

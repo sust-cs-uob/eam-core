@@ -2,6 +2,8 @@ import eam_core.util as util
 import unittest
 import os
 from deepdiff import DeepDiff
+
+import eam_core.yaml_runner
 from eam_core.yaml_runner import load_configuration
 from eam_core.YamlLoader import YamlLoader
 from types import SimpleNamespace
@@ -38,10 +40,10 @@ def get_ids(file, flag=True):
     model_output_directory = model_run_base_directory + f"/{scenario}"
     if not os.path.exists(model_output_directory):
         os.makedirs(model_output_directory)
-    create_model_func, sim_control, yaml_struct = util.prepare_simulation(model_output_directory,
-                                                                          simulation_run_description, yaml_struct,
-                                                                          scenario, filename=args.yamlfile,
-                                                                          IDs=args.IDs)
+    create_model_func, sim_control, yaml_struct = eam_core.yaml_runner.prepare_simulation(model_output_directory,
+                                                                                          simulation_run_description, yaml_struct,
+                                                                                          scenario, filename=args.yamlfile,
+                                                                                          IDs=args.IDs)
     loader = YamlLoader(version=yaml_struct.get('variant', 1))
     loader.parse_yaml_structure(yaml_struct, sim_control)
     old = open("tests/models/" + file + "_copy.yml")
