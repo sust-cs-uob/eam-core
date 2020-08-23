@@ -613,7 +613,7 @@ def generate_graph_node_barcharts(model_name, metric, start_date=None, end_date=
 
     for k, v in df.mean(level='time').sum().items():
         logger.debug(f'writing subgraph for {k}')
-        fig, ax = plt.subplots(figsize=(3, 1))
+        fig, ax = plt.subplots(figsize=(3, .7))
         plt.bar(indexes, values, width, alpha=0.2)
         plt.bar(labels.index(k), values[labels.index(k)], width, color='red', alpha=0.7)
         plt.gca().annotate(k,
@@ -622,9 +622,10 @@ def generate_graph_node_barcharts(model_name, metric, start_date=None, end_date=
                            arrowprops=dict(arrowstyle="->",
                                            connectionstyle="angle3,angleA=0,angleB=-90"))
 
-        plt.xticks(indexes + width * 0.5, labels)
+        # plt.xticks(indexes + width * 0.5, labels)
 
         plt.gca().get_xaxis().set_visible(False)
+        plt.gca().get_yaxis().set_visible(False)
 
         plt.savefig(f'{base_directory}/subgraphs/%s.png' % k.replace(' ', '_'))
         plt.close()
@@ -838,8 +839,7 @@ def store_sim_config(sim_control, directory, simulation_run_description, **kwarg
     del sim_control___dict__['times']
     del sim_control___dict__['param_repo']
     del sim_control___dict__['_df_multi_index']
-    sim_config = {'simulation_run_description': simulation_run_description, **sim_control___dict__,
-                  }
+    sim_config = {'simulation_run_description': simulation_run_description, **sim_control___dict__}
     sim_config.update(kwargs)
     with open(f'{str(directory)}/sim_config.json', 'w') as outfile:
         simplejson.dump(sim_config, outfile, indent=4, sort_keys=True)
@@ -895,6 +895,7 @@ def prepare_simulation(model_output_directory, simulation_run_description, yaml_
         sim_control = SimulationControl()
         configue_sim_control_from_yaml(sim_control, yaml_struct, model_output_directory)
     sim_control.process_ids = IDs
+    sim_control.model_run_datetime = time.strftime("%m%d-%H%M")
     sim_control.variable_ids = IDs
     sim_control.filename = filename
     sim_control.scenario = scenario
