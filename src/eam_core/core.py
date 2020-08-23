@@ -81,6 +81,7 @@ class SimulationControl(object):
         self.variable_ids = False
         self.filename = None
         self.table_version = None
+        self.model_run_datetime = None
 
     def reset(self):
         logger.info("Resetting Simulation Control Parameters")

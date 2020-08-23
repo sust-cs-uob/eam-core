@@ -1,5 +1,6 @@
 import csv
 import logging
+import os
 from logging.config import dictConfig
 from typing import Dict
 
@@ -213,6 +214,9 @@ class SimulationRunner(object):
 
         self.store_metadata()
 
+        if output_persistence_config.get('process_traces'):
+            self.store_process_traces(output_persistence_config.get('process_traces'), self.sim_control)
+
         if output_persistence_config.get('store_traces', True):
             self.store_process_variables(result_variables, target_units)
             # self.store_process_input_variables(target_units)
@@ -257,6 +261,25 @@ class SimulationRunner(object):
                                                        simulation_control=simulation_control)
         return df, metadata
 
+    def store_process_traces(self, process_traces, simulation_control):
+        for process, data in self.model.process_graph.nodes(data=True):
+            logger.debug(f'collecting calculation trace for process {process.name}')
+
+            if process.name in process_traces:
+                df, metadata = pandas_series_dict_to_dataframe(process._DSL_variables,
+                                                               simulation_control=simulation_control)
+                logger.info(f'metadata is {metadata}')
+                subdirectory = ''
+                filename = f'{simulation_control.output_directory}/{subdirectory}/process_trace_{process}_{simulation_control.model_run_datetime}.xlsx'
+
+                if not os.path.exists(f'{simulation_control.output_directory}/{subdirectory}'):
+                    os.mkdir(f'{simulation_control.output_directory}/{subdirectory}')
+                df = df.pint.dequantify()
+                # df.columns = df.columns.droplevel(1)
+                writer = pd.ExcelWriter(filename)
+                df.to_excel(writer)
+                writer.close()
+
     def store_process_variables(self, variable_names, target_units):
         """
         Given a list of variable names, stores these variables for all model processes that use this variable.
@@ -268,9 +291,7 @@ class SimulationRunner(object):
         :rtype:
         """
         traces: Dict[str, Dict[str, pd.Series]] = self.model.collect_calculation_traces()
-        #
-        # store_calculation_debug_info(self.model, sim_control, store_input_vars=True, average=pickle_average,
-        #                              target_units=target_units)
+
         for variable_name in variable_names:
             logger.info(f'storing results for variable {variable_name}')
             _variable_values: Dict[str, pd.Series] = traces[variable_name]

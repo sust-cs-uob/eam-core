@@ -235,8 +235,8 @@ class YamlLoader(object):
 
             export_variable_names = definition.get('export_variables')
         if self.version == 2:
-
-            export_variable_names = [obj['value'] for obj in definition.get('exportVariables')]
+            logger.debug(f"parsing export vars for {definition['name']}")
+            export_variable_names = [obj['value'] for obj in definition.get('exportVariables', [])]
 
             for _var in definition.get('importVariables', []):
                 var_name = _var['value']

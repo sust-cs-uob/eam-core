@@ -8,13 +8,14 @@ import matplotlib
 from openpyxl.styles import Alignment
 
 matplotlib.use('Agg')
-from matplotlib import pyplot as plt
+from matplotlib import pyplot as plt, MatplotlibDeprecationWarning
 
 import json as json
 
 from shutil import copyfile
 from eam_core.util import get_sim_run_description, create_output_folder, \
-    draw_graph_from_dotfile, load_as_df_qantity, load_as_plain_df, prepare_simulation, find_node_by_name
+    draw_graph_from_dotfile, load_as_df_qantity, load_as_plain_df, prepare_simulation, find_node_by_name, \
+    generate_model_definition_markdown
 
 from eam_core.YamlLoader import YamlLoader
 from eam_core.common_graphical_analysis import load_metadata, plot_kind, plot_process_with_input_vars
@@ -37,6 +38,11 @@ import configparser
 import eam_core.log_configuration as logconf
 
 logconf.config_logging()
+
+# @todo: upgrade pandas 0.24 to stay compatible
+import warnings
+
+warnings.filterwarnings("ignore", category=MatplotlibDeprecationWarning)
 
 try:
     CONFIG_FILE = "local.cfg"
@@ -61,13 +67,13 @@ def setup_parser(args):
     parser.add_argument('--filetype', '-f', help="generate graphviz graphs in a docker container", default='pdf')
     parser.add_argument('--local', '-l', help="don't check for updates cloud spreadsheets", action='store_true')
     parser.add_argument('--singlethread', '-s', help="don't use multicore speed ups", action='store_true')
-    parser.add_argument('--verbose', '-v', help="enable debug level logging", action='store_true')
-    parser.add_argument('yamlfile', help="yaml file to run")
     parser.add_argument('--sensitivity', '-n', help="run sensitivity analysis", action='store_true')
     parser.add_argument('--skip_documentation', '-sd', help="create documentation", action='store_true')
     parser.add_argument('--IDs', '-id', help="give each process and variable an ID", action='store_true')
     parser.add_argument('--formula_checks', '-fc', help="perform checks on formulas and variables", action='store_true')
     parser.add_argument('--skip_storage', '-ss', help="do not store results", action='store_true')
+    parser.add_argument('--verbose', '-v', help="enable debug level logging", action='store_true')
+    parser.add_argument('yamlfile', help="yaml file to run")
 
     args = parser.parse_args(args)
     # print(args)
@@ -165,8 +171,8 @@ def create_documentation(runner):
         ps = subprocess.Popen(cmd, shell=True)
     else:
         logger.info("writing pandoc")
-        output = pypandoc.convert_file(f'"{output_directory}/{model.name}_model_documentation.md"', 'pdf',
-                                       outputfile=f'"{output_directory}/{model.name}_model_documentation.pdf"',
+        output = pypandoc.convert_file(f"{output_directory}/{model.name}_model_documentation.md", 'pdf',
+                                       outputfile=f'{output_directory}/{model.name}_model_documentation.pdf',
                                        extra_args=['-V', 'geometry:margin=0.2in, landscape'])
 
 
@@ -301,12 +307,14 @@ def run(args, analysis_config=None):
 
     # scenarios to evaluate
     scenarios = yaml_struct['Analysis'].get('scenarios', [])
-    # 'default' is implicit
-    scenarios.append('default')
+    if not 'default' in scenarios:
+        # 'default' is implicit
+        scenarios.append('default')
     # define aspects/data to store
 
     logger.info(f'Skip store results set to {args.skip_storage}')
-    output_persistence_config = {'store_traces': not args.skip_storage}
+    output_persistence_config = {'store_traces': not args.skip_storage,
+                                 'process_traces': analysis_config['process_traces']}
 
     # a partial to invoke for each scenario
     run_scenario_f = partial(run_scenario, model_run_base_directory=model_run_base_directory,
@@ -539,9 +547,9 @@ def analysis(runner, yaml_struct, analysis_config=None, mean_run=None, image_fil
     if sim_control.use_time_series:
         output_directory = sim_control.output_directory
 
-        logger.info('generate_model_definition_markdown')
-        logger.warning('skipping markdown generation for now')
-        # @todo fix generate_model_definition_markdown
+        # logger.info('generate_model_definition_markdown')
+        # logger.warning('skipping markdown generation for now')
+        # # @todo fix generate_model_definition_markdown
         # generate_model_definition_markdown(model, in_docker=args.docker, output_directory=output_directory)
 
         if 'start_date' in yaml_struct['Metadata']:
@@ -621,8 +629,6 @@ def analysis(runner, yaml_struct, analysis_config=None, mean_run=None, image_fil
                        'metadata': metadata,
                        'output_scenario_directory': output_directory}
 
-        logger.info("plot_platform_process_annual_total")
-
         plot_defs = yaml_struct['Analysis'].get('plots', [])
 
         for plot_def in plot_defs:
@@ -685,7 +691,7 @@ def analysis(runner, yaml_struct, analysis_config=None, mean_run=None, image_fil
                               title=title,
                               kind=kind, **common_args)
             else:
-                logger.warning(f"Named plot {plot_def['name']} not found")
+                logger.debug(f"Named plot {plot_def['name']} not used in analysis config")
 
         if 'individual_process_graphs' in analysis_config:
             # @todo - hack
@@ -717,6 +723,7 @@ def analysis(runner, yaml_struct, analysis_config=None, mean_run=None, image_fil
 
         if 'input_vars' in analysis_config:
             logger.info("plotting input vars")
+            logger.debug("collecting input vars from model")
             all_vars = model.collect_input_variables()
 
             _vars = {}
@@ -730,8 +737,8 @@ def analysis(runner, yaml_struct, analysis_config=None, mean_run=None, image_fil
             input_vars_ac = analysis_config['input_vars']
             if input_vars_ac is not None and 'variables' in input_vars_ac:
                 iv_ac = set(input_vars_ac['variables'])
-
                 _vars = {k: v for k, v in _vars.items() if k in iv_ac}
+            logger.debug(f"plotting vars: {_vars}")
 
             file_name = f'input_vars.{image_filetype}'
 

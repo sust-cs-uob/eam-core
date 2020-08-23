@@ -1,6 +1,6 @@
 eam-data-tools>=1.2.2
 
-matplotlib>=2.0.2
+matplotlib>=2.0.2,<3.2.2
 
 graphviz==0.8
 networkx==1.11
