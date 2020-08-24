@@ -62,26 +62,26 @@ class SimulationControl(object):
     """
 
     def __init__(self):
-        self.scenario = 'default'
-        self.output_directory = None
         self._df_multi_index = None
-        self.trace = None
-        self.index_names = ['time', 'samples']
         self.cache = defaultdict(dict)
-        self.param_repo = ParameterRepository()
-        self.use_time_series = False
-        self.sample_mean_value = False
-        self.single_variable_names = None
-        self.single_variable_run = False
         self.excel_handler = 'openpyxl'
-        self.times = pd.date_range('2009-01-01', '2017-01-01', freq='MS')
-        self.sample_size = 100
-        self.with_pint_units = True
-        self.process_ids = False
-        self.variable_ids = False
         self.filename = None
-        self.table_version = None
+        self.index_names = ['time', 'samples']
         self.model_run_datetime = None
+        self.output_directory = None
+        self.param_repo = ParameterRepository()
+        self.process_ids = False
+        self.sample_mean_value = False
+        self.sample_size = 100
+        self.scenario = 'default'
+        self.single_variable_run = False
+        self.single_variable_names = None
+        self.times = pd.date_range('2009-01-01', '2017-01-01', freq='MS')
+        self.trace = None
+        self.table_version = None
+        self.use_time_series = False
+        self.variable_ids = False
+        self.with_pint_units = True
 
     def reset(self):
         logger.info("Resetting Simulation Control Parameters")

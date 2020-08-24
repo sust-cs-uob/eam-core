@@ -288,7 +288,7 @@ def plot_bar(df, file_name, xlabel, ylabel, title=None, base_dir='.', output_sce
     fig.subplots_adjust(left=leftmargin / figwidth, right=1 - rightmargin / figwidth,
                         top=0.94, bottom=0.1)
 
-    title = f'{title} ({kwargs["start_date"]} - {kwargs["end_date"]})'
+    title = f'{title} ({kwargs["start_date"].strftime("%b %Y")} - {kwargs["end_date"].strftime("%b %Y")})'
     import matplotlib.font_manager as fm
 
     prop = fm.FontProperties()

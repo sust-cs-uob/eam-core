@@ -593,31 +593,37 @@ def analysis(runner, yaml_struct, analysis_config=None, mean_run=None, image_fil
             pint_pandas_data, m = load_data(f'{output_directory}/result_data_{variable}.hdf5')
             units = {v[0]: v[1] for v in pint_pandas_data.pint.dequantify().columns.values}
             df = pint_pandas_data.pint.dequantify()
-            df.columns = df.columns.droplevel(1)
+            # df.columns = df.columns.droplevel(1)
             data = df
-
             unit = list(units.values())[0]
 
-            # print(data)
-            sheet_name = f'mean {variable} '
+            sheet_name = f'total {variable} '
+            sheet_descriptions[
+                sheet_name] = f'{sheet_name}: total over assessment period. Unit: {unit}'
+            logger.info("storing total values to excel")
+            mean = data.mean(level='time').mean().sum(level=0)
+            mean.to_excel(writer, sheet_name)
+
+            sheet_name = f'month mean {variable} '
             sheet_descriptions[
                 sheet_name] = f'{sheet_name}: a direct load of the result data, monthly mean values. Unit: {unit}'
             logger.info("storing mean values to excel")
             mean = data.mean(level='time').mean()
             mean.to_excel(writer, sheet_name)
 
-            # print(data)
-            sheet_name = f'25 quantiles {variable}'
-            sheet_descriptions[
-                sheet_name] = f'{sheet_name}: a direct load of the result data, monthly mean values. Unit: {unit}'
-            logger.info("storing quantile values to excel")
-            low = data.abs().groupby(level=['time']).quantile(.25)
-            low.to_excel(writer, sheet_name)
+            if sim_control.sample_size > 1:
+                # print(data)
+                sheet_name = f'25 quantiles {variable}'
+                sheet_descriptions[
+                    sheet_name] = f'{sheet_name}: a direct load of the result data, monthly mean values. Unit: {unit}'
+                logger.info("storing quantile values to excel")
+                low = data.abs().groupby(level=['time']).quantile(.25)
+                low.to_excel(writer, sheet_name)
 
-            sheet_name = f'75 quantiles {variable}'
-            sheet_descriptions[
-                sheet_name] = f'{sheet_name}: a direct load of the result data, monthly mean values. Unit: {unit}'
-            data.abs().groupby(level=['time']).quantile(.75).to_excel(writer, sheet_name)
+                sheet_name = f'75 quantiles {variable}'
+                sheet_descriptions[
+                    sheet_name] = f'{sheet_name}: a direct load of the result data, monthly mean values. Unit: {unit}'
+                data.abs().groupby(level=['time']).quantile(.75).to_excel(writer, sheet_name)
 
         # sum up monthly values to aggregate - duration depends on distance between start and end date
         #    load_data_aggegrate = lambda : load_data().sum(level='samples')
