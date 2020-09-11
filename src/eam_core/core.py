@@ -64,7 +64,7 @@ class SimulationControl(object):
     def __init__(self):
         self.scenario = 'default'
         self.output_directory = None
-        self.country_df_multi_index = None
+        self.group_df_multi_index = None
         self._df_multi_index = None
         self.trace = None
         self.index_names = ['time', 'samples']
@@ -77,9 +77,9 @@ class SimulationControl(object):
         self.excel_handler = 'openpyxl'
         self.times = pd.date_range('2009-01-01', '2017-01-01', freq='MS')
         self.sample_size = 100
-        self.with_countries = False
-        self.countries = None
-        self.country_vars = None
+        self.with_group = False
+        self.groupings = None
+        self.group_vars = None
         self.with_pint_units = True
         self.process_ids = False
         self.variable_ids = False
@@ -255,8 +255,8 @@ class ExcelDataSource(DataSource):
             loader = TableParameterLoader(filename=self.file_name, table_handler=simulation_control.excel_handler,
                                           **kwargs)
             loader.load_into_repo(repository=param_repo, id_flag=simulation_control.variable_ids,
-                                  with_countries=simulation_control.with_countries,
-                                  countries=simulation_control.countries, country_vars=simulation_control.country_vars)
+                                  with_group=simulation_control.with_group,
+                                  groupings=simulation_control.groupings, group_vars=simulation_control.group_vars)
 
         param = param_repo.get_parameter(self.variable_name, scenario_name=simulation_control.scenario)
         if 'process_name' in kwargs:

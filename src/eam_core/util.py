@@ -233,8 +233,8 @@ def pandas_series_dict_to_dataframe(data: Dict[str, pd.Series], target_units=Non
 
     """
     metadata = {}
-    if simulation_control.with_countries:
-        results_df = pd.DataFrame(index=simulation_control.country_df_multi_index)
+    if simulation_control.with_group:
+        results_df = pd.DataFrame(index=simulation_control.group_df_multi_index)
     else:
         results_df = pd.DataFrame(index=simulation_control._df_multi_index)
     for process, variable in data.items():
@@ -841,7 +841,7 @@ def store_sim_config(sim_control, directory, simulation_run_description, **kwarg
     del sim_control___dict__['times']
     del sim_control___dict__['param_repo']
     del sim_control___dict__['_df_multi_index']
-    del sim_control___dict__['country_df_multi_index']
+    del sim_control___dict__['group_df_multi_index']
     sim_config = {'simulation_run_description': simulation_run_description, 'sim_config': sim_control___dict__}
     with open(f'{directory}/sim_config.json', 'w') as outfile:
         simplejson.dump(sim_config, outfile, indent=4, sort_keys=True)
@@ -884,14 +884,14 @@ def configue_sim_control_from_yaml(sim_control: SimulationControl, yaml_struct, 
     if 'table_format_version' in yaml_struct['Metadata']:
         sim_control.table_version = yaml_struct['Metadata']['table_format_version']
 
-    if yaml_struct['Metadata'].get('with_countries', False):
-        sim_control.with_countries = True
-        sim_control.countries = yaml_struct['Metadata']['countries']
-        iterables = [sim_control.times, range(sim_control.sample_size), sim_control.countries]
+    if yaml_struct['Metadata'].get('with_group', False):
+        sim_control.with_group = True
+        sim_control.groupings = yaml_struct['Metadata']['groupings']
+        iterables = [sim_control.times, range(sim_control.sample_size), sim_control.groupings]
         index = sim_control.index_names.copy()
-        index.append("country")
-        sim_control.country_df_multi_index = pd.MultiIndex.from_product(iterables, names=index)
-        sim_control.country_vars = yaml_struct['Metadata']['country_vars']
+        index.append("group")
+        sim_control.group_df_multi_index = pd.MultiIndex.from_product(iterables, names=index)
+        sim_control.group_vars = yaml_struct['Metadata']['group_vars']
 
 
     sim_control.output_directory = output_directory

@@ -46,11 +46,11 @@ Metadata:
   sample_size: 2
   sample_mean: false
   individual_process_graphs_variable: energy
-  with_countries: True
-  countries:
+  with_group: True
+  groupings:
     - UK
     - DE
-  country_vars:
+  group_vars:
     - power_B
     - time_B
     - power_A
