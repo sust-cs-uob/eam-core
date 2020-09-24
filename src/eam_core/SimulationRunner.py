@@ -113,7 +113,7 @@ class SimulationRunner(object):
                 'Xi_mu': np.mean(Xi),
                 'Xi_cv': np.std(Xi) / np.mean(Xi),
                 }
-
+    #turns a dictionary of series into a list of arrays, removing pint units
     def dict_to_array(self,a):
         for k in a.keys():
             a[k]=a[k].pint.m
@@ -122,6 +122,7 @@ class SimulationRunner(object):
             a[i]=a[i].to_numpy()
         return a
 
+    #calculates the multiple correlation between a dependent and any number of independent variables. if only one independent variable is given it returns the correlation
     def multiple_correlation(self, dep,indep):
         assert len(dep)==1
         if len(indep)>=2:
@@ -164,7 +165,6 @@ class SimulationRunner(object):
         # evaluate model to get input variables
         model = create_model_func(sim_control=sim_control)
         fp = model.footprint(use_phase=True, embodied=embodied, simulation_control=sim_control)
-        # variances = {}
         cor={}
         fparray=self.dict_to_array(fp['use_phase_energy'])
         cor['all'] = SimulationRunner.multiple_correlation(self,fparray, [np.ones(len(fparray[0]))])
