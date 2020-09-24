@@ -218,7 +218,6 @@ def run_scenario(scenario, model_run_base_directory=None, simulation_run_descrip
         model, correlations = runner.run_OTA_SA(create_model_func=create_model_func, embodied=False, sim_control=None)
 
         df = pd.DataFrame(correlations).T
-        df.sort_values(by=['std_dev'], inplace=True)
 
         logger.debug(df)
 

@@ -114,16 +114,16 @@ class SimulationRunner(object):
                 'Xi_cv': np.std(Xi) / np.mean(Xi),
                 }
 
+    def dict_to_array(self,a):
+        for k in a.keys():
+            a[k]=a[k].pint.m
+        a=list(a.values())
+        for i in range(len(a)):
+            a[i]=a[i].to_numpy()
+        return a
+
     def multiple_correlation(self, dep,indep):
-        assert len(dep.keys())==1
-        for k in dep.keys():
-            dep[k]=dep[k].pint.m
-        dep=list(dep.values())[0].to_numpy()
-        for k in indep.keys():
-            indep[k]=indep[k].pint.m
-        indep=list(indep.values())
-        for i in range(len(indep)):
-            indep[i]=indep[i].to_numpy()
+        assert len(dep)==1
         if len(indep)>=2:
             Rxx=np.corrcoef(np.array(indep))
             Rxx=np.linalg.inv(Rxx)
@@ -132,7 +132,7 @@ class SimulationRunner(object):
                 c[i]=np.corrcoef(indep[i],dep)[0,1]
             return math.sqrt(np.matmul(np.transpose(c),np.matmul(Rxx,c)))
         else:
-            return np.corrcoef(indep,dep)
+            return np.corrcoef(indep,dep)[0,1]
 
 
     def run_OTA_SA(self, create_model_func=None, embodied=True, sim_control=None):
@@ -164,9 +164,10 @@ class SimulationRunner(object):
         # evaluate model to get input variables
         model = create_model_func(sim_control=sim_control)
         fp = model.footprint(use_phase=True, embodied=embodied, simulation_control=sim_control)
-        print(fp)
-        variances = {}
-        variances['all'] = SimulationRunner.get_stddev_and_mean(fp['use_phase_energy'], np.ones(2))
+        # variances = {}
+        cor={}
+        fparray=self.dict_to_array(fp['use_phase_energy'])
+        cor['all'] = SimulationRunner.multiple_correlation(self,fparray, [np.ones(len(fparray[0]))])
 
         param_names = get_param_names(sim_control)
         count = len(param_names)
@@ -197,7 +198,7 @@ class SimulationRunner(object):
             idx = idx + 1
             print(f"{idx} of {count}")
             if idx > 9:
-                return model, variances
+                return model, cor
             print(f"running model for var(s) {param_name_tuple}")
 
             # sim_control = SimulationControl()
@@ -219,7 +220,7 @@ class SimulationRunner(object):
             # variances[str(list(param_name_tuple))] = stddev_and_mean
             # print(outcome_var)
 
-            cor=self.multiple_correlation(fp['use_phase_energy'], fp['traces'])
+            cor[str(list(param_name_tuple))]=[self.multiple_correlation(self.dict_to_array(fp['use_phase_energy']), self.dict_to_array(fp['traces']))]
 
         return model, cor
 
