@@ -610,6 +610,7 @@ class ServiceModel(object):
             logger.debug(f"Checking {process_node.name}")
             if process_node not in processed:
                 next_up = [process_node]
+                traces = {}
                 while next_up:
                     process_node = next_up.pop()
 
@@ -677,17 +678,25 @@ class ServiceModel(object):
                                                              debug=kwargs.get('debug', False))
 
                     # todo - is this tracing stuff still needed?
-                    # _, input_vars = collect_process_variables(process_node)
+                    _, input_vars = collect_process_variables(process_node)
                     # node_trace_obj['data']['input_vars'] = {
                     #     k: {'value': v, 'unit': str(v.pint.units)} for k, v in input_vars.items()}
-                    simulation_control.trace.append(node_trace_obj)
+                    # simulation_control.trace.append(node_trace_obj)
 
-                    # @todo this does not work - result is never None as the DSL parser does not support return values
-                    # @todo https://bitbucket.org/dschien/ngmodel_generic/issues/10/parser-allow-return-values
-                    result = None
-                    if result is not None:
-                        # assert result.m.index.names == ['time', 'samples']
-                        results[process_node.name] = result
+                    if simulation_control.single_variable_run:
+                        for v in simulation_control.single_variable_names:
+                            if v in input_vars.keys():
+                                traces[v]=input_vars[v]
+                    if len(export_variables.keys()):
+                        results={}
+                    for n in export_variables.keys():
+                        results[n]=export_variables[n].data_source.value
+                    # # @todo this does not work - result is never None as the DSL parser does not support return values
+                    # # @todo https://bitbucket.org/dschien/ngmodel_generic/issues/10/parser-allow-return-values
+                    # result = None
+                    # if result is not None:
+                    #     # assert result.m.index.names == ['time', 'samples']
+                    #     results[process_node.name] = result
 
                     # propagate flows to upstream nodes
                     for edge in self.process_graph.out_edges(process_node, data=True):
@@ -719,7 +728,7 @@ class ServiceModel(object):
             else:
                 logger.debug(f"node {process_node.name} already processed")
         # collect results
-        return {'use_phase_energy': results}
+        return {'use_phase_energy': results, "traces":traces}
 
     def collect_calculation_traces(self) -> Dict[str, pd.DataFrame]:
         """

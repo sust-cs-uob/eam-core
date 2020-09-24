@@ -7,6 +7,7 @@ from typing import Dict
 import numpy as np
 import pandas as pd
 import simplejson
+import math
 import yaml
 from pip._vendor.pkg_resources import resource_filename, Requirement
 
@@ -100,7 +101,8 @@ class SimulationRunner(object):
     @staticmethod
     def get_stddev_and_mean(Y, Xi):
         Y = [i.pint.m for i in Y.values()]
-
+        s=sum(Y)
+        c=Y[0]
         std_dev = np.std(sum(Y))
         men = np.mean(sum(Y))
 
@@ -111,6 +113,27 @@ class SimulationRunner(object):
                 'Xi_mu': np.mean(Xi),
                 'Xi_cv': np.std(Xi) / np.mean(Xi),
                 }
+
+    def multiple_correlation(self, dep,indep):
+        assert len(dep.keys())==1
+        for k in dep.keys():
+            dep[k]=dep[k].pint.m
+        dep=list(dep.values())[0].to_numpy()
+        for k in indep.keys():
+            indep[k]=indep[k].pint.m
+        indep=list(indep.values())
+        for i in range(len(indep)):
+            indep[i]=indep[i].to_numpy()
+        if len(indep)>=2:
+            Rxx=np.corrcoef(np.array(indep))
+            Rxx=np.linalg.inv(Rxx)
+            c=np.zeros(len(indep))
+            for i in range(len(indep)):
+                c[i]=np.corrcoef(indep[i],dep)[0,1]
+            return math.sqrt(np.matmul(np.transpose(c),np.matmul(Rxx,c)))
+        else:
+            return np.corrcoef(indep,dep)
+
 
     def run_OTA_SA(self, create_model_func=None, embodied=True, sim_control=None):
         """
@@ -190,13 +213,15 @@ class SimulationRunner(object):
 
             # for p in param_name_tuple:
             # param = sim_control.param_repo[p]
-            stddev_and_mean = SimulationRunner.get_stddev_and_mean(fp['use_phase_energy'], None)
+            # stddev_and_mean = SimulationRunner.get_stddev_and_mean(fp['use_phase_energy'], None)
             # stddevs.append(stddev_and_mean)
             # if stddev_and_mean['std_dev'] > 1:
-            variances[str(list(param_name_tuple))] = stddev_and_mean
+            # variances[str(list(param_name_tuple))] = stddev_and_mean
             # print(outcome_var)
 
-        return model, variances
+            cor=self.multiple_correlation(fp['use_phase_energy'], fp['traces'])
+
+        return model, cor
 
     def run(self, create_model_func=None, embodied=False,
             pickle_average=True, debug=False, target_units=None, result_variables=None, output_persistence_config=None):

@@ -214,10 +214,10 @@ def run_scenario(scenario, model_run_base_directory=None, simulation_run_descrip
                                                                      formula_checks=args.formula_checks, args=args)
     if args.sensitivity:
         runner = SimulationRunner()
-        model, variances = runner.run_SA(create_model_func=create_model_func, embodied=False, sim_control=sim_control)
-        # model, variances = runner.run_OTA_SA(create_model_func=create_model_func, embodied=False, sim_control=None)
+        # model, variances = runner.run_SA(create_model_func=create_model_func, embodied=False, sim_control=sim_control)
+        model, correlations = runner.run_OTA_SA(create_model_func=create_model_func, embodied=False, sim_control=None)
 
-        df = pd.DataFrame(variances).T
+        df = pd.DataFrame(correlations).T
         df.sort_values(by=['std_dev'], inplace=True)
 
         logger.debug(df)
@@ -334,11 +334,12 @@ def run(args, analysis_config=None):
     analysis_config.update(yaml_struct['Analysis'])
     analysis_config.update(yaml_struct['Metadata'])
 
-    scenario_paths = {scenario_name: run_data.sim_control.output_directory for scenario_name, run_data in
-                      runners.items()}
-    if args.analysis_config:
-        summary_analysis(scenario_paths, model_run_base_directory, analysis_config, yaml_struct,
-                         image_filetype=args.filetype)
+    if not args.sensitivity:
+        scenario_paths = {scenario_name: run_data.sim_control.output_directory for scenario_name, run_data in
+                          runners.items()}
+        if args.analysis_config:
+            summary_analysis(scenario_paths, model_run_base_directory, analysis_config, yaml_struct,
+                             image_filetype=args.filetype)
     return runners
 
 
