@@ -743,8 +743,8 @@ def compare_dataframes(assert_structural_identity, df_a, df_b, simrun_a, simrun_
 
     def get_end_date(df):
         if isinstance(df.index, pd.core.index.MultiIndex):
-            return df.index[0][0].to_pydatetime()
-        return df.index[0].to_pydatetime()
+            return df.index[-1][0].to_pydatetime()
+        return df.index[-1].to_pydatetime()
 
     start_date_a = get_start_date(df_a)
     start_date_b = get_start_date(df_b)
@@ -781,20 +781,6 @@ def compare_dataframes(assert_structural_identity, df_a, df_b, simrun_a, simrun_
     return changed_variables
 
 
-def find_changed_variables(scenario, simrun_a, simrun_b, output_directory_prefix=None, tolerance=0.3,
-                           assert_structural_identity=False):
-    df_a = load_df(scenario, None, kind='input', output_directory=f'{output_directory_prefix}/{simrun_a}')
-    df_b = load_df(scenario, None, kind='input', output_directory=f'{output_directory_prefix}/{simrun_b}')
-
-    return compare_dataframes(assert_structural_identity, df_a, df_b, simrun_a, simrun_b, tolerance)
-
-
-def find_changed_processes(scenario, simrun_a, simrun_b, output_directory_prefix=None, tolerance=0.3,
-                           assert_structural_identity=False):
-    df_a = load_df(scenario, 'use_phase_energy', output_directory=f'{output_directory_prefix}/{simrun_a}')
-    df_b = load_df(scenario, 'use_phase_energy', output_directory=f'{output_directory_prefix}/{simrun_b}')
-
-    return compare_dataframes(assert_structural_identity, df_a, df_b, simrun_a, simrun_b, tolerance)
 
 
 def get_sim_run_description():
