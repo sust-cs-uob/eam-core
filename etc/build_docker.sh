@@ -1,8 +1,8 @@
 #/bin/sh
 mkdir "build_tmp"
 
-#git clone -b countries git@github.com:sust-cs-uob/eam-data-tools.git build_tmp/eam-data-tools
-#git clone -b countries git@github.com:sust-cs-uob/eam-core.git build_tmp/eam-core
+git clone -b countries git@github.com:sust-cs-uob/eam-data-tools.git build_tmp/eam-data-tools
+git clone -b countries git@github.com:sust-cs-uob/eam-core.git build_tmp/eam-core
 
 cp build_tmp/eam-core/etc/Dockerfile build_tmp
 
