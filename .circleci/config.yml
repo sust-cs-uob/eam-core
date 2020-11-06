@@ -15,8 +15,9 @@ jobs:
             pip install .
             pip install -r test-requirements.txt
             pip install pytest
+            pip install Pint-Pandas-Fork
             pip install git+https://github.com/hgrecco/pint.git@f356379c15c1cb5d211c795872ac9e9284d2358f#egg=pint
-            pip install --no-deps git+https://github.com/hgrecco/pint-pandas.git#egg=pint-pandas
+#            pip install --no-deps git+https://github.com/hgrecco/pint-pandas.git#egg=pint-pandas
 
       - python/save-cache
       - run:
