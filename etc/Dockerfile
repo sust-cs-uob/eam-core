@@ -16,10 +16,10 @@ RUN pip3 install cython
 RUN pip3 install numpy==1.18.2
 
 # RUN pip install --no-deps git+https://github.com/sust-cs-uob/eam-data-tools.git@countries#egg=eam-data-tools
+ADD eam-data-tools /usr/src/eam-data-tools
 WORKDIR /usr/src/eam-data-tools
-COPY eam-data-tools/requirements.txt /usr/src/eam-data-tools/
-RUN pip3 install -r requirements.txt
-COPY eam-data-tools /usr/src/eam-data-tools
+#COPY eam-data-tools/requirements.txt /usr/src/eam-data-tools/
+#RUN pip3 install -r requirements.txt
 RUN pip install .
 
 WORKDIR /usr/src/eam-core
