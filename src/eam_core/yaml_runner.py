@@ -314,7 +314,7 @@ def run(args, analysis_config=None):
 
     logger.info(f'Skip store results set to {args.skip_storage}')
     output_persistence_config = {'store_traces': not args.skip_storage,
-                                 'process_traces': analysis_config['process_traces']}
+                                 'process_traces': analysis_config.get('process_traces', [])}
 
     # a partial to invoke for each scenario
     run_scenario_f = partial(run_scenario, model_run_base_directory=model_run_base_directory,
@@ -601,7 +601,7 @@ def analysis(runner, yaml_struct, analysis_config=None, mean_run=None, image_fil
             sheet_descriptions[
                 sheet_name] = f'{sheet_name}: total over assessment period. Unit: {unit}'
             logger.info("storing total values to excel")
-            mean = data.mean(level='time').mean().sum(level=0)
+            mean = data.mean(level='time').sum()
             mean.to_excel(writer, sheet_name)
 
             sheet_name = f'month mean {variable} '

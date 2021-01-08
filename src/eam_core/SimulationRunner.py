@@ -1,6 +1,7 @@
 import csv
 import logging
 import os
+import pint
 from logging.config import dictConfig
 from typing import Dict
 
@@ -274,11 +275,25 @@ class SimulationRunner(object):
 
                 if not os.path.exists(f'{simulation_control.output_directory}/{subdirectory}'):
                     os.mkdir(f'{simulation_control.output_directory}/{subdirectory}')
-                df = df.pint.dequantify()
+
+                df = self.to_reduced_units(df.pint).pint.dequantify()
+                # df = self.to_reduced_units(df.pint)
+                # df = df.pint.to_base_units().pint.dequantify()
+                # df = df.pint.dequantify()
                 # df.columns = df.columns.droplevel(1)
                 writer = pd.ExcelWriter(filename)
                 df.to_excel(writer)
                 writer.close()
+
+    def to_reduced_units(self, pint):
+        obj = pint._obj
+        df = pint._obj
+        index = object.__getattribute__(obj, 'index')
+        # name = object.__getattribute__(obj, '_name')
+        return pd.DataFrame({
+            col: df[col].pint.to_reduced_units()
+            for col in df.columns
+        }, index=index)
 
     def store_process_variables(self, variable_names, target_units):
         """
