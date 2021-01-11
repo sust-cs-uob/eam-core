@@ -871,14 +871,14 @@ if (0 == df) && (df == 0) {
             'ref_duration', sim_control)
 
         block = '''
-        aggreate_power = mean_power_per_linear_channel * number_of_BBC_linear_channels;
+        aggreate_power = mean_power_per_linear_channel * number_of_linear_channels;
 
         energy = aggreate_power * ref_duration;
 
         return energy
         '''
         visitor = evaluate(block,
-                           variables={'mean_power_per_linear_channel': power, 'number_of_BBC_linear_channels': channels,
+                           variables={'mean_power_per_linear_channel': power, 'number_of_linear_channels': channels,
                                       'ref_duration': time})
 
         # print(visitor.variables['energy'].shape)

@@ -177,7 +177,7 @@ Metadata:
           - name: DTT TV Amplifier
             import_variables:
               - formula_name: service_on_time_per_day_mins
-                external_name: dtt_tv_amplifier_bbc_servcie_time_mins_per_day
+                external_name: dtt_tv_amplifier_servcie_time_mins_per_day
               - formula_name: number
                 external_name: num_hh_dtt_tv_amplifer
             link_to:

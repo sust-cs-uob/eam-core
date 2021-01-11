@@ -410,7 +410,7 @@ def draw_graph_from_dotfile(model, file_type='pdf', show_variables=True, metric=
         generate_graph_node_barcharts(model.name, metric, start_date=start_date, end_date=end_date,
                                       base_directory=output_directory)
 
-    project_dir = os.getcwd()  # '/Users/csxds/workspaces/bbc/ngmodel'
+    project_dir = os.getcwd()  # '/Users/csxds/workspaces/ngmodel'
 
     H = nx.relabel_nodes(model.process_graph, lambda n: n.name)
     ref_period = 'monthly'
