@@ -168,8 +168,8 @@ def create_documentation(runner):
         ps = subprocess.Popen(cmd, shell=True)
     else:
         logger.info("writing pandoc")
-        output = pypandoc.convert_file(f'"{output_directory}/{model.name}_model_documentation.md"', 'pdf',
-                                       outputfile=f'"{output_directory}/{model.name}_model_documentation.pdf"',
+        output = pypandoc.convert_file(f'{output_directory}/{model.name}_model_documentation.md', 'pdf',
+                                       outputfile=f'{output_directory}/{model.name}_model_documentation.pdf',
                                        extra_args=['-V', 'geometry:margin=0.2in, landscape'])
 
 

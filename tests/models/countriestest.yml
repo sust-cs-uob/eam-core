@@ -10,7 +10,7 @@ Processes:
     constants: []
     importVariables:
       - value: time_B
-        group_statistic: sum
+#        group_statistic: sum
     exportVariables: []
     device_type: IP Networking
     formula: |2
@@ -26,11 +26,14 @@ Processes:
       - value: time_B
     constants: []
     importVariables: []
-    exportVariables: []
+    exportVariables:
+      - value: time_B
     device_type: IP Networking
     formula: |2
       energy = power_B * time_B;
       return energy
+    link_to:
+      - Origin Datacentre
 
   - name: Internet Network
     id: 1
@@ -54,7 +57,7 @@ Metadata:
   description: |
     bla bla
   model_version: 0.0.1
-  table_file_name: countriestest_data.xlsx
+  table_file_name: tests/data/full_country_data.xlsx
   datasource_version_hint: 2
   comparison_variable: energy
   start_date: 2019-01-01
