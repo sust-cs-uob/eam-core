@@ -51,7 +51,7 @@ except:
 
 import logging
 
-logger = logging.getLogger(__file__)
+logger = logging.getLogger()
 
 
 def setup_parser(args):
@@ -240,7 +240,7 @@ def run_scenario(scenario, model_run_base_directory=None, simulation_run_descrip
 
     if not args.skip_documentation:
         create_documentation(runner)
-
+    logger.info(f'Evaluating scenario {scenario} complete')
     return (scenario, runner)
 
 
@@ -254,7 +254,7 @@ def run_mean(args, model_run_base_directory=None, simulation_run_description=Non
     :rtype:
     """
 
-    logger.info(f"running mean for scenario {scenario}")
+    logger.info(f"Running mean for scenario {scenario}")
     if not model_run_base_directory:
         model_run_base_directory, simulation_run_description, yaml_struct = load_configuration(args)
 
@@ -269,6 +269,8 @@ def run_mean(args, model_run_base_directory=None, simulation_run_description=Non
                              analysis_config={}, output_persistence_config={})
 
     _, runner = run_scenario_f(scenario)
+
+    logger.info(f"Running mean for scenario {scenario} finished")
     return runner
 
 
