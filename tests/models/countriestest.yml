@@ -1,6 +1,22 @@
 variant: 2
 Processes:
 
+  - name: Origin Datacentre
+    id: 2
+    metadata:
+      model_layer: 3rd Party
+    tableVariables:
+      - value: power_B
+    constants: []
+    importVariables:
+      - value: time_B
+        group_statistic: sum
+    exportVariables: []
+    device_type: IP Networking
+    formula: |2
+      energy = power_B * time_B;
+      return energy
+
   - name: CDN
     id: 0
     metadata:
@@ -38,7 +54,7 @@ Metadata:
   description: |
     bla bla
   model_version: 0.0.1
-  table_file_name: tests/data/full_country_data.xlsx
+  table_file_name: countriestest_data.xlsx
   datasource_version_hint: 2
   comparison_variable: energy
   start_date: 2019-01-01
