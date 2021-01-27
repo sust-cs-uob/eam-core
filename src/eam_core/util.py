@@ -892,6 +892,7 @@ def configue_sim_control_from_yaml(sim_control: SimulationControl, yaml_struct, 
         index.append("group")
         sim_control.group_df_multi_index = pd.MultiIndex.from_product(iterables, names=index)
         sim_control.group_vars = yaml_struct['Metadata']['group_vars']
+        sim_control.group_aggregation_vars = yaml_struct['Metadata'].get('group_aggregation_vars', None)
 
 
     sim_control.output_directory = output_directory

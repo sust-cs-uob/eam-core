@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Dict, Tuple
 
 import numpy as np
-import yaml
+# import yaml
 from ruamel import yaml
 
 from eam_core import Variable, ExcelVariable, Formula, FormulaModel, FormulaProcess, \
@@ -62,7 +62,7 @@ class YamlLoader(object):
         return yaml.safe_load(doc)
 
     def create_variables_from_yaml_v1(self, variable_definitions, simulation_control, yaml_structure, constants) \
-        -> Dict[str, Variable]:
+            -> Dict[str, Variable]:
         vars = {}
 
         for var_def in variable_definitions:
@@ -127,7 +127,7 @@ class YamlLoader(object):
         return vars
 
     def create_variables_from_yaml_v2(self, variable_definitions, simulation_control, yaml_structure, constants) \
-        -> Dict[str, Variable]:
+            -> Dict[str, Variable]:
         vars = {}
 
         for var_defs_type, var_def in variable_definitions.items():
@@ -159,7 +159,7 @@ class YamlLoader(object):
         return vars
 
     def create_variables_from_yaml(self, variable_definitions, simulation_control, yaml_structure, constants) \
-        -> Dict[str, Variable]:
+            -> Dict[str, Variable]:
         if self.version == 1:
             return self.create_variables_from_yaml_v1(variable_definitions, simulation_control, yaml_structure,
                                                       constants)
@@ -203,7 +203,7 @@ class YamlLoader(object):
         input_variables = {}
 
         if (self.version == 1 and 'input_variables' in definition) or \
-            self.version == 2:
+                self.version == 2:
 
             if self.version == 1:
                 variable_definitions = definition.get('input_variables', [])
@@ -234,13 +234,18 @@ class YamlLoader(object):
                     import_variables[incoming_name] = {'aggregate': True, 'formula_name': _var}
 
             export_variable_names = definition.get('export_variables')
+
         if self.version == 2:
 
             export_variable_names = [obj['value'] for obj in definition.get('exportVariables', [])]
 
             for _var in definition.get('importVariables', []):
                 var_name = _var['value']
-                import_variables[var_name] = {'aggregate': True, 'formula_name': var_name}
+                group_aggregation = _var.get('group_aggregation', None)
+                if group_aggregation:
+                    # yaml returns ordered dicts -> turn into ordinary dict
+                    group_aggregation = dict(group_aggregation)
+                import_variables[var_name] = {'formula_name': var_name, 'group_aggregation': group_aggregation}
 
         if isinstance(export_variable_names, list):
             export_variable_names = {v: v for v in export_variable_names}

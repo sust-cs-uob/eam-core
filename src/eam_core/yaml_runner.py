@@ -603,14 +603,16 @@ def analysis(runner, yaml_struct, analysis_config=None, mean_run=None, image_fil
             mean = data.mean(level='time').mean()
             mean.to_excel(writer, sheet_name)
 
+            sheet_name = f'total {variable}'
+            sheet_descriptions[
+                sheet_name] = f'{sheet_name}: total over assessment period. Unit: {unit}'
+            logger.info("storing total values to excel")
             if sim_control.with_group:
-                sheet_name = f'total {variable} '
-                sheet_descriptions[
-                    sheet_name] = f'{sheet_name}: total over assessment period. Unit: {unit}'
-                logger.info("storing total values to excel")
-                mean = data.reorder_levels([2, 0, 1]).sort_index(level=['group', 'time']).mean(level=[0, 1]).sum(
+                total = data.reorder_levels([2, 0, 1]).sort_index(level=['group', 'time']).mean(level=[0, 1]).sum(
                     level=0).T
-                mean.to_excel(writer, sheet_name)
+            else:
+                total = data.mean(level=0).sum()
+            total.to_excel(writer, sheet_name)
 
             # print(data)
             sheet_name = f'25 quantiles {variable}'
