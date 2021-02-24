@@ -62,29 +62,30 @@ class SimulationControl(object):
     """
 
     def __init__(self):
-        self.scenario = 'default'
-        self.output_directory = None
-        self.group_df_multi_index = None
         self._df_multi_index = None
-        self.trace = None
-        self.index_names = ['time', 'samples']
         self.cache = defaultdict(dict)
+        self.excel_handler = 'openpyxl'
+        self.filename = None
+        self.group_aggregation_vars = None
+        self.group_df_multi_index = None
+        self.group_vars = None
+        self.groupings = None
+        self.index_names = ['time', 'samples']
+        self.output_directory = None
         self.param_repo = ParameterRepository()
-        self.use_time_series = False
+        self.process_ids = False
         self.sample_mean_value = False
+        self.sample_size = 100
+        self.scenario = 'default'
         self.single_variable_names = None
         self.single_variable_run = False
-        self.excel_handler = 'openpyxl'
-        self.times = pd.date_range('2009-01-01', '2017-01-01', freq='MS')
-        self.sample_size = 100
-        self.with_group = False
-        self.groupings = None
-        self.group_vars = None
-        self.with_pint_units = True
-        self.process_ids = False
-        self.variable_ids = False
-        self.filename = None
         self.table_version = None
+        self.times = pd.date_range('2009-01-01', '2017-01-01', freq='MS')
+        self.trace = None
+        self.use_time_series = False
+        self.variable_ids = False
+        self.with_group = False
+        self.with_pint_units = True
 
     def reset(self):
         logger.info("Resetting Simulation Control Parameters")
@@ -368,7 +369,7 @@ class FormulaModel(object):
     def evaluate(self, sim_control, input_variables: Dict[str, Variable] = None,
                  export_variable_names: Dict[str, str] = None,
                  DSL_variable_dict=None, **kwargs) -> \
-        Tuple[Dict[str, Variable], EvalVisitor]:
+            Tuple[Dict[str, Variable], EvalVisitor]:
         """
         1. variables and add to DSL
         2. evaluate
@@ -442,7 +443,7 @@ class FormulaProcess(object):
         # Req FP 1. FormulaProcesses can also define import variables that can come from a pool of global variables
         self.import_variable_names = import_variable_names
         self._DSL_variables = DSL_variable_dict if DSL_variable_dict else {}
-
+        # dict of variable name and aggregation function - applied to import variables of the same name (ie. same variable name coming from multiple incoming edges)
         self.aggregation_functions = defaultdict(lambda: sum)
         self.metadata = metadata if metadata is not None else {}
 
@@ -560,7 +561,8 @@ class ServiceModel(object):
             logger.info(f"removing node {node.name} from graph")
             self.process_graph.remove_node(node)
 
-    def footprint(self, simulation_control=None, embodied=True, **kwargs) -> Dict[str, Dict[str, float]]:
+    def footprint(self, simulation_control: SimulationControl = None, embodied=True, **kwargs) -> Dict[
+        str, Dict[str, float]]:
 
         assert simulation_control is not None
 
@@ -642,33 +644,63 @@ class ServiceModel(object):
                         for variable_name, process_variable_tuple in edge_variables.items():
                             import_variables[variable_name].append(process_variable_tuple)
 
-                    def create_aggregate_variable_from_variables(name, process_var_list):
-                        var_values = [
-                            simulation_control.get_variable_value(process_variable_tuple[1], process_variable_tuple[0])
-                            for process_variable_tuple in process_var_list]
+                    def create_aggregate_variable_from_variables(name, process_var_list, group_aggregation):
+                        """
+                        Uses an aggregate (see FormulaProcess::aggregation_functions) for implementation to operate on entire variables.
+                        """
+                        var_values = [simulation_control.get_variable_value(proc_var_tpl[1], proc_var_tpl[0]) for
+                                      proc_var_tpl in process_var_list]
+                        # apply the aggregate function for this variable
+                        if group_aggregation:
+                            group_aggregation_func = group_aggregation['op']
+                            group_aggregation_group_var = group_aggregation['group']
+                            group_name = None
+                            for group_aggregation_group_var_name in simulation_control.group_aggregation_vars:
+                                if group_aggregation_group_var_name['name'] == group_aggregation_group_var:
+                                    group_name = group_aggregation_group_var_name['group']
+                                    break
+
+
+                            logger.debug(
+                                f'applying aggregation func {group_aggregation_func}, collapsing to group {group_name}')
+                            _var_values = []
+                            for var in var_values:
+                                # https://stackoverflow.com/questions/65909367/pandas-multiindex-sum-on-one-slice-set-others-to-zero/65909606#65909606
+                                var_op = var.apply(group_aggregation_func, level=[0, 1]).to_frame()
+                                var_op['group'] = group_name
+                                var_apply = \
+                                    var_op.set_index('group', append=True).reindex(
+                                        simulation_control.group_df_multi_index,
+                                        fill_value=0)[0]
+
+                                _var_values.append(var_apply)
+                            var_values = _var_values
+
                         res = process_node.aggregation_functions[name](var_values)
                         v = Variable.static_variable(name, res)  # b/s * s = b
 
                         return v
 
                     # Req FP 4. imported variables from adjancent downstream processes in the graph can be aggregated
-
                     import_node_trace_data = []
 
                     aggregated_import_vars = {}
                     for name, var_list in import_variables.items():
-                        if process_node.import_variable_names[name]['aggregate']:
-                            incoming_name = process_node.import_variable_names[name].get('formula_name', name)
-                            aggregated_import_vars[incoming_name] = create_aggregate_variable_from_variables(name,
-                                                                                                             var_list)
-                            # value = aggregated_import_vars[incoming_name].data_source.get_value(None,
-                            #                                                                     simulation_control)
-                            # value_mean = value.pint.m.mean()
-                            # todo - do we need trace data?
-                            # import_node_trace_data.append({'formula_name': incoming_name,
-                            #                                'edge_name': name,
-                            #                                'value': value_mean,
-                            #                                'unit': str(value_mean.units)})
+                        logger.debug(f'aggregating values for name "{name}"')
+                        group_aggregation = process_node.import_variable_names[name]['group_aggregation']
+
+                        incoming_name = process_node.import_variable_names[name].get('formula_name', name)
+                        aggregated_import_vars[incoming_name] = create_aggregate_variable_from_variables(name,
+                                                                                                         var_list,
+                                                                                                         group_aggregation)
+                        # value = aggregated_import_vars[incoming_name].data_source.get_value(None,
+                        #                                                                     simulation_control)
+                        # value_mean = value.pint.m.mean()
+                        # todo - do we need trace data?
+                        # import_node_trace_data.append({'formula_name': incoming_name,
+                        #                                'edge_name': name,
+                        #                                'value': value_mean,
+                        #                                'unit': str(value_mean.units)})
 
                     ingress_variables = aggregated_import_vars
 
@@ -686,11 +718,11 @@ class ServiceModel(object):
                     if simulation_control.single_variable_run:
                         for v in simulation_control.single_variable_names:
                             if v in input_vars.keys():
-                                traces[v]=input_vars[v]
+                                traces[v] = input_vars[v]
                     if len(export_variables.keys()):
-                        results={}
+                        results = {}
                     for n in export_variables.keys():
-                        results[n]=export_variables[n].data_source.value
+                        results[n] = export_variables[n].data_source.value
                     # # @todo this does not work - result is never None as the DSL parser does not support return values
                     # # @todo https://bitbucket.org/dschien/ngmodel_generic/issues/10/parser-allow-return-values
                     # result = None
@@ -728,7 +760,7 @@ class ServiceModel(object):
             else:
                 logger.debug(f"node {process_node.name} already processed")
         # collect results
-        return {'use_phase_energy': results, "traces":traces}
+        return {'use_phase_energy': results, "traces": traces}
 
     def collect_calculation_traces(self) -> Dict[str, pd.DataFrame]:
         """

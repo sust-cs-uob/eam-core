@@ -51,7 +51,7 @@ except:
 
 import logging
 
-logger = logging.getLogger(__file__)
+logger = logging.getLogger()
 
 
 def setup_parser(args):
@@ -168,8 +168,8 @@ def create_documentation(runner):
         ps = subprocess.Popen(cmd, shell=True)
     else:
         logger.info("writing pandoc")
-        output = pypandoc.convert_file(f'"{output_directory}/{model.name}_model_documentation.md"', 'pdf',
-                                       outputfile=f'"{output_directory}/{model.name}_model_documentation.pdf"',
+        output = pypandoc.convert_file(f'{output_directory}/{model.name}_model_documentation.md', 'pdf',
+                                       outputfile=f'{output_directory}/{model.name}_model_documentation.pdf',
                                        extra_args=['-V', 'geometry:margin=0.2in, landscape'])
 
 
@@ -240,7 +240,7 @@ def run_scenario(scenario, model_run_base_directory=None, simulation_run_descrip
 
     if not args.skip_documentation:
         create_documentation(runner)
-
+    logger.info(f'Evaluating scenario {scenario} complete')
     return (scenario, runner)
 
 
@@ -254,7 +254,7 @@ def run_mean(args, model_run_base_directory=None, simulation_run_description=Non
     :rtype:
     """
 
-    logger.info(f"running mean for scenario {scenario}")
+    logger.info(f"Running mean for scenario {scenario}")
     if not model_run_base_directory:
         model_run_base_directory, simulation_run_description, yaml_struct = load_configuration(args)
 
@@ -269,6 +269,8 @@ def run_mean(args, model_run_base_directory=None, simulation_run_description=Non
                              analysis_config={}, output_persistence_config={})
 
     _, runner = run_scenario_f(scenario)
+
+    logger.info(f"Running mean for scenario {scenario} finished")
     return runner
 
 
@@ -601,14 +603,16 @@ def analysis(runner, yaml_struct, analysis_config=None, mean_run=None, image_fil
             mean = data.mean(level='time').mean()
             mean.to_excel(writer, sheet_name)
 
+            sheet_name = f'total {variable}'
+            sheet_descriptions[
+                sheet_name] = f'{sheet_name}: total over assessment period. Unit: {unit}'
+            logger.info("storing total values to excel")
             if sim_control.with_group:
-                sheet_name = f'total {variable} '
-                sheet_descriptions[
-                    sheet_name] = f'{sheet_name}: total over assessment period. Unit: {unit}'
-                logger.info("storing total values to excel")
-                mean = data.reorder_levels([2, 0, 1]).sort_index(level=['group', 'time']).mean(level=[0, 1]).sum(
+                total = data.reorder_levels([2, 0, 1]).sort_index(level=['group', 'time']).mean(level=[0, 1]).sum(
                     level=0).T
-                mean.to_excel(writer, sheet_name)
+            else:
+                total = data.mean(level=0).sum()
+            total.to_excel(writer, sheet_name)
 
             # print(data)
             sheet_name = f'25 quantiles {variable}'
