@@ -1,0 +1,48 @@
+version: 1
+disable_existing_loggers: False
+formatters:
+    simple:
+        format:  "%(levelname)s - %(asctime)s - %(name)s:%(lineno)d - %(message)s"
+#        format: "%(asctime)s - %(filename)s - %(lineno)d - %(levelname)s - %(message)s"
+    coloredFormatter:
+        '()': eam_core.log_configuration.ColoredFormatter
+handlers:
+    console:
+        class: logging.StreamHandler
+        level: DEBUG
+        formatter: coloredFormatter
+        stream: ext://sys.stdout
+
+    info_file_handler:
+        class: eam_core.log_configuration.MakeFileHandler
+        level: DEBUG
+        formatter: simple
+        filename: logs/debug.log
+        maxBytes: 1048576 # 1MB
+        backupCount: 5
+        encoding: utf8
+
+    error_file_handler:
+        class: eam_core.log_configuration.MakeFileHandler
+        level: ERROR
+        formatter: simple
+        filename: logs/errors.log
+        maxBytes: 1048576 # 1MB
+        backupCount: 5
+        encoding: utf8
+
+#loggers:
+#    ngmodel:
+#        level: INFO
+#        handlers: [console, info_file_handler]
+#        propagate: no
+#    excel_helper:
+#        level: INFO
+#        handlers: [console, info_file_handler]
+#        propagate: no
+##
+root:
+    level: INFO
+#    handlers: [console]
+    handlers: [console, info_file_handler, error_file_handler]
+#    handlers: [console, info_file_handler, error_file_handler]

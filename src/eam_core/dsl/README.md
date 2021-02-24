@@ -1,0 +1,4 @@
+# ANTLR howto 
+
+build interpreter classes with
+`java -Xmx500M -cp /usr/local/lib/antlr-4.7.1-complete.jar org.antlr.v4.Tool -Dlanguage=Python2 arithmetic.g4`
