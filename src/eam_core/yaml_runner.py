@@ -1,23 +1,22 @@
 import os
 import shlex
 import subprocess
-import sys
-import time
 
 import matplotlib
+import sys
+import time
 from openpyxl.styles import Alignment
 
 from eam_core import SimulationControl
 
 matplotlib.use('Agg')
-from matplotlib import pyplot as plt
+from matplotlib import pyplot as plt, MatplotlibDeprecationWarning
 
 import json as json
 
 from shutil import copyfile
 from eam_core.util import get_sim_run_description, create_output_folder, \
-    draw_graph_from_dotfile, load_as_df_qantity, load_as_plain_df, find_node_by_name, store_sim_config, \
-    prepare_simulation
+    draw_graph_from_dotfile, load_as_df_qantity, load_as_plain_df, prepare_simulation,find_node_by_name
 
 from eam_core.YamlLoader import YamlLoader
 from eam_core.common_graphical_analysis import load_metadata, plot_kind, plot_process_with_input_vars
@@ -28,7 +27,6 @@ from eam_core.SimulationRunner import SimulationRunner
 
 import pandas as pd
 from ruamel import yaml
-import pint
 
 from functools import partial
 
@@ -40,6 +38,11 @@ import configparser
 import eam_core.log_configuration as logconf
 
 logconf.config_logging()
+
+# @todo: upgrade pandas 0.24 to stay compatible
+import warnings
+
+warnings.filterwarnings("ignore", category=MatplotlibDeprecationWarning)
 
 try:
     CONFIG_FILE = "local.cfg"
@@ -66,11 +69,12 @@ def setup_parser(args):
     parser.add_argument('--local', '-l', help="When using cloud datasources, don't check for updates cloud spreadsheets", action='store_true')
     parser.add_argument('--IDs', '-id', help="give each process and variable an ID", action='store_true')
     parser.add_argument('--multithreaded', '-m', help="use multicore speed ups", action='store_true')
+
+    parser.add_argument('--verbose', '-v', help="enable debug level logging", action='store_true')
+    parser.add_argument('yamlfile', help="yaml file to run")
     parser.add_argument('--sensitivity', '-n', help="run sensitivity analysis", action='store_true')
     parser.add_argument('--skip_documentation', '-sd', help="create documentation", action='store_true')
     parser.add_argument('--skip_storage', '-ss', help="do not store results", action='store_true')
-    parser.add_argument('--verbose', '-v', help="enable debug level logging", action='store_true')
-    parser.add_argument('yamlfile', help="yaml file to run")
 
     args = parser.parse_args(args)
     # print(args)
@@ -305,12 +309,14 @@ def run(args, analysis_config=None):
 
     # scenarios to evaluate
     scenarios = yaml_struct['Analysis'].get('scenarios', [])
-    # 'default' is implicit
-    scenarios.append('default')
+    if not 'default' in scenarios:
+        # 'default' is implicit
+        scenarios.append('default')
     # define aspects/data to store
 
     logger.info(f'Skip store results set to {args.skip_storage}')
-    output_persistence_config = {'store_traces': not args.skip_storage}
+    output_persistence_config = {'store_traces': not args.skip_storage,
+                                 'process_traces': analysis_config.get('process_traces', [])}
 
     # a partial to invoke for each scenario
     run_scenario_f = partial(run_scenario, model_run_base_directory=model_run_base_directory,
@@ -544,9 +550,9 @@ def analysis(runner, yaml_struct, analysis_config=None, mean_run=None, image_fil
     if sim_control.use_time_series:
         output_directory = sim_control.output_directory
 
-        logger.info('generate_model_definition_markdown')
-        logger.warning('skipping markdown generation for now')
-        # @todo fix generate_model_definition_markdown
+        # logger.info('generate_model_definition_markdown')
+        # logger.warning('skipping markdown generation for now')
+        # # @todo fix generate_model_definition_markdown
         # generate_model_definition_markdown(model, in_docker=args.docker, output_directory=output_directory)
 
         if 'start_date' in yaml_struct['Metadata']:
@@ -590,20 +596,12 @@ def analysis(runner, yaml_struct, analysis_config=None, mean_run=None, image_fil
             pint_pandas_data, m = load_data(f'{output_directory}/result_data_{variable}.hdf5')
             units = {v[0]: v[1] for v in pint_pandas_data.pint.dequantify().columns.values}
             df = pint_pandas_data.pint.dequantify()
-            df.columns = df.columns.droplevel(1)
+            # df.columns = df.columns.droplevel(1)
             data = df
 
             unit = list(units.values())[0]
 
-            # print(data)
-            sheet_name = f'mean {variable} '
-            sheet_descriptions[
-                sheet_name] = f'{sheet_name}: monthly mean values. Unit: {unit}'
-            logger.info("storing mean values to excel")
-            mean = data.mean(level='time').mean()
-            mean.to_excel(writer, sheet_name)
-
-            sheet_name = f'total {variable}'
+            sheet_name = f'total {variable} '
             sheet_descriptions[
                 sheet_name] = f'{sheet_name}: total over assessment period. Unit: {unit}'
             logger.info("storing total values to excel")
@@ -614,18 +612,26 @@ def analysis(runner, yaml_struct, analysis_config=None, mean_run=None, image_fil
                 total = data.mean(level=0).sum()
             total.to_excel(writer, sheet_name)
 
-            # print(data)
-            sheet_name = f'25 quantiles {variable}'
+            sheet_name = f'month mean {variable} '
             sheet_descriptions[
-                sheet_name] = f'{sheet_name}: monthly mean values. Unit: {unit}'
-            logger.info("storing quantile values to excel")
-            low = data.abs().groupby(level=['time']).quantile(.25)
-            low.to_excel(writer, sheet_name)
+                sheet_name] = f'{sheet_name}: a direct load of the result data, monthly mean values. Unit: {unit}'
+            logger.info("storing mean values to excel")
+            mean = data.mean(level='time').mean()
+            mean.to_excel(writer, sheet_name)
 
-            sheet_name = f'75 quantiles {variable}'
-            sheet_descriptions[
-                sheet_name] = f'{sheet_name}: monthly mean values. Unit: {unit}'
-            data.abs().groupby(level=['time']).quantile(.75).to_excel(writer, sheet_name)
+            if sim_control.sample_size > 1:
+                # print(data)
+                sheet_name = f'25 quantiles {variable}'
+                sheet_descriptions[
+                sheet_name] = f'{sheet_name}: a direct load of the result data, monthly mean values. Unit: {unit}'
+                logger.info("storing quantile values to excel")
+                low = data.abs().groupby(level=['time']).quantile(.25)
+                low.to_excel(writer, sheet_name)
+
+                sheet_name = f'75 quantiles {variable}'
+                sheet_descriptions[
+                sheet_name] = f'{sheet_name}: a direct load of the result data, monthly mean values. Unit: {unit}'
+                data.abs().groupby(level=['time']).quantile(.75).to_excel(writer, sheet_name)
 
         # sum up monthly values to aggregate - duration depends on distance between start and end date
         #    load_data_aggegrate = lambda : load_data().sum(level='samples')
@@ -701,7 +707,7 @@ def analysis(runner, yaml_struct, analysis_config=None, mean_run=None, image_fil
                               title=title,
                               kind=kind, **common_args)
             else:
-                logger.warning(f"Named plot {plot_def['name']} not found")
+                logger.debug(f"Named plot {plot_def['name']} not used in analysis config")
 
         if 'individual_process_graphs' in analysis_config:
             # @todo - hack
@@ -733,6 +739,7 @@ def analysis(runner, yaml_struct, analysis_config=None, mean_run=None, image_fil
 
         if 'input_vars' in analysis_config:
             logger.info("plotting input vars")
+            logger.debug("collecting input vars from model")
             all_vars = model.collect_input_variables()
 
             _vars = {}
@@ -746,8 +753,8 @@ def analysis(runner, yaml_struct, analysis_config=None, mean_run=None, image_fil
             input_vars_ac = analysis_config['input_vars']
             if input_vars_ac is not None and 'variables' in input_vars_ac:
                 iv_ac = set(input_vars_ac['variables'])
-
                 _vars = {k: v for k, v in _vars.items() if k in iv_ac}
+            logger.debug(f"plotting vars: {_vars}")
 
             file_name = f'input_vars.{image_filetype}'
 
@@ -838,4 +845,3 @@ if __name__ == '__main__':
             handler.setLevel(level)
 
     runners = run(args)
-

@@ -260,7 +260,7 @@ And then use them like so
   - name: Playout
     formula:
       text: |
-        return bbc_playout_annual_energy * J_p_kWh / months_per_year
+        return playout_annual_energy * J_p_kWh / months_per_year
     input_variables:
       - type: Constants
         variables:

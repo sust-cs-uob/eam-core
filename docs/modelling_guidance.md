@@ -10,7 +10,7 @@ Eg
 - name: Playout
     formula:
       text: |
-        aggreate_power = mean_power_per_linear_channel * number_of_BBC_linear_channels
+        aggreate_power = mean_power_per_linear_channel * number_of_linear_channels
 
         energy = aggreate_power * ref_duration
 

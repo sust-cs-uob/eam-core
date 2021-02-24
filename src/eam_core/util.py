@@ -413,7 +413,7 @@ def draw_graph_from_dotfile(model, file_type='pdf', show_variables=True, metric=
         generate_graph_node_barcharts(model.name, metric, start_date=start_date, end_date=end_date,
                                       base_directory=output_directory)
 
-    project_dir = os.getcwd()  # '/Users/csxds/workspaces/bbc/ngmodel'
+    project_dir = os.getcwd()  # '/Users/csxds/workspaces/ngmodel'
 
     H = nx.relabel_nodes(model.process_graph, lambda n: n.name)
     ref_period = 'monthly'
@@ -745,8 +745,8 @@ def compare_dataframes(assert_structural_identity, df_a, df_b, simrun_a, simrun_
 
     def get_end_date(df):
         if isinstance(df.index, pd.core.index.MultiIndex):
-            return df.index[0][0].to_pydatetime()
-        return df.index[0].to_pydatetime()
+            return df.index[-1][0].to_pydatetime()
+        return df.index[-1].to_pydatetime()
 
     start_date_a = get_start_date(df_a)
     start_date_b = get_start_date(df_b)
@@ -783,20 +783,6 @@ def compare_dataframes(assert_structural_identity, df_a, df_b, simrun_a, simrun_
     return changed_variables
 
 
-def find_changed_variables(scenario, simrun_a, simrun_b, output_directory_prefix=None, tolerance=0.3,
-                           assert_structural_identity=False):
-    df_a = load_df(scenario, None, kind='input', output_directory=f'{output_directory_prefix}/{simrun_a}')
-    df_b = load_df(scenario, None, kind='input', output_directory=f'{output_directory_prefix}/{simrun_b}')
-
-    return compare_dataframes(assert_structural_identity, df_a, df_b, simrun_a, simrun_b, tolerance)
-
-
-def find_changed_processes(scenario, simrun_a, simrun_b, output_directory_prefix=None, tolerance=0.3,
-                           assert_structural_identity=False):
-    df_a = load_df(scenario, 'use_phase_energy', output_directory=f'{output_directory_prefix}/{simrun_a}')
-    df_b = load_df(scenario, 'use_phase_energy', output_directory=f'{output_directory_prefix}/{simrun_b}')
-
-    return compare_dataframes(assert_structural_identity, df_a, df_b, simrun_a, simrun_b, tolerance)
 
 
 def get_sim_run_description():
@@ -842,8 +828,9 @@ def store_sim_config(sim_control, directory, simulation_run_description, **kwarg
     del sim_control___dict__['param_repo']
     del sim_control___dict__['_df_multi_index']
     del sim_control___dict__['group_df_multi_index']
-    sim_config = {'simulation_run_description': simulation_run_description, 'sim_config': sim_control___dict__}
-    with open(f'{directory}/sim_config.json', 'w') as outfile:
+    sim_config = {'simulation_run_description': simulation_run_description, **sim_control___dict__}
+    sim_config.update(kwargs)
+    with open(f'{str(directory)}/sim_config.json', 'w') as outfile:
         simplejson.dump(sim_config, outfile, indent=4, sort_keys=True)
 
 
@@ -908,6 +895,7 @@ def prepare_simulation(model_output_directory, simulation_run_description, yaml_
         sim_control = SimulationControl()
         configue_sim_control_from_yaml(sim_control, yaml_struct, model_output_directory)
     sim_control.process_ids = IDs
+    sim_control.model_run_datetime = time.strftime("%m%d-%H%M")
     sim_control.variable_ids = IDs
     sim_control.filename = filename
     sim_control.scenario = scenario

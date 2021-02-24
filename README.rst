@@ -34,13 +34,6 @@ then install eam-core::
     pip install -e .
 
 
-install non-pypi dependencies::
-
-    pip install git+https://github.com/hgrecco/pint.git@f356379c15c1cb5d211c795872ac9e9284d2358f#egg=pint
-    pip install --no-deps git+https://github.com/hgrecco/pint-pandas.git#egg=pint-pandas
-
-
-
 To run the all tests run::
 
     tox
