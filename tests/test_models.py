@@ -13,7 +13,7 @@ class MyTestCase(unittest.TestCase):
         runners = run(setup_parser(['-l', '-a', 'ci', '-d', '-id', 'tests/models/ci_v2.yml']))
 
     def test_countries(self):
-        runners = run(setup_parser(['-l', '-a', 'ci', '-d', '-id', 'tests/models/countriestest.yml']))
+        runners = run(setup_parser(['-l', '-a', 'ci', '-d', 'tests/models/countriestest.yml']))
 
 if __name__ == '__main__':
     unittest.main()

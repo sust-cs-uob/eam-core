@@ -28,6 +28,7 @@ RUN pip3 install -r requirements.txt
 COPY eam-core /usr/src/eam-core
 RUN pip install .
 
+RUN fc-cache -fv
 
 #RUN python -m ngmodel.yaml_runner -a ci -l -c ci -f pdf tests/models/youtube.yml
 
