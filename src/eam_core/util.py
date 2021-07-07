@@ -201,6 +201,8 @@ def load_as_qantity_dict(filename) -> Dict[str, _Quantity]:
     return result_dict
 
 
+# loads a dataframe val from hdf5
+# then converts into a dataframe with pint object dtypes instead of float64
 def load_as_df_qantity(filename) -> _Quantity:
     val, metadata = h5load(filename)
     # check all units are the same
@@ -211,6 +213,10 @@ def load_as_df_qantity(filename) -> _Quantity:
 
 
 def load_as_plain_df(filename):
+    """
+    loads a dataframe using method above, then dequantifies back to floats
+    and drops the units
+    """
     data, metadata = load_as_df_qantity(filename)
     units = {v[0]: v[1] for v in data.pint.dequantify().columns.values}
     df = data.pint.dequantify()
