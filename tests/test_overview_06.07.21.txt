@@ -1,0 +1,98 @@
+James Wickenden 06/07/2021
+Results of running each unit test and consolidating results
+
+-> Feedback: running unit tests with pytest, tox etc sets the working directory correctly as /eam-data-tools
+             running unit tests manually and directly sets working directory to /eam-data-tools/tests, and static filenames to csv files fail.
+             maybe add a check for working directory to fix this?
+
+             the other issue found was not having deepdiff and pytest modules, which are in the test-requirements.txt and tox.ini files but not with setup files.
+
+eam-core-provenance
+=====================================
+
+SandboxTests.py
+    tests: 1, passes 1
+
+test_credentials.py
+    tests: 1, passes 1
+
+test_data_source.py
+    tests: 5, passes 1, skips 2, fails 2
+        FAILS test_create_excel_var, test_create_timeseries_excel_var
+        FIX change working directory/ test call directory
+
+test_dsl_model.py
+    tests: 2, passes 1, skips 1
+
+test_dsl_static_analyser.py
+    tests: 36, passes 36
+
+test_grouping.py
+    tests: 1, passes 1
+
+test_hdf.pytest-requirements.txt
+    tests: 2, passes 1, skips 1
+
+test_models.py
+    tests: 3, skips 1, fails 2
+        FAILS test_ci_v2, test_countries
+        FIX change working directory/ test call directory
+
+test_module_parser.py
+    tests: 3, fails 3
+        FAILS test_model_metadata, test_process_data, test_variable_data
+        FIX change working directory/ test call directory
+
+test_mu_dsl.py
+    tests: 81, passes 81
+
+test_process_ids.py
+    tests: 1, fails 1
+        FAILS test_process_ids
+        FIX pip install deepdiff
+
+test_serialise.py
+    tests: 2, passes 2
+
+test_unit.py
+    tests: 9, passes 8, skips 1
+
+test_yaml_loader.py
+    tests: 18, passes 9, skips 6, fails 3
+        FAILS test_excelvar_set_with_sub, test_excelvar_set_with_sub_and_excel_var_stub, test_basic
+        FIX change working directory/ test call directory
+
+working_tests.py
+    tests: 4, passes 1, skips 1, fails 2
+        FAILS test_create_excel_var, test_create_timeseries_excel_var
+        FIX change working directory/ test call directory
+
+eam-data-tools
+=====================================
+
+test_growth_coefficients.py
+    tests: 7, passes 7
+
+test_parameter.py
+    tests: 10, passes 10
+
+test_parameter_repository.py
+    tests: 16, passes 15, skips 1
+
+test_table_data_reader.py
+    tests: 0
+
+test_table_loader.py
+    tests: 25, passes 5, fails 20
+        FAILS all unittests in CSVParameterLoaderTestCase, ExcelParameterLoaderTestCase, PandasCSVParameterLoaderTestCase
+        FIX change working directory/ test call directory
+
+test_table_writer.py
+    tests: 1, fails 1
+        FAILS test_table_writer
+        FIX pip install pytest
+
+test_variable_ids.py
+    tests: 1, fails 1
+        FAILS test_variable_ids
+        FIX pip install deepdiff, then fix pathing
