@@ -92,8 +92,7 @@ Metadata:
 #        - input_vars
       individual_process_graphs:
         - Laptop
-      standard_plots:
-        - process_tree
+      process_tree: {}
 Analysis:
   result_variables:
     - energy

@@ -162,7 +162,7 @@ def create_documentation(runner):
         # cmd = f"docker run -v {cwd}:{project_dir} -w {project_dir} markfletcher/graphviz dot {dot_file} -T{file_type} -Gsplines=ortho -Grankdir=BT > {dot_render_filename}"
         pdf_file_name = f"{runner.sim_control.output_directory}/{model.name}_model_documentation.pdf"
 
-        cmd = f"docker run -v  $(pwd):/source jagregory/pandoc -f markdown -t latex {runner.sim_control.output_directory}/{model.name}_model_documentation.md -o {pdf_file_name} -V geometry:margin=0.2in, landscape"
+        cmd = f"docker run -v  $(pwd):/source jagregory/pandoc -f markdown -t latex {runner.sim_control.output_directory}/{model.name}_model_documentation.md -o {pdf_file_name} -V 'geometry:margin=0.2in, landscape'"
         logger.info(f'running docker cmd {cmd}')
         l_cmd = shlex.split(cmd)
         logger.info(f'running docker cmd {l_cmd}')
