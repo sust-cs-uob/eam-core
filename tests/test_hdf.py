@@ -34,36 +34,6 @@ class MyTestCase(unittest.TestCase):
 
         assert_frame_equal(val, df * 100)
 
-    @unittest.skip('no time to investigate')
-    def test_store_df(self):
-        q_dict = {}
-        samples = 2
-        date_range = pd.date_range('2016-01-01', '2016-12-01', freq='MS')
-
-        for i in ['a', 'b']:
-            df = pd.DataFrame(data=np.arange(len(date_range) * samples).ravel(), columns=[i])
-            iterables = [date_range, range(samples)]
-            index_names = ['time', 'samples']
-            _multi_index = pd.MultiIndex.from_product(iterables, names=index_names)
-            df.set_index(_multi_index, inplace=True)
-            q_dict[i] = Q_(df, {'a': ureg.joules, 'b': ureg.joules}[i])
-
-        storage_df, metadata = quantity_dict_to_dataframe(q_dict)
-
-        if not os.path.exists('.tmp-test'):
-            os.mkdir('.tmp-test')
-
-        filename = '.tmp-test/test.hdf5'
-
-        h5store(filename, storage_df, **metadata)
-
-        val = load_as_qantity_dict(filename)
-
-        assert_series_equal(val['b'].m, df['b'])
-
-        val = load_as_df_qantity(filename)
-        assert_series_equal(val.m['b'], df['b'])
-
 
 if __name__ == '__main__':
     unittest.main()

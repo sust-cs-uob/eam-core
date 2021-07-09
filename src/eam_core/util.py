@@ -195,12 +195,6 @@ def store_dataframe(q_dict: Dict[str, pd.Series], simulation_control=None, targe
     h5store(filename, storage_df.pint.dequantify(), **metadata)
 
 
-def load_as_qantity_dict(filename) -> Dict[str, _Quantity]:
-    val, metadata = h5load(filename)
-    result_dict = {k: Q_(val[k], metadata[k]['unit']) for k in val.columns}
-    return result_dict
-
-
 # loads a dataframe val from hdf5
 # then converts into a dataframe with pint object dtypes instead of float64
 def load_as_df_qantity(filename) -> _Quantity:
