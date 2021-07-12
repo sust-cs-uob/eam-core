@@ -7,7 +7,7 @@ import pint
 from eam_core import SimulationControl
 from eam_core import ureg, Q_
 from eam_core.YamlLoader import YamlLoader
-from eam_core.util import quantity_dict_to_dataframe
+#from eam_core.util import quantity_dict_to_dataframe
 
 
 class MyTestCase(unittest.TestCase):
@@ -61,7 +61,7 @@ class MyTestCase(unittest.TestCase):
     @unittest.skip("old DSL. New does not return values - need review")
     def test_simple_model_with_units(self):
         doc = u"""
-        Processes:        
+        Processes:
           - name: a
             formula:
               text: |
@@ -69,19 +69,19 @@ class MyTestCase(unittest.TestCase):
             input_variables:
               - type: ExcelVariableSet
                 file_alias: test_location
-                sheet_name: Sheet1                
+                sheet_name: Sheet1
                 variables:
                   # - time
                   - power
               - type: StaticVariables
-                variables:                  
+                variables:
                   time: 10second
 
         Metadata:
           model_name: test model
           file_locations:
             - file_alias: test_location
-              file_name: tests/data/test_data.xlsx            
+              file_name: tests/data/test_data.xlsx
         """
 
         yaml_structure = YamlLoader.load_definitions(doc)

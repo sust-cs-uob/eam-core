@@ -7,7 +7,7 @@ import pandas as pd
 from pandas.util.testing import assert_frame_equal, assert_series_equal
 
 from eam_core import Q_, ureg
-from eam_core.util import h5store, h5load, quantity_dict_to_dataframe, load_as_qantity_dict, load_as_df_qantity
+from eam_core.util import h5store, h5load, load_as_df_qantity
 
 
 class MyTestCase(unittest.TestCase):
@@ -33,6 +33,10 @@ class MyTestCase(unittest.TestCase):
         val, metadata = h5load(filename)
 
         assert_frame_equal(val, df * 100)
+
+    def test_df_store(self):
+        val, metadata = h5load(filename)
+        #pint_pandas_data, m = load_as_df_qantity(f'{output_directory}/result_data_{variable}.hdf5')
 
 
 if __name__ == '__main__':

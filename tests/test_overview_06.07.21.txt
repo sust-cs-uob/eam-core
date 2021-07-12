@@ -30,7 +30,7 @@ test_dsl_static_analyser.py
 test_grouping.py
     tests: 1, passes 1
 
-test_hdf.pytest-requirements.txt
+test_hdf.py
     tests: 2, passes 1, skips 1
 
 test_models.py

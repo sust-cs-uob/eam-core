@@ -218,12 +218,6 @@ def load_as_plain_df(filename):
     return df, units
 
 
-def load_as_df(filename) -> Tuple[pd.DataFrame, Dict[str, Dict[str, str]]]:
-    val, metadata = h5load(filename)
-
-    return val, metadata
-
-
 def pandas_series_dict_to_dataframe(data: Dict[str, pd.Series], target_units=None, var_name=None,
                                     simulation_control: SimulationControl = None):
     """
@@ -244,36 +238,6 @@ def pandas_series_dict_to_dataframe(data: Dict[str, pd.Series], target_units=Non
         results_df[process] = variable
         metadata[process] = variable.pint.units
     return results_df, metadata
-
-
-def quantity_dict_to_dataframe(q_data: Dict[str, _Quantity], target_units=None, var_name=None,
-                               simulation_control: SimulationControl = None) \
-    -> Tuple[pd.DataFrame, Dict[str, str]]:
-    data = None
-    metadata = {}
-    logger.debug(f'result data has the following processes {q_data.keys()}')
-    for process, results in q_data.items():
-        logger.debug(f'Converting <Quantity> back to <Pandas DF> {process}')
-        if isinstance(results, Q_):
-
-            if target_units:
-                results = to_target_dimension(var_name, results, target_units)
-
-            d = results.m
-
-            metadata[process] = {'unit': str(results.units)}
-
-            results_df = pd.DataFrame(data=d)
-            results_df.columns = [process]
-            if not isinstance(results_df.index, pd.MultiIndex):
-                results_df.index = simulation_control._df_multi_index
-
-        if data is None:
-            data = results_df
-        else:
-            data[process] = results_df
-    # print(data)
-    return data, metadata
 
 
 def generate_model_definition_markdown(model, in_docker=False, output_directory=None):
