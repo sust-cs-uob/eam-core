@@ -34,8 +34,15 @@ class MyTestCase(unittest.TestCase):
 
         assert_frame_equal(val, df * 100)
 
-    def test_df_store(self):
-        val, metadata = h5load(filename)
+    def test_h5_store_load(self):
+        test_alphabet = {chr(k+65): k for k in range(26)}
+
+        df_stored = pd.DataFrame.from_dict(test_alphabet, orient='index')
+        h5store('.tmp-test/test_alphabet.hdf5', df_stored)
+
+        df_loaded, metadata = h5load('.tmp-test/test_alphabet.hdf5')
+
+        assert(df_stored.equals(df_loaded))
         #pint_pandas_data, m = load_as_df_qantity(f'{output_directory}/result_data_{variable}.hdf5')
 
 
