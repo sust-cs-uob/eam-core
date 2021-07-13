@@ -1,24 +1,18 @@
-eam-data-tools>=1.2.2
-
-matplotlib>=2.0.2,<3.2.2
-
+PyYAML
+# eam-data-tools
 graphviz==0.8
+matplotlib>=2.0.2,<3.2.2
 networkx==1.11
+numpy==1.18.0
+openpyxl
+pandas==0.24.2
+# pint
+# pint-pandas
 pydotplus==2.0.2
 pypandoc>=1.4
-
-PyYAML
 ruamel.yaml
-
+scipy
 simplejson
-
 tables>=3.4.4
 tabulate>=0.7.7
 tzlocal
-
-numpy>=1.14.5
-pandas==0.24.2
-
-openpyxl
-pint-pandas
-pint

@@ -1,6 +1,5 @@
 FROM python:3.8-buster
 
-COPY requirements.txt /usr/src/app/
 
 RUN apt-get update
 RUN apt-get install -y python3-matplotlib cython3  libhdf5-serial-dev pandoc \
@@ -10,6 +9,7 @@ RUN mkdir -p /usr/src/app
 WORKDIR /usr/src/app
 
 
+COPY requirements.txt /usr/src/app/
 RUN pip3 install -r requirements.txt
 #RUN docker pull markfletcher/graphviz
 

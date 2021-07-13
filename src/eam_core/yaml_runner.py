@@ -10,7 +10,7 @@ from openpyxl.styles import Alignment
 from eam_core import SimulationControl
 
 matplotlib.use('Agg')
-from matplotlib import pyplot as plt, MatplotlibDeprecationWarning
+from matplotlib import pyplot as plt# , #MatplotlibDeprecationWarning
 
 import json as json
 
@@ -42,7 +42,7 @@ logconf.config_logging()
 # @todo: upgrade pandas 0.24 to stay compatible
 import warnings
 
-warnings.filterwarnings("ignore", category=MatplotlibDeprecationWarning)
+# warnings.filterwarnings("ignore", category=MatplotlibDeprecationWarning)
 
 try:
     CONFIG_FILE = "local.cfg"
@@ -534,6 +534,15 @@ def style_result_worksheet(ws):
 
 
 def analysis(runner, yaml_struct, analysis_config=None, mean_run=None, image_filetype=None):
+    """
+
+    :param runner:
+    :param yaml_struct:
+    :param analysis_config:
+    :param mean_run:
+    :param image_filetype:
+    :return:
+    """
     if analysis_config is None or not analysis_config:
         logger.info(f'analysis_config not provided, nothing to analyse')
         return

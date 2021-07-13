@@ -117,9 +117,9 @@ Metadata:
 
       process_tree:
         process_group_colours:
-          category_name: category
+          category_name: platform_name
           colours:
-            A: '#037E8C'
+            Cellular: '#037E8C'
             B: '#F26C27'
 
       input_vars:
