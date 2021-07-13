@@ -10,7 +10,13 @@ jobs:
       - checkout
       - python/load-cache
 
-      # taken from https://github.com/TNG/jiradeps/blob/master/.circleci/config.yml
+      - run:
+          name: prepare for graphviz
+          command: |
+            sudo add-apt-repository universe
+            sudo apt update
+      - python/save-cache
+
       - run:
           name: install graphviz
           command: |
@@ -32,8 +38,8 @@ jobs:
             pip install git+git://github.com/sust-cs-uob/eam-data-tools.git@countries
             pip install .
       - run:
-          command: pytest
           name: Test
+          command: pytest
 
 workflows:
   main:
