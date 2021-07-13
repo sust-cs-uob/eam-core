@@ -97,6 +97,7 @@ __pycache__/*
 ipynb/.ipynb_checkpoints/*
 output/*
 tests/logs/**
+tests/.tmp-test/*
 tests/__pycache__/*
 tests/baseline.png
 tests/test.dot
