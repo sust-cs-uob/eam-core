@@ -9,11 +9,16 @@ jobs:
     steps:
       - checkout
       - python/load-cache
+
+      # taken from https://github.com/TNG/jiradeps/blob/master/.circleci/config.yml
+      - run:
+          name: install graphviz
+          command: |
+            sudo apt-get install graphviz
       - run:
           name: install deps
           command: |
             pip install cython
-            sudo apt install graphviz
             pip install numpy==1.18.0
             pip install -r requirements.txt
             pip install git+https://github.com/hgrecco/pint.git@f356379c15c1cb5d211c795872ac9e9284d2358f#egg=pint
