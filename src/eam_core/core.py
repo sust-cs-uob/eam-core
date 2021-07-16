@@ -574,34 +574,6 @@ class ServiceModel(object):
 
         results = {}
 
-        """
-        elements:[
-            {group: 'nodes', data: { id: x}},
-            {group: "edges", data: { id: x,  source: 'a', target: 'b' }},
-
-        ]
-        { nodes:{
-            'Laptop':
-            {
-                'input vars': {'power':51},
-                'import vars': [
-                {    'formula_name': 'test',
-                    'edge_name': 'power',
-                    'value': 15}
-                ]
-
-            }
-            }
-        edges:[
-            {'sourceNode':'', 'targetNode': '',
-                data: {
-                    'time': val
-                }
-            }
-        ]
-
-        }
-        """
         simulation_control.trace = []
 
         while unprocessed:
