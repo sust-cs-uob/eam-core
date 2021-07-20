@@ -17,11 +17,6 @@ jobs:
           command: |
             sudo add-apt-repository universe
             sudo apt update
-      - python/save-cache:
-          dependency-file:
-            setup.cfg
-          lib-path:
-            /home/circleci/.pyenv/versions/3.8.11/lib
 
       - run:
           name: install graphviz
