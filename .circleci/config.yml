@@ -8,9 +8,8 @@ jobs:
     executor: python/default
     steps:
       - checkout
-      - python/load-cache:
-          dependency-file:
-            setup.cfg
+      - restore_cache:
+          key: v1-{{ checksum "setup.cfg" }}
 
       - run:
           name: prepare for graphviz
@@ -32,11 +31,11 @@ jobs:
             pip install pint-pandas-fork
             pip install -r test-requirements.txt
             pip install openpyxl xlrd
-      - python/save-cache:
-          dependency-file:
-            setup.cfg
-          lib-path:
+      - save_cache:
+          key: v1-{{ checksum "setup.cfg" }}
+          paths:
             /home/circleci/.pyenv/versions/3.8.11/lib
+            /home/circleci/.pyenv/versions/3.8.11/bin
           
       - run:
           name: install eam_core
