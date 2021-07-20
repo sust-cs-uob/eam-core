@@ -15,7 +15,9 @@ jobs:
           command: |
             sudo add-apt-repository universe
             sudo apt update
-      - python/save-cache
+      - python/save-cache:
+          lib-path:
+            /home/circleci/.pyenv/versions/3.8.11/lib
 
       - run:
           name: install graphviz
@@ -31,7 +33,9 @@ jobs:
             pip install pint-pandas-fork
             pip install -r test-requirements.txt
             pip install openpyxl xlrd
-      - python/save-cache
+      - python/save-cache:
+          lib-path:
+            /home/circleci/.pyenv/versions/3.8.11/lib
       - run:
           name: install eam_core
           command: |
