@@ -10,14 +10,12 @@ Processes:
   constants: []
   importVariables:
   - value: data_volume
-
   exportVariables: []
   device_type: IP Networking
   formula: |
     energy = energy_intensity_network * data_volume
     carbon = energy * carbon_intensity
     return energy
-
 - name: Internet Network
   metadata:
     model_layer: 3rd Party
@@ -37,7 +35,6 @@ Processes:
     carbon = energy * carbon_intensity
     data_volume = data_volume_laptop
     return energy
-
 - name: Laptop
   metadata:
     model_layer: User Device
@@ -100,7 +97,6 @@ Analysis:
     to_unit: kyear
   - __eq__: result
     to_unit: GWh
-
   plots:
   - name: individual_processes
     variable: energy
