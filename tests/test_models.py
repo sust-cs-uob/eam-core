@@ -1,5 +1,5 @@
 import unittest
-
+from tests.directory_test_controller import get_static_path, set_cwd_to_script_dir, return_to_base_cwd
 from eam_core.yaml_runner import setup_parser, run
 
 
@@ -7,13 +7,20 @@ class MyTestCase(unittest.TestCase):
 
     @unittest.skip("too much effort to maintain")
     def test_youtube(self):
-        runners = run(setup_parser(['-l', '-a dev', '-d', 'tests/models/youtube.yml']))
+        cwd = set_cwd_to_script_dir()
+        runners = run(setup_parser(['-l', '-a dev', '-d', get_static_path('models/youtube.yml')]))
+        return_to_base_cwd(cwd)
 
     def test_ci_v2(self):
-        runners = run(setup_parser(['-l', '-a', 'ci', '-d', '-id', 'tests/models/ci_v2.yml']))
+        cwd = set_cwd_to_script_dir()
+        runners = run(setup_parser(['-l', '-a', 'ci', '-d', '-id', get_static_path('models/ci_v2.yml')]))
+        return_to_base_cwd(cwd)
 
     def test_countries(self):
-        runners = run(setup_parser(['-l', '-a', 'ci', '-d', 'tests/models/countriestest.yml']))
+        cwd = set_cwd_to_script_dir()
+        runners = run(setup_parser(['-l', '-a', 'ci', '-d', get_static_path('models/countriestest.yml')]))
+        return_to_base_cwd(cwd)
+
 
 if __name__ == '__main__':
     unittest.main()

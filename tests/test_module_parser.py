@@ -1,5 +1,6 @@
 import unittest
 from ruamel import yaml
+from tests.directory_test_controller import set_cwd_to_script_dir, return_to_base_cwd
 
 from eam_core.ModuleParser import ModuleParser
 
@@ -33,7 +34,7 @@ Metadata:
   description: |
     bla bla
   model_version: 0.0.1
-  table_file_name: tests/data/ci_v2_data.xlsx
+  table_file_name: data/ci_v2_data.xlsx
   datasource_version_hint: 2
   comparison_variable: energy
   start_date: 2019-01-01
@@ -95,6 +96,7 @@ Constants:
         - only include table variables that are marked with 'ui' in the table (excludes energy_intensity)
         :return:
         """
+        cwd = set_cwd_to_script_dir()
         module = ModuleParser.load_module(yaml.safe_load(ModuleParserTestCase.doc, ))
         process = next(iter(module['processes'].values()))
         params = process['params']
@@ -106,6 +108,7 @@ Constants:
         assert param_map['carbon intensity']['id'] == 4
         assert param_map['carbon intensity']['unit'] == 'kg/kWh'
         assert param_map['carbon intensity']['type'] == 'proportion'
+        return_to_base_cwd(cwd)
 
 
     def test_process_data(self):
@@ -116,6 +119,7 @@ Constants:
         - description
         :return:
         """
+        cwd = set_cwd_to_script_dir()
         module = ModuleParser.load_module(yaml.load(ModuleParserTestCase.doc))
 
         process = next(iter(module['processes'].values()))
@@ -123,6 +127,7 @@ Constants:
         assert process['id'] == 0
         assert process['name'] == 'CDN'
         assert process['category'] == 'Datacentre'
+        return_to_base_cwd(cwd)
 
     def test_model_metadata(self):
         """
@@ -133,9 +138,11 @@ Constants:
         :return:
         """
 
+        cwd = set_cwd_to_script_dir()
         module = ModuleParser.load_module(yaml.safe_load(ModuleParserTestCase.doc))
         assert module['name'] == 'CI_model'
         assert module['version'] == '0.0.1'
+        return_to_base_cwd(cwd)
 
 
 if __name__ == '__main__':

@@ -1384,7 +1384,7 @@ Metadata:
   model_name: youtube
   file_locations:
     - file_alias: youtube_model_params
-      file_name: tests/data/youtube_model_params.xlsx
+      file_name: data/youtube_model_params.xlsx
       type: local_file
 #      google_id_alias: youtube_model_params
 

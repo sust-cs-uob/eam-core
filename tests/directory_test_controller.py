@@ -1,5 +1,5 @@
 import unittest
-from os import path
+from os import path, chdir, getcwd
 
 
 def get_static_path(filename):
@@ -13,6 +13,17 @@ def get_static_path(filename):
     """
     directory = path.dirname(path.realpath(__file__))
     return path.join(directory, filename)
+
+
+def set_cwd_to_script_dir():
+    cwd = getcwd()
+    directory = path.dirname(path.realpath(__file__))
+    chdir(directory)
+    return cwd
+
+
+def return_to_base_cwd(cwd):
+    chdir(cwd)
 
 
 class MyTestCase(unittest.TestCase):

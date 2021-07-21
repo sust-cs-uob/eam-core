@@ -7,6 +7,7 @@ import yaml
 
 from eam_core import SimulationControl, Variable
 from eam_core.YamlLoader import YamlLoader
+from tests.directory_test_controller import set_cwd_to_script_dir, return_to_base_cwd
 
 
 class YamlLoader_v1(unittest.TestCase):
@@ -58,6 +59,7 @@ Metadata:
 """
 
     def test_yaml_parsing(self):
+        cwd = set_cwd_to_script_dir()
         yaml_def = yaml.load(YamlLoader_v1.doc)
         assert len(yaml_def) == 3
         # print(yaml_def)
@@ -93,8 +95,10 @@ Metadata:
         assert metadata_struct['model_name'] == 'test model'
         # print(metadata_struct['start_date'])
         assert metadata_struct['start_date'] == datetime.date(2016, 1, 1)
+        return_to_base_cwd(cwd)
 
     def test_excelvar(self):
+        cwd = set_cwd_to_script_dir()
         yaml_def = yaml.load(YamlLoader_v1.doc)
         metadata_struct = yaml_def['Metadata']
 
@@ -105,6 +109,7 @@ Metadata:
         vars: Dict[str, Variable] = YamlLoader().create_variables_from_yaml(formula_def.get('input_variables', []),
                                                                             sim_control, yaml_def, [])
         assert isinstance(vars['custom_coefficient'], Variable)
+        return_to_base_cwd(cwd)
 
     def test_excelvar_set(self):
         doc = u"""
@@ -124,9 +129,9 @@ Metadata:
           model_name: test model
           file_locations:
             - file_alias: test_location
-              file_name: tests/data/test_data.xlsx
+              file_name: data/test_data.xlsx
         """
-
+        cwd = set_cwd_to_script_dir()
         yaml_def = yaml.safe_load(doc)
 
         formula_def = yaml_def['Processes'][0]
@@ -136,6 +141,7 @@ Metadata:
         vars: Dict[str, Variable] = YamlLoader().create_variables_from_yaml(formula_def.get('input_variables', []),
                                                                             sim_control, yaml_def, [])
         assert isinstance(vars['a'], Variable)
+        return_to_base_cwd(cwd)
 
     def test_constants(self):
         doc = u"""
@@ -222,6 +228,7 @@ Metadata:
               file_name: data/test_data.xlsx
         """
 
+        cwd = set_cwd_to_script_dir()
         yaml_def = yaml.safe_load(doc)
 
         formula_def = yaml_def['Processes'][0]
@@ -232,6 +239,7 @@ Metadata:
                                                                             sim_control, yaml_def, [])
 
         assert isinstance(vars['passive_standby_time_per_day_mins'], Variable)
+        return_to_base_cwd(cwd)
 
     def test_staticvar_set(self):
         doc = u"""
@@ -278,9 +286,10 @@ Metadata:
           model_name: test model
           file_locations:
             - file_alias: test_location
-              file_name: tests/data/test_data.xlsx
+              file_name: data/test_data.xlsx
         """
 
+        cwd = set_cwd_to_script_dir()
         yaml_def = yaml.safe_load(doc)
 
         formula_def = yaml_def['Processes'][0]
@@ -294,6 +303,7 @@ Metadata:
         v = vars['a'].data_source.get_value('test', sim_control)
         # print(v)
         assert v == 1.5
+        return_to_base_cwd(cwd)
 
     def test_excelvar_set_with_sub_and_excel_var_stub(self):
         doc = u"""
@@ -314,9 +324,10 @@ Metadata:
           model_name: test model
           file_locations:
             - file_alias: test_location
-              file_name: tests/data/test_data.xlsx
+              file_name: data/test_data.xlsx
         """
 
+        cwd = set_cwd_to_script_dir()
         yaml_def = yaml.safe_load(doc)
 
         formula_def = yaml_def['Processes'][0]
@@ -330,6 +341,7 @@ Metadata:
         v = vars['a'].data_source.get_value('test', sim_control)
         # print(v)
         assert v == 1.5
+        return_to_base_cwd(cwd)
 
     def test_linkto_declaration(self):
         doc = u"""
@@ -726,9 +738,10 @@ Processes:
   - UD
 Metadata:
   model_name: test
-  table_file_name: tests/data/yaml_loader_test_data.xlsx
+  table_file_name: data/yaml_loader_test_data.xlsx
     """
 
+        cwd = set_cwd_to_script_dir()
         sim_control = SimulationControl()
         sim_control.sample_size = 1
         sim_control.sample_mean_value = True
@@ -752,6 +765,7 @@ Metadata:
 
         fp = s.footprint(embodied=False, simulation_control=sim_control)
         print(fp)
+        return_to_base_cwd(cwd)
 
     def test_static_check(self):
         doc = u"""
@@ -768,9 +782,10 @@ Processes:
   link_to: []
 Metadata:
   model_name: test
-  table_file_name: tests/data/yaml_loader_test_data.xlsx
+  table_file_name: data/yaml_loader_test_data.xlsx
     """
 
+        cwd = set_cwd_to_script_dir()
         sim_control = SimulationControl()
         sim_control.sample_size = 1
         sim_control.sample_mean_value = True
@@ -778,6 +793,7 @@ Metadata:
 
         yaml_structure = YamlLoader.load_definitions(doc)
         self.assertRaises(Exception, YamlLoader.create_service, yaml_structure, sim_control, formula_checks=True)
+        return_to_base_cwd(cwd)
 
 
 if __name__ == '__main__':
