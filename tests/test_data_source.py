@@ -37,8 +37,7 @@ class MyTestCase(unittest.TestCase):
 
     # works
     def test_create_excel_var(self):
-        excel_file_name = get_static_path('test_data.xlsx')
-        variable = ExcelVariable(name='b', excel_file_name='tests/data/' + excel_file_name, sheet_name='Sheet1')
+        variable = ExcelVariable(name='b', excel_file_name=get_static_path('data/test_data.xlsx'), sheet_name='Sheet1')
         assert (variable.data_source.get_value('b', simulation_control=eam_core.SimulationControl()) >= 2).all()
         assert (variable.data_source.get_value('b', simulation_control=eam_core.SimulationControl()) <= 4).all()
 
