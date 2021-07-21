@@ -8,14 +8,14 @@ jobs:
     executor: python/default
     steps:
       - checkout
-      - restore_cache:
-          key: v1-{{ checksum "setup.cfg" }}
+      - python/load-cache
 
       - run:
           name: prepare for graphviz
           command: |
             sudo add-apt-repository universe
             sudo apt update
+      - python/save-cache
 
       - run:
           name: install graphviz
