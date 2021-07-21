@@ -47,7 +47,7 @@ class MyTestCase(unittest.TestCase):
         simulation_control.use_time_series = True
         simulation_control.sample_size = 3
 
-        variable = ExcelVariable(name='b', excel_file_name='tests/data/test_data.xlsx', sheet_name='Sheet1',
+        variable = ExcelVariable(name='b', excel_file_name=get_static_path('data/test_data.xlsx'), sheet_name='Sheet1',
                                  times=pd.date_range('2009-01-01', '2009-02-01', freq='MS'), size=10)
 
         assert (variable.data_source.get_value('b', simulation_control=eam_core.SimulationControl()) >= 2).all()
