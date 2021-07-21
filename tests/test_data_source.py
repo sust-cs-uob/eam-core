@@ -1,10 +1,8 @@
 import unittest
-
 import pandas as pd
-
 import eam_core
 from eam_core import ExcelVariable
-
+from tests.directory_test_controller import get_static_path
 
 class MyTestCase(unittest.TestCase):
 
@@ -39,7 +37,8 @@ class MyTestCase(unittest.TestCase):
 
     # works
     def test_create_excel_var(self):
-        variable = ExcelVariable(name='b', excel_file_name='tests/data/test_data.xlsx', sheet_name='Sheet1')
+        excel_file_name = get_static_path('test_data.xlsx')
+        variable = ExcelVariable(name='b', excel_file_name='tests/data/' + excel_file_name, sheet_name='Sheet1')
         assert (variable.data_source.get_value('b', simulation_control=eam_core.SimulationControl()) >= 2).all()
         assert (variable.data_source.get_value('b', simulation_control=eam_core.SimulationControl()) <= 4).all()
 
