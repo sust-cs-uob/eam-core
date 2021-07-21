@@ -96,6 +96,7 @@ local.cfg
 __pycache__/*
 ipynb/.ipynb_checkpoints/*
 output/*
+tests/output/*
 tests/logs/**
 tests/.tmp-test/*
 tests/__pycache__/*
