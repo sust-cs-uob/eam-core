@@ -6,6 +6,7 @@ from pint import UnitRegistry
 from eam_core import dsl
 from eam_core.dsl import EvalVisitor, DSLError
 import eam_core.dsl.check_visitor
+from table_data_reader.table_handlers import TableParameterLoader
 
 ureg = UnitRegistry(auto_reduce_dimensions=False)
 Q_ = ureg.Quantity
@@ -22,7 +23,7 @@ import copy
 import networkx as nx
 import numpy as np
 import pandas as pd
-from table_data_reader import ParameterRepository, TableParameterLoader, DistributionFunctionGenerator, \
+from table_data_reader import ParameterRepository, DistributionFunctionGenerator, \
     GrowthTimeSeriesGenerator
 from networkx import DiGraph, ancestors
 from networkx.readwrite import json_graph
