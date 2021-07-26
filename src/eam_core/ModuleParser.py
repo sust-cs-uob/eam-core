@@ -4,7 +4,7 @@ from typing import Dict
 
 import yaml
 
-from table_data_reader import CSVHandler, OpenpyxlTableHandler
+from table_data_reader.table_handlers import CSVHandler, OpenpyxlTableHandler
 
 logger = logging.getLogger(__name__)
 
