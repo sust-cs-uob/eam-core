@@ -7,7 +7,8 @@ import yaml
 
 from eam_core import SimulationControl, Variable
 from eam_core.YamlLoader import YamlLoader
-from tests.directory_test_controller import set_cwd_to_script_dir, return_to_base_cwd
+#from tests.directory_test_controller import set_cwd_to_script_dir, return_to_base_cwd
+from tests.directory_test_controller import use_test_dir
 
 
 class YamlLoader_v1(unittest.TestCase):
@@ -59,57 +60,58 @@ Metadata:
 """
 
     def test_yaml_parsing(self):
-        cwd = set_cwd_to_script_dir()
-        yaml_def = yaml.load(YamlLoader_v1.doc)
-        assert len(yaml_def) == 3
-        # print(yaml_def)
-        process_def = yaml_def['Processes'][0]
-        # print(process_def)
-        assert process_def['formula']['test_result'] == 1
+        #cwd = set_cwd_to_script_dir()
+        with use_test_dir():
+            yaml_def = yaml.load(YamlLoader_v1.doc)
+            assert len(yaml_def) == 3
+            # print(yaml_def)
+            process_def = yaml_def['Processes'][0]
+            # print(process_def)
+            assert process_def['formula']['test_result'] == 1
 
-        assert process_def['name'] == 'test formula process'
+            assert process_def['name'] == 'test formula process'
 
-        assert len(process_def['import_variables']) == 2
+            assert len(process_def['import_variables']) == 2
 
-        assert process_def['input_variables'][0]['formula_name'] == 'energy_intensity'
-        assert process_def['input_variables'][0]['type'] == 'StaticVariable'
-        assert process_def['input_variables'][0]['value'] == 5
-        assert process_def['input_variables'][1]['formula_name'] == 'custom_coefficient'
-        assert process_def['input_variables'][1]['type'] == 'ExcelVariable'
-        assert process_def['input_variables'][1]['sheet_name'] == 'Sheet1'
-        assert process_def['input_variables'][1]['excel_var_name'] == 'a'
-        assert process_def['input_variables'][1]['file_alias'] == 'test_location'
+            assert process_def['input_variables'][0]['formula_name'] == 'energy_intensity'
+            assert process_def['input_variables'][0]['type'] == 'StaticVariable'
+            assert process_def['input_variables'][0]['value'] == 5
+            assert process_def['input_variables'][1]['formula_name'] == 'custom_coefficient'
+            assert process_def['input_variables'][1]['type'] == 'ExcelVariable'
+            assert process_def['input_variables'][1]['sheet_name'] == 'Sheet1'
+            assert process_def['input_variables'][1]['excel_var_name'] == 'a'
+            assert process_def['input_variables'][1]['file_alias'] == 'test_location'
 
-        assert process_def['import_variables'][1] == 'data_volume'
+            assert process_def['import_variables'][1] == 'data_volume'
 
-        assert process_def['export_variables']['energy_intensity'] == 'test_energy_intensity'
-        assert process_def['export_variables']['data_volume'] == 'test_data_volume'
-        assert process_def[
-                   'formula']['text'] == 'energy = energy_intensity * data_volume * custom_coefficient\nreturn energy\n'
-        # assert process_def[                   'formula']['name'] == 'test formula'
-        assert process_def['link_to'][0] == 'process a'
+            assert process_def['export_variables']['energy_intensity'] == 'test_energy_intensity'
+            assert process_def['export_variables']['data_volume'] == 'test_data_volume'
+            assert process_def['formula']['text'] == 'energy = energy_intensity * data_volume * custom_coefficient\nreturn energy\n'
+            # assert process_def[                   'formula']['name'] == 'test formula'
+            assert process_def['link_to'][0] == 'process a'
 
-        metadata_struct = yaml_def['Metadata']
-        # print(metadata_struct)
-        assert len(metadata_struct['file_locations']) == 2
-        assert metadata_struct['model_name'] == 'test model'
-        # print(metadata_struct['start_date'])
-        assert metadata_struct['start_date'] == datetime.date(2016, 1, 1)
-        return_to_base_cwd(cwd)
+            metadata_struct = yaml_def['Metadata']
+            # print(metadata_struct)
+            assert len(metadata_struct['file_locations']) == 2
+            assert metadata_struct['model_name'] == 'test model'
+            # print(metadata_struct['start_date'])
+            assert metadata_struct['start_date'] == datetime.date(2016, 1, 1)
+        #return_to_base_cwd(cwd)
 
     def test_excelvar(self):
-        cwd = set_cwd_to_script_dir()
-        yaml_def = yaml.load(YamlLoader_v1.doc)
-        metadata_struct = yaml_def['Metadata']
+        #cwd = set_cwd_to_script_dir()
+        with use_test_dir():
+            yaml_def = yaml.load(YamlLoader_v1.doc)
+            metadata_struct = yaml_def['Metadata']
 
-        formula_def = yaml_def['Processes'][0]
+            formula_def = yaml_def['Processes'][0]
 
-        sim_control = SimulationControl()
-        sim_control.sample_size = 2
-        vars: Dict[str, Variable] = YamlLoader().create_variables_from_yaml(formula_def.get('input_variables', []),
-                                                                            sim_control, yaml_def, [])
-        assert isinstance(vars['custom_coefficient'], Variable)
-        return_to_base_cwd(cwd)
+            sim_control = SimulationControl()
+            sim_control.sample_size = 2
+            vars: Dict[str, Variable] = YamlLoader().create_variables_from_yaml(formula_def.get('input_variables', []),
+                                                                                sim_control, yaml_def, [])
+            assert isinstance(vars['custom_coefficient'], Variable)
+        #return_to_base_cwd(cwd)
 
     def test_excelvar_set(self):
         doc = u"""
@@ -131,17 +133,18 @@ Metadata:
             - file_alias: test_location
               file_name: data/test_data.xlsx
         """
-        cwd = set_cwd_to_script_dir()
-        yaml_def = yaml.safe_load(doc)
+        #cwd = set_cwd_to_script_dir()
+        with use_test_dir():
+            yaml_def = yaml.safe_load(doc)
 
-        formula_def = yaml_def['Processes'][0]
+            formula_def = yaml_def['Processes'][0]
 
-        sim_control = SimulationControl()
-        sim_control.sample_size = 2
-        vars: Dict[str, Variable] = YamlLoader().create_variables_from_yaml(formula_def.get('input_variables', []),
-                                                                            sim_control, yaml_def, [])
-        assert isinstance(vars['a'], Variable)
-        return_to_base_cwd(cwd)
+            sim_control = SimulationControl()
+            sim_control.sample_size = 2
+            vars: Dict[str, Variable] = YamlLoader().create_variables_from_yaml(formula_def.get('input_variables', []),
+                                                                                sim_control, yaml_def, [])
+            assert isinstance(vars['a'], Variable)
+        #return_to_base_cwd(cwd)
 
     def test_constants(self):
         doc = u"""
@@ -228,18 +231,19 @@ Metadata:
               file_name: data/test_data.xlsx
         """
 
-        cwd = set_cwd_to_script_dir()
-        yaml_def = yaml.safe_load(doc)
+        #cwd = set_cwd_to_script_dir()
+        with use_test_dir():
+            yaml_def = yaml.safe_load(doc)
 
-        formula_def = yaml_def['Processes'][0]
+            formula_def = yaml_def['Processes'][0]
 
-        sim_control = SimulationControl()
-        sim_control.sample_size = 2
-        vars: Dict[str, Variable] = YamlLoader().create_variables_from_yaml(formula_def.get('input_variables', []),
-                                                                            sim_control, yaml_def, [])
+            sim_control = SimulationControl()
+            sim_control.sample_size = 2
+            vars: Dict[str, Variable] = YamlLoader().create_variables_from_yaml(formula_def.get('input_variables', []),
+                                                                                sim_control, yaml_def, [])
 
-        assert isinstance(vars['passive_standby_time_per_day_mins'], Variable)
-        return_to_base_cwd(cwd)
+            assert isinstance(vars['passive_standby_time_per_day_mins'], Variable)
+        #return_to_base_cwd(cwd)
 
     def test_staticvar_set(self):
         doc = u"""
@@ -289,21 +293,22 @@ Metadata:
               file_name: data/test_data.xlsx
         """
 
-        cwd = set_cwd_to_script_dir()
-        yaml_def = yaml.safe_load(doc)
+        #cwd = set_cwd_to_script_dir()
+        with use_test_dir():
+            yaml_def = yaml.safe_load(doc)
 
-        formula_def = yaml_def['Processes'][0]
+            formula_def = yaml_def['Processes'][0]
 
-        sim_control = SimulationControl()
-        sim_control.sample_size = 1
-        sim_control.sample_mean_value = True
-        vars: Dict[str, Variable] = YamlLoader().create_variables_from_yaml(formula_def.get('input_variables', []),
-                                                                            sim_control, yaml_def, [])
-        assert isinstance(vars['a'], Variable)
-        v = vars['a'].data_source.get_value('test', sim_control)
-        # print(v)
-        assert v == 1.5
-        return_to_base_cwd(cwd)
+            sim_control = SimulationControl()
+            sim_control.sample_size = 1
+            sim_control.sample_mean_value = True
+            vars: Dict[str, Variable] = YamlLoader().create_variables_from_yaml(formula_def.get('input_variables', []),
+                                                                                sim_control, yaml_def, [])
+            assert isinstance(vars['a'], Variable)
+            v = vars['a'].data_source.get_value('test', sim_control)
+            # print(v)
+            assert v == 1.5
+        #return_to_base_cwd(cwd)
 
     def test_excelvar_set_with_sub_and_excel_var_stub(self):
         doc = u"""
@@ -327,21 +332,22 @@ Metadata:
               file_name: data/test_data.xlsx
         """
 
-        cwd = set_cwd_to_script_dir()
-        yaml_def = yaml.safe_load(doc)
+        #cwd = set_cwd_to_script_dir()
+        with use_test_dir():
+            yaml_def = yaml.safe_load(doc)
 
-        formula_def = yaml_def['Processes'][0]
+            formula_def = yaml_def['Processes'][0]
 
-        sim_control = SimulationControl()
-        sim_control.sample_size = 1
-        sim_control.sample_mean_value = True
-        vars: Dict[str, Variable] = YamlLoader().create_variables_from_yaml(formula_def.get('input_variables', []),
-                                                                            sim_control, yaml_def, [])
-        assert isinstance(vars['a'], Variable)
-        v = vars['a'].data_source.get_value('test', sim_control)
-        # print(v)
-        assert v == 1.5
-        return_to_base_cwd(cwd)
+            sim_control = SimulationControl()
+            sim_control.sample_size = 1
+            sim_control.sample_mean_value = True
+            vars: Dict[str, Variable] = YamlLoader().create_variables_from_yaml(formula_def.get('input_variables', []),
+                                                                                sim_control, yaml_def, [])
+            assert isinstance(vars['a'], Variable)
+            v = vars['a'].data_source.get_value('test', sim_control)
+            # print(v)
+            assert v == 1.5
+        #return_to_base_cwd(cwd)
 
     def test_linkto_declaration(self):
         doc = u"""
@@ -741,31 +747,32 @@ Metadata:
   table_file_name: data/yaml_loader_test_data.xlsx
     """
 
-        cwd = set_cwd_to_script_dir()
-        sim_control = SimulationControl()
-        sim_control.sample_size = 1
-        sim_control.sample_mean_value = True
-        sim_control.use_time_series = True
+        #cwd = set_cwd_to_script_dir()
+        with use_test_dir():
+            sim_control = SimulationControl()
+            sim_control.sample_size = 1
+            sim_control.sample_mean_value = True
+            sim_control.use_time_series = True
 
-        yaml_structure = YamlLoader.load_definitions(doc)
+            yaml_structure = YamlLoader.load_definitions(doc)
 
-        s = YamlLoader.create_service(yaml_structure, sim_control)
+            s = YamlLoader.create_service(yaml_structure, sim_control)
 
-        for node in s.process_graph.nodes_iter():
-            if node.name in ['Net']:
-                assert node.formulaModel.formula.text == 'energy = data * intensity;'
-                assert s.process_graph.out_edges(node) == []
+            for node in s.process_graph.nodes_iter():
+                if node.name in ['Net']:
+                    assert node.formulaModel.formula.text == 'energy = data * intensity;'
+                    assert s.process_graph.out_edges(node) == []
 
-            if node.name == 'UD':
+                if node.name == 'UD':
 
-                linked_nodes = set()
-                for (_, p) in s.process_graph.out_edges(node):
-                    linked_nodes.add(p.name)
-                assert linked_nodes == {'Net'}
+                    linked_nodes = set()
+                    for (_, p) in s.process_graph.out_edges(node):
+                        linked_nodes.add(p.name)
+                    assert linked_nodes == {'Net'}
 
-        fp = s.footprint(embodied=False, simulation_control=sim_control)
-        print(fp)
-        return_to_base_cwd(cwd)
+            fp = s.footprint(embodied=False, simulation_control=sim_control)
+            print(fp)
+        #return_to_base_cwd(cwd)
 
     def test_static_check(self):
         doc = u"""
@@ -785,15 +792,16 @@ Metadata:
   table_file_name: data/yaml_loader_test_data.xlsx
     """
 
-        cwd = set_cwd_to_script_dir()
-        sim_control = SimulationControl()
-        sim_control.sample_size = 1
-        sim_control.sample_mean_value = True
-        sim_control.use_time_series = True
+        #cwd = set_cwd_to_script_dir()
+        with use_test_dir():
+            sim_control = SimulationControl()
+            sim_control.sample_size = 1
+            sim_control.sample_mean_value = True
+            sim_control.use_time_series = True
 
-        yaml_structure = YamlLoader.load_definitions(doc)
-        self.assertRaises(Exception, YamlLoader.create_service, yaml_structure, sim_control, formula_checks=True)
-        return_to_base_cwd(cwd)
+            yaml_structure = YamlLoader.load_definitions(doc)
+            self.assertRaises(Exception, YamlLoader.create_service, yaml_structure, sim_control, formula_checks=True)
+        #return_to_base_cwd(cwd)
 
 
 if __name__ == '__main__':

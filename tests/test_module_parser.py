@@ -1,6 +1,7 @@
 import unittest
 from ruamel import yaml
-from tests.directory_test_controller import set_cwd_to_script_dir, return_to_base_cwd
+#from tests.directory_test_controller import set_cwd_to_script_dir, return_to_base_cwd
+from tests.directory_test_controller import use_test_dir
 
 from eam_core.ModuleParser import ModuleParser
 
@@ -96,19 +97,20 @@ Constants:
         - only include table variables that are marked with 'ui' in the table (excludes energy_intensity)
         :return:
         """
-        cwd = set_cwd_to_script_dir()
-        module = ModuleParser.load_module(yaml.safe_load(ModuleParserTestCase.doc, ))
-        process = next(iter(module['processes'].values()))
-        params = process['params']
-        # print(params)
-        param_map = {v['name']: v for v in params}
-        # print(param_map)
-        assert set(param_map.keys()) == {'carbon intensity'}
-        assert param_map['carbon intensity']['value'] == 0.5
-        assert param_map['carbon intensity']['id'] == 4
-        assert param_map['carbon intensity']['unit'] == 'kg/kWh'
-        assert param_map['carbon intensity']['type'] == 'proportion'
-        return_to_base_cwd(cwd)
+        #cwd = set_cwd_to_script_dir()
+        with use_test_dir():
+            module = ModuleParser.load_module(yaml.safe_load(ModuleParserTestCase.doc, ))
+            process = next(iter(module['processes'].values()))
+            params = process['params']
+            # print(params)
+            param_map = {v['name']: v for v in params}
+            # print(param_map)
+            assert set(param_map.keys()) == {'carbon intensity'}
+            assert param_map['carbon intensity']['value'] == 0.5
+            assert param_map['carbon intensity']['id'] == 4
+            assert param_map['carbon intensity']['unit'] == 'kg/kWh'
+            assert param_map['carbon intensity']['type'] == 'proportion'
+        #return_to_base_cwd(cwd)
 
 
     def test_process_data(self):
@@ -119,15 +121,16 @@ Constants:
         - description
         :return:
         """
-        cwd = set_cwd_to_script_dir()
-        module = ModuleParser.load_module(yaml.load(ModuleParserTestCase.doc))
+        #cwd = set_cwd_to_script_dir()
+        with use_test_dir():
+            module = ModuleParser.load_module(yaml.load(ModuleParserTestCase.doc))
 
-        process = next(iter(module['processes'].values()))
+            process = next(iter(module['processes'].values()))
 
-        assert process['id'] == 0
-        assert process['name'] == 'CDN'
-        assert process['category'] == 'Datacentre'
-        return_to_base_cwd(cwd)
+            assert process['id'] == 0
+            assert process['name'] == 'CDN'
+            assert process['category'] == 'Datacentre'
+        #return_to_base_cwd(cwd)
 
     def test_model_metadata(self):
         """
@@ -138,11 +141,12 @@ Constants:
         :return:
         """
 
-        cwd = set_cwd_to_script_dir()
-        module = ModuleParser.load_module(yaml.safe_load(ModuleParserTestCase.doc))
-        assert module['name'] == 'CI_model'
-        assert module['version'] == '0.0.1'
-        return_to_base_cwd(cwd)
+        #cwd = set_cwd_to_script_dir()
+        with use_test_dir():
+            module = ModuleParser.load_module(yaml.safe_load(ModuleParserTestCase.doc))
+            assert module['name'] == 'CI_model'
+            assert module['version'] == '0.0.1'
+        #return_to_base_cwd(cwd)
 
 
 if __name__ == '__main__':

@@ -1,5 +1,6 @@
 import unittest
 from os import path, chdir, getcwd
+from contextlib import contextmanager
 
 
 def get_static_path(filename):
@@ -24,6 +25,17 @@ def set_cwd_to_script_dir():
 
 def return_to_base_cwd(cwd):
     chdir(cwd)
+
+
+@contextmanager
+def use_test_dir():
+    cwd = getcwd()
+    try:
+        directory = path.dirname(path.realpath(__file__))
+        chdir(directory)
+        yield
+    finally:
+        chdir(cwd)
 
 
 class MyTestCase(unittest.TestCase):
