@@ -397,7 +397,7 @@ def load_configuration(args):
 
 def plot_scenario_comparison(scenario_paths, model_run_base_directory, base_dir, yaml_struct, image_filetype=None):
     load_data = load_as_df_qantity
-    variable = yaml_struct['Metadata']['comparison_variable']
+    variable = yaml_struct['Metadata'].get('comparison_variable', 'energy')
     fig = plt.figure(figsize=(10, 5))
     ax = fig.add_subplot(111)
 
