@@ -12,39 +12,40 @@ jobs:
       - restore_cache:
           key: v1-{{ checksum "setup.cfg" }}
 
-      - run:
-          name: prepare for graphviz
-          command: |
-            sudo add-apt-repository universe
-            sudo apt update
+      # - run:
+      #     name: prepare for graphviz
+      #     command: |
+      #       sudo add-apt-repository universe
+      #       sudo apt update
 
-      - run:
-          name: install graphviz
-          command: |
-            sudo apt-get install graphviz
+      # - run:
+      #     name: install graphviz
+      #     command: |
+      #       sudo apt-get install graphviz
 
+      # - run:
+      #     name: install deps
+      #     command: |
+      #       pip install cython
+      #       pip install numpy==1.18.0
+      #       pip install -r requirements.txt
+      #       pip install git+https://github.com/hgrecco/pint.git@f356379c15c1cb5d211c795872ac9e9284d2358f#egg=pint
+      #       pip install pint-pandas-fork
+      #       pip install -r test-requirements.txt
+      #       pip install openpyxl xlrd
+          
       - run:
-          name: install deps
+          name: install eam_core
           command: |
             pip install cython
-            pip install numpy==1.18.0
-            pip install -r requirements.txt
-            pip install git+https://github.com/hgrecco/pint.git@f356379c15c1cb5d211c795872ac9e9284d2358f#egg=pint
-            pip install pint-pandas-fork
-            pip install -r test-requirements.txt
-            pip install openpyxl xlrd
+            pip install numpy==1.18.1
+            pip install .[test]
 
       - save_cache:
           key: v1-{{ checksum "setup.cfg" }}
           paths:
             - /home/circleci/.pyenv/versions/3.8.11/lib
             - /home/circleci/.pyenv/versions/3.8.11/bin
-          
-      - run:
-          name: install eam_core
-          command: |
-            pip install git+git://github.com/sust-cs-uob/eam-data-tools.git@countries
-            pip install .
             
       - run:
           name: Test
