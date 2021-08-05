@@ -12,16 +12,16 @@ jobs:
       - restore_cache:
           key: v1-{{ checksum "setup.cfg" }}
 
-      # - run:
-      #     name: prepare for graphviz
-      #     command: |
-      #       sudo add-apt-repository universe
-      #       sudo apt update
+      - run:
+          name: prepare for graphviz
+          command: |
+            sudo add-apt-repository universe
+            sudo apt update
 
-      # - run:
-      #     name: install graphviz
-      #     command: |
-      #       sudo apt-get install graphviz
+      - run:
+          name: install graphviz
+          command: |
+            sudo apt-get install graphviz
 
       # - run:
       #     name: install deps
