@@ -397,7 +397,7 @@ def load_configuration(args):
 
 def plot_scenario_comparison(scenario_paths, model_run_base_directory, base_dir, yaml_struct, image_filetype=None):
     load_data = load_as_df_qantity
-    variable = yaml_struct['Metadata']['comparison_variable']
+    variable = yaml_struct['Metadata'].get('comparison_variable', 'energy')
     fig = plt.figure(figsize=(10, 5))
     ax = fig.add_subplot(111)
 
@@ -642,16 +642,6 @@ def analysis(runner, yaml_struct, analysis_config=None, mean_run=None, image_fil
                 sheet_name] = f'{sheet_name}: a direct load of the result data, monthly mean values. Unit: {unit}'
                 data.abs().groupby(level=['time']).quantile(.75).to_excel(writer, sheet_name)
 
-        # sum up monthly values to aggregate - duration depends on distance between start and end date
-        #    load_data_aggegrate = lambda : load_data().sum(level='samples')
-        xlabel = f'{unit}/a'
-        common_args = {'start_date': start_date,
-                       'end_date': end_date,
-                       'base_dir': base_dir,
-                       'xlabel': xlabel,
-                       'metadata': metadata,
-                       'output_scenario_directory': output_directory}
-
         logger.info("plot_platform_process_annual_total")
 
         plot_defs = yaml_struct['Analysis'].get('plots', [])
@@ -678,7 +668,15 @@ def analysis(runner, yaml_struct, analysis_config=None, mean_run=None, image_fil
 
                 unit = units_set.pop()
 
-                common_args.update({'unit': unit})
+                # sum up monthly values to aggregate - duration depends on distance between start and end date
+                #    load_data_aggegrate = lambda : load_data().sum(level='samples')
+                xlabel = f'{unit}/a'
+                common_args = {'start_date': start_date,
+                               'end_date': end_date,
+                               'base_dir': base_dir,
+                               'metadata': metadata,
+                               'unit': unit,
+                               'output_scenario_directory': output_directory}
 
                 if 'xlabel' in plot_def:
                     xlabel = plot_def['xlabel'].format(unit=unit)
