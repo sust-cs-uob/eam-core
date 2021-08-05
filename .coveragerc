@@ -7,8 +7,7 @@ source =
 branch = true
 source =
     eam_core
-    tests
-parallel = true
+parallel = false
 
 [report]
 show_missing = true
