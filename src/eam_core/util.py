@@ -239,9 +239,9 @@ def pandas_series_dict_to_dataframe(data: Dict[str, pd.Series], target_units=Non
         # variable.to_pickle(f'{simulation_control.output_directory}/traces/{process}.pdpkl')
         # https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.Series.to_pickle.html
         # need to inspect size, maybe look at in jupyter for further investigation
-        var_df = pd.DataFrame(index=simulation_control.group_df_multi_index)
-        var_df[process] = variable
-        var_df.to_pickle(f'output/{process}.pickle')
+        # var_df = pd.DataFrame(index=simulation_control.group_df_multi_index)
+        # var_df[process] = variable
+        variable.to_pickle(f'output/{process}.pickle')
         try:
             results_df[process] = variable
             metadata[process] = variable.pint.units
