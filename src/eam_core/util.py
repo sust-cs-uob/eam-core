@@ -231,6 +231,10 @@ def pandas_series_dict_to_dataframe(data: Dict[str, pd.Series], target_units=Non
         results_df = pd.DataFrame(index=simulation_control.group_df_multi_index)
     else:
         results_df = pd.DataFrame(index=simulation_control._df_multi_index)
+
+    var_shapes = []
+    var_series = []
+    processes = []
     for process, variable in data.items():
         logger.debug(f'converting results for process {process}')
         if target_units:
@@ -241,6 +245,10 @@ def pandas_series_dict_to_dataframe(data: Dict[str, pd.Series], target_units=Non
         # need to inspect size, maybe look at in jupyter for further investigation
         # var_df = pd.DataFrame(index=simulation_control.group_df_multi_index)
         # var_df[process] = variable
+
+        var_shapes.append(variable.shape)
+        var_series.append(variable)
+        processes.append(process)
         variable.to_pickle(f'output/{process}.pickle')
         try:
             results_df[process] = variable
