@@ -126,6 +126,7 @@ def load_trace_data(output_directory, variable: str, base_dir='.') -> pd.DataFra
     return pd.read_pickle(f'{base_dir}/{output_directory}/traces/{variable}.pdpkl')
 
 
+# this isn't called anywhere that I can see. Is it still needed?
 def store_calculation_debug_info(model, simulation_control, store_input_vars=True, average=True, target_units=None,
                                  result_variables=None):
     """
@@ -163,7 +164,7 @@ def store_calculation_debug_info(model, simulation_control, store_input_vars=Tru
         if not os.path.exists(f'{simulation_control.output_directory}/pd_pickles/'):
             os.makedirs(f'{simulation_control.output_directory}/pd_pickles/')
 
-        h5store(f'{simulation_control.output_directory}/pd_pickles/input_variables.hd5', df, **metadata)
+        h5store(f'{simulation_control.output_directory}/pd_pickles/input_variables.hd5', df)
         df.to_pickle(f'{simulation_control.output_directory}/pd_pickles/input_variables.pdpkl')
 
 
@@ -218,6 +219,14 @@ def load_as_plain_df(filename):
     return df, units
 
 
+def get_maximum_country_list(data: Dict[str, pd.Series]) -> list:
+    countries = set()
+    for s in data.values():
+        if 'group' in s.index.names:
+            countries = countries.union(set(s.index.get_level_values('group').values))
+    return list(countries)
+
+
 def pandas_series_dict_to_dataframe(data: Dict[str, pd.Series], target_units=None, var_name=None,
                                     simulation_control: SimulationControl = None):
     """
@@ -228,33 +237,27 @@ def pandas_series_dict_to_dataframe(data: Dict[str, pd.Series], target_units=Non
     """
     metadata = {}
     if simulation_control.with_group:
-        results_df = pd.DataFrame(index=simulation_control.group_df_multi_index)
+        sample_size = simulation_control.sample_size
+        times = simulation_control.times
+        groups = get_maximum_country_list(data)
+
+        index_names = ['time', 'samples', 'group']
+        iterables = [times, range(sample_size), groups]
+        group_df_multi_index = pd.MultiIndex.from_product(iterables, names=index_names)
+
+        results_df = pd.DataFrame(index=group_df_multi_index)
     else:
         results_df = pd.DataFrame(index=simulation_control._df_multi_index)
 
-    var_shapes = []
-    var_series = []
-    processes = []
     for process, variable in data.items():
         logger.debug(f'converting results for process {process}')
         if target_units:
             variable = to_target_dimension(var_name, variable, target_units)
 
-        # variable.to_pickle(f'{simulation_control.output_directory}/traces/{process}.pdpkl')
-        # https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.Series.to_pickle.html
-        # need to inspect size, maybe look at in jupyter for further investigation
-        # var_df = pd.DataFrame(index=simulation_control.group_df_multi_index)
-        # var_df[process] = variable
+        # variable.to_pickle(f'output/{process}.pickle')
 
-        var_shapes.append(variable.shape)
-        var_series.append(variable)
-        processes.append(process)
-        variable.to_pickle(f'output/{process}.pickle')
-        try:
-            results_df[process] = variable
-            metadata[process] = variable.pint.units
-        except:
-            pass
+        results_df[process] = variable
+        metadata[process] = variable.pint.units
 
     return results_df, metadata
 
