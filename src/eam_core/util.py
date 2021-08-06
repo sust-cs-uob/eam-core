@@ -569,7 +569,7 @@ def generate_graph_node_barcharts(model_name, metric, start_date=None, end_date=
         start_date = df.index[0][0].date()
     if not end_date:
         end_date = df.index[-1][0].date()
-    df = df.loc[start_date:end_date]
+    df = df.loc[pd.date_range(start_date, end_date, freq='MS')]
 
     s = [*df.mean(level='time').sum().items()]
     labels, values = zip(*sorted(s, key=itemgetter(1)))
