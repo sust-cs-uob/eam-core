@@ -4,6 +4,7 @@ from functools import partial
 
 import matplotlib
 import pint
+import pint_pandas
 import os
 from pint.quantity import _Quantity
 
@@ -254,7 +255,11 @@ def pandas_series_dict_to_dataframe(data: Dict[str, pd.Series], target_units=Non
         if target_units:
             variable = to_target_dimension(var_name, variable, target_units)
 
-        # variable.to_pickle(f'output/{process}.pickle')
+        pickle_df = pd.DataFrame()
+        pickle_df[process] = variable
+        pickle_df = pickle_df.pint.dequantify()
+
+        pickle_df.to_pickle(f'output/{process}.pickle')
 
         results_df[process] = variable
         metadata[process] = variable.pint.units
