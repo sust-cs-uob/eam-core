@@ -324,6 +324,7 @@ def run(args, analysis_config=None):
                              output_persistence_config=output_persistence_config, analysis_config=analysis_config)
 
     if args.multithreaded:
+        #todo: this doesn't work, needs review
         logger.info("Running in parallel")
         from pathos.multiprocessing import ThreadPool
         import multiprocessing

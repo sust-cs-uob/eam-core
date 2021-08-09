@@ -509,5 +509,5 @@ def sum_interval(df, start_date=None, end_date=None):
         start_date = df.index[0][0].date()
     if not end_date:
         end_date = df.index[-1][0].date()
-    df = df.loc[start_date:end_date].sum(level='samples')
+    df = df.loc[pd.date_range(start_date, end_date, freq='MS')].sum(level='samples')
     return df
