@@ -50,6 +50,12 @@ class ModuleParser(object):
                         param['description'] = parameter_definition['description']
                         param['type'] = ModuleParser.param_type_map[parameter_definition['ui variable']]
 
+                        if 'with_group' in yaml_structure['Metadata'] and yaml_structure['Metadata']['with_group']:
+                            param['countrifiable'] = parameter_definition['variable']\
+                                                     in yaml_structure['Metadata']['group_vars']
+                        else:
+                            param['countrifiable'] = False
+
                         override_flag = parameter_definition.get('override', "")
                         if override_flag and override_flag.lower().strip() == "x":
                             param['is_override'] = True
