@@ -48,6 +48,24 @@ def get_generated_series_indexing():
     return iterables, times, index_names
 
 
+def get_series_and_dataframe():
+    series, series_length = generate_series_list()
+    iterables, times, index_names = get_generated_series_indexing()
+    df_multi_index = pd.MultiIndex.from_product(iterables, names=index_names)
+    df_index = pd.DataFrame(index=df_multi_index)
+
+    for i in range(len(series)):
+        df_index[series[i].name] = series[i]
+
+    return series, df_index
+
+
+def assert_lists_equal(a, b):
+    assert len(a) == len(b)
+    for i in range(len(a)):
+        assert (a[i] == b[i]) or (math.isnan(a[i]) and math.isnan(b[i]))
+
+
 class DataFrameShapeTest(unittest.TestCase):
     series, series_length = generate_series_list()
     iterables, times, index_names = get_generated_series_indexing()
@@ -107,9 +125,33 @@ class DataFrameShapeTest(unittest.TestCase):
             else:
                 assert math.isnan(df_index['ONE_COUNTRY'].values[i])
 
-class DataFrameOperationsTest(unittest.TestCase):
-    series, series_length = generate_series_list()
-    iterables, times, index_names = get_generated_series_indexing()
 
+class DataFrameOperationsTest(unittest.TestCase):
     def test_basic_operations(self):
-        pass
+        series, df_index = get_series_and_dataframe()
+
+        a = (df_index['FULL_A'] + df_index['ONE_COUNTRY']).values
+        b = (df_index['FULL_A'].values + df_index['ONE_COUNTRY'].values)
+        assert_lists_equal(list(a), list(b))
+
+        a = (df_index['FULL_A'] * df_index['NO_GROUPS_A']).values
+        b = (df_index['FULL_A'].values * df_index['NO_GROUPS_A'].values)
+        assert_lists_equal(list(a), list(b))
+
+        a = (df_index['TWO_COUNTRIES'] / df_index['NO_GROUPS_A']).values
+        b = (df_index['TWO_COUNTRIES'].values / df_index['NO_GROUPS_A'].values)
+        assert_lists_equal(list(a), list(b))
+
+        one_country_div_full = df_index['ONE_COUNTRY'] / df_index['FULL_A']
+        assert len(one_country_div_full.dropna()) == len(series[3].values) - 1
+
+        full_div_one_country = df_index['ONE_COUNTRY'] / df_index['FULL_A']
+        assert len(full_div_one_country.dropna()) == len(series[3].values) - 1
+
+    @unittest.skip("numpy statistic functions return NaN if any element given is NaN? not good.")
+    def test_statistics(self):
+        series, df_index = get_series_and_dataframe()
+        print(type(df_index['FULL_A'].values))
+        assert df_index['FULL_A'].values.max() == 26
+        assert df_index['TWO_COUNTRIES'].values.max() == 17
+
