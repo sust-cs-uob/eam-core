@@ -237,6 +237,7 @@ def pandas_series_dict_to_dataframe(data: Dict[str, pd.Series], target_units=Non
 
     """
     metadata = {}
+    pickle_df_index = simulation_control._df_multi_index
     if simulation_control.with_group:
         sample_size = simulation_control.sample_size
         times = simulation_control.times
@@ -247,22 +248,27 @@ def pandas_series_dict_to_dataframe(data: Dict[str, pd.Series], target_units=Non
         group_df_multi_index = pd.MultiIndex.from_product(iterables, names=index_names)
 
         results_df = pd.DataFrame(index=group_df_multi_index)
+        pickle_df_index = group_df_multi_index
     else:
         results_df = pd.DataFrame(index=simulation_control._df_multi_index)
 
+    pickle_dfs = {}
     for process, variable in data.items():
         logger.debug(f'converting results for process {process}')
         if target_units:
             variable = to_target_dimension(var_name, variable, target_units)
 
-        pickle_df = pd.DataFrame()
-        pickle_df[process] = variable
+        pickle_df = pickle_dfs.get(process, pd.DataFrame(index=pickle_df_index))
+        pickle_df[process + '_' + var_name] = variable
+        pickle_df[process + '_' + var_name].name = process
+
+        pickle_dfs[process] = pickle_df
+        results_df[process + '_' + var_name] = variable
+        metadata[process + '_' + var_name] = variable.pint.units
+
+    for process, pickle_df in pickle_dfs.items():
         pickle_df = pickle_df.pint.dequantify()
-
         pickle_df.to_pickle(f'output/{process}.pickle')
-
-        results_df[process] = variable
-        metadata[process] = variable.pint.units
 
     return results_df, metadata
 
