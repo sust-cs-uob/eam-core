@@ -261,10 +261,10 @@ def pandas_series_dict_to_dataframe(data: Dict[str, pd.Series], target_units=Non
         pickle_df = pickle_dfs.get(process, pd.DataFrame(index=pickle_df_index))
         pickle_df[process + '_' + var_name] = variable
         pickle_df[process + '_' + var_name].name = process
-
         pickle_dfs[process] = pickle_df
-        results_df[process + '_' + var_name] = variable
-        metadata[process + '_' + var_name] = variable.pint.units
+
+        results_df[process] = variable
+        metadata[process] = variable.pint.units
 
     for process, pickle_df in pickle_dfs.items():
         pickle_df = pickle_df.pint.dequantify()
