@@ -148,10 +148,18 @@ class DataFrameOperationsTest(unittest.TestCase):
         full_div_one_country = df_index['ONE_COUNTRY'] / df_index['FULL_A']
         assert len(full_div_one_country.dropna()) == len(series[3].values) - 1
 
-    @unittest.skip("numpy statistic functions return NaN if any element given is NaN? not good.")
+    # @unittest.skip("numpy statistic functions return NaN if any element given is NaN? not good.")
     def test_statistics(self):
         series, df_index = get_series_and_dataframe()
-        print(type(df_index['FULL_A'].values))
-        assert df_index['FULL_A'].values.max() == 26
-        assert df_index['TWO_COUNTRIES'].values.max() == 17
 
+        def drop_nan(x):
+            return x[~np.isnan(x)]
+
+        assert drop_nan(df_index['FULL_A'].values).max() == 26
+        assert drop_nan(df_index['TWO_COUNTRIES'].values).max() == 17
+
+        assert drop_nan(df_index['FULL_A'].values).sum() == 351
+        assert drop_nan(df_index['TWO_COUNTRIES'].values).sum() == 153
+
+        assert drop_nan(df_index['FULL_A'].values).mean() == 13.0
+        assert drop_nan(df_index['TWO_COUNTRIES'].values).mean() == 8.5
