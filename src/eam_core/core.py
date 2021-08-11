@@ -44,6 +44,8 @@ days_per_month = 365 / 12
 
 metrics = ['use_phase_energy', 'use_phase_carbon', 'embodied_carbon']
 
+# todo: could this be broken up into several files?
+# todo: this needs to be tested more
 
 class SimulationControl(object):
     """

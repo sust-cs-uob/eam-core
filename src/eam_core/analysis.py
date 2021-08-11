@@ -23,6 +23,7 @@ from eam_core.graphical_analysis import get_platform_total, \
 from eam_core.common_graphical_analysis import plot_kind, load_metadata, sum_interval
 from eam_core.util import load_trace_data, kWh_p_J, load_df, load_as_df_qantity
 
+# todo: this is all untested
 
 def calculate_SRCs(input_variables, y):
     """

@@ -8,6 +8,7 @@ branch = true
 source =
     eam_core
 parallel = false
+dynamic_context = test_function
 
 [report]
 show_missing = true

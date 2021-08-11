@@ -22,6 +22,7 @@ class YamlLoader(object):
 
     def create_formula_v1(self, formula_struct, yaml_structure, test=True):
         if 'ref' in formula_struct:
+            # todo: 'ref' usage is untested. Is it still used?
             ref = formula_struct['ref']
 
             for _fstruc in yaml_structure['Formulas']:
@@ -37,6 +38,7 @@ class YamlLoader(object):
         formula = Formula(text)
 
         if 'test_config' in formula_struct:
+            # todo: 'test_config' usage is untested. Is it still used?
             control = SimulationControl()
             control.sample_mean_value = True
             control.sample_size = 1
@@ -96,6 +98,7 @@ class YamlLoader(object):
                         raise Exception(f"Could not find excel file location in with alias {var_def['file_alias']}")
                     location = matching_locations[0]
                 else:
+                    # todo: missing file_alias is untested
                     if len(yaml_structure['Metadata']['file_locations']) == 1:
                         location = yaml_structure['Metadata']['file_locations'][0]
                         logger.debug(
@@ -182,6 +185,7 @@ class YamlLoader(object):
     def create_formula_process(self, definition, yaml_structure, sim_control, constants, prototypes,
                                static_checks=False):
         if 'prototype' in definition:
+            # todo: 'prototype' usage untested
             pt = copy.deepcopy(prototypes[definition['prototype']])
             for k, v in definition.items():
                 # // key does exist
@@ -225,6 +229,7 @@ class YamlLoader(object):
             for _var in definition.get('import_variables', []):
 
                 if 'external_name' in _var:
+                    # todo: external name usage untested
                     incoming_name = _var['external_name']
                     import_variables[incoming_name] = {'aggregate': _var.get('aggregate', True),
                                                        'formula_name': _var.get('formula_name', _var['external_name'])}

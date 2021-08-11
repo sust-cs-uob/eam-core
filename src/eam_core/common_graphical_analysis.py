@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 default_cycler = (cycler(color=['r', 'g', 'b', 'y']) +
                   cycler(linestyle=['-', '--', ':', '-.']))
 
+# todo: large parts of this are untested. Does this matter?
 
 def plot_grid(df, file_name, xlabel, ylabel, title, base_dir, output_scenario_directory, **kwargs):
     data = df.ix[:, df.groupby(level=['time']).quantile(.75).max().sort_values(ascending=False).index]

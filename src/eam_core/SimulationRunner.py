@@ -26,7 +26,7 @@ class SimulationRunner(object):
     Responsible for the execution of the simulation, including storage of results. It encapsulates the protocol of the
     simulation.
 
-
+    todo: most of this isnt tested
     """
 
     def __init__(self, sim_control=None):

@@ -33,6 +33,7 @@ class ModuleParser(object):
         if self.yaml_file_location:
             table_file_name = self.yaml_file_location + os.path.sep + table_file_name
         if table_file_name.endswith('.csv'):
+            raise ValueError('csv data tables are no longer supported.')
             definitions = CSVHandler().load_definitions(filename=table_file_name)
         else:
             definitions = OpenpyxlTableHandler().load_definitions(None, filename=table_file_name)
