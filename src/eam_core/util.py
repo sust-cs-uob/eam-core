@@ -236,6 +236,14 @@ def pandas_series_dict_to_dataframe(data: Dict[str, pd.Series], target_units=Non
     output pd.DataFrame with with result pd.Series for columns of process keys
 
     """
+
+    write_pickles = True
+
+    if write_pickles:
+        # from pathlib import Path
+        # pickle_directory = Path(f'{simulation_control.output_directory}/pickles')
+        os.makedirs(f'{simulation_control.output_directory}/pickles', exist_ok=True)
+
     metadata = {}
     pickle_df_index = simulation_control._df_multi_index
     if simulation_control.with_group:
@@ -252,28 +260,25 @@ def pandas_series_dict_to_dataframe(data: Dict[str, pd.Series], target_units=Non
     else:
         results_df = pd.DataFrame(index=simulation_control._df_multi_index)
 
-    pickle_dfs = {}
     for process, variable in data.items():
         logger.debug(f'converting results for process {process}')
         if target_units:
             variable = to_target_dimension(var_name, variable, target_units)
 
-        pickle_df = pickle_dfs.get(process, pd.DataFrame(index=pickle_df_index))
-        pickle_df[process + '_' + var_name] = variable
-        pickle_df[process + '_' + var_name].name = process
-        pickle_dfs[process] = pickle_df
+        if write_pickles:
+            if os.path.isfile(f'{simulation_control.output_directory}/pickles/{process}.pickle'):
+                pickle_df = pd.read_pickle(f'{simulation_control.output_directory}/pickles/{process}.pickle')
+                pickle_df = pickle_df.pint.quantify()
+            else:
+                pickle_df = pd.DataFrame(index=pickle_df_index)
+
+            pickle_df[process + '_' + var_name] = variable
+            pickle_df[process + '_' + var_name].name = process
+            pickle_df = pickle_df.pint.dequantify()
+            pickle_df.to_pickle(f'{simulation_control.output_directory}/pickles/{process}.pickle')
 
         results_df[process] = variable
         metadata[process] = variable.pint.units
-
-    write_pickles = False
-    if write_pickles:
-        from pathlib import Path
-        pickle_directory = Path(f'{simulation_control.output_directory}/pickles')
-        os.makedirs(pickle_directory, exist_ok=True)
-        for process, pickle_df in pickle_dfs.items():
-            pickle_df = pickle_df.pint.dequantify()
-            pickle_df.to_pickle(f'{simulation_control.output_directory}/pickles/{process}.pickle')
 
     return results_df, metadata
 
