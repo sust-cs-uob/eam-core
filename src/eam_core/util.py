@@ -266,9 +266,14 @@ def pandas_series_dict_to_dataframe(data: Dict[str, pd.Series], target_units=Non
         results_df[process] = variable
         metadata[process] = variable.pint.units
 
-    for process, pickle_df in pickle_dfs.items():
-        pickle_df = pickle_df.pint.dequantify()
-        pickle_df.to_pickle(f'output/{process}.pickle')
+    write_pickles = False
+    if write_pickles:
+        from pathlib import Path
+        pickle_directory = Path(f'{simulation_control.output_directory}/pickles')
+        os.makedirs(pickle_directory, exist_ok=True)
+        for process, pickle_df in pickle_dfs.items():
+            pickle_df = pickle_df.pint.dequantify()
+            pickle_df.to_pickle(f'{simulation_control.output_directory}/pickles/{process}.pickle')
 
     return results_df, metadata
 
