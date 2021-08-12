@@ -18,6 +18,7 @@ logging.basicConfig(level=logging.DEBUG)
 import os
 from datetime import datetime
 
+# todo: untested. Does this matter?
 
 SCOPES = 'https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.readonly'
 CLIENT_SECRET_FILE = 'gdrive_client_secret.json'

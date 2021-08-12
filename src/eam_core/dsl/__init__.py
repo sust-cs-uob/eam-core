@@ -3,13 +3,13 @@ import math
 import numbers
 from distutils.util import strtobool
 
-from antlr4 import InputStream, CommonTokenStream
+from antlr4 import InputStream, CommonTokenStream, BailErrorStrategy
 from antlr4.error.ErrorListener import ErrorListener
 from pint.quantity import _Quantity
 
 from eam_core.dsl import MuParser
 from eam_core.dsl.MuLexer import MuLexer
-from eam_core.dsl.MuParser import MuParser, RecognitionException, Parser, BailErrorStrategy
+from eam_core.dsl.MuParser import MuParser, RecognitionException, Parser
 from eam_core.dsl.MuVisitor import MuVisitor
 import numpy as np
 

@@ -171,6 +171,7 @@ def create_documentation(runner):
         #         pass
         ps = subprocess.Popen(cmd, shell=True)
     else:
+        # todo: untested without docker
         logger.info("writing pandoc")
         output = pypandoc.convert_file(f'{output_directory}/{model.name}_model_documentation.md', 'pdf',
                                        outputfile=f'{output_directory}/{model.name}_model_documentation.pdf',
@@ -217,6 +218,7 @@ def run_scenario(scenario, model_run_base_directory=None, simulation_run_descrip
                                                                      scenario, filename=args.yamlfile, IDs=args.IDs,
                                                                      formula_checks=args.formula_checks, args=args)
     if args.sensitivity:
+        # todo: untested with args.sensitivity
         runner = SimulationRunner()
         # model, variances = runner.run_SA(create_model_func=create_model_func, embodied=False, sim_control=sim_control)
         model, correlations = runner.run_OTA_SA(create_model_func=create_model_func, embodied=False, sim_control=None)
@@ -375,6 +377,8 @@ def load_configuration(args):
     model_basedir = f"output/{yaml_struct['Metadata']['model_name']}/"
     model_run_base_directory = create_output_folder(model_basedir)
     for file_location in yaml_struct['Metadata'].get('file_locations', []):
+        # todo: this isn't tested. is it ever used?
+
         if file_location['type'] == 'google_spreadsheet':
             google_id_alias = file_location['google_id_alias']
 

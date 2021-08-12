@@ -34,6 +34,8 @@ from networkx.drawing.nx_agraph import graphviz_layout, write_dot
 
 import errno
 
+# todo: large parts of this are untested
+
 logger = logging.getLogger(__name__)
 
 

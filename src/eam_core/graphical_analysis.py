@@ -21,6 +21,8 @@ from eam_core.util import load_trace_data
 from eam_core.common_graphical_analysis import plot_kind, medianprops, boxprops, whiskerprops, capprops, flierprops, \
     sum_interval
 
+# todo: untested. Does this matter?
+
 kWh_p_J = 1 / 3.60E+06
 
 # In[3]:

@@ -13,4 +13,6 @@ dynamic_context = test_function
 [report]
 show_missing = true
 precision = 2
-omit = *migrations*
+omit =
+    *migrations*
+    src/eam_core/dsl/MuListener.py

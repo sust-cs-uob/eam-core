@@ -146,6 +146,7 @@ class CheckVisitor(MuVisitor):
 
         return None
 
+    # todo: untested
     def visitReturn_expr(self, ctx: MuParser.Return_exprContext):
         value = self.visit(ctx.expr())
         self.result = value
