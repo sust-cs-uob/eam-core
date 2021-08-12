@@ -238,7 +238,16 @@ def pandas_series_dict_to_dataframe(data: Dict[str, pd.Series], target_units=Non
     output pd.DataFrame with with result pd.Series for columns of process keys
 
     """
+
+    write_pickles = True
+
+    if write_pickles:
+        # from pathlib import Path
+        # pickle_directory = Path(f'{simulation_control.output_directory}/pickles')
+        os.makedirs(f'{simulation_control.output_directory}/pickles', exist_ok=True)
+
     metadata = {}
+    pickle_df_index = simulation_control._df_multi_index
     if simulation_control.with_group:
         sample_size = simulation_control.sample_size
         times = simulation_control.times
@@ -249,6 +258,7 @@ def pandas_series_dict_to_dataframe(data: Dict[str, pd.Series], target_units=Non
         group_df_multi_index = pd.MultiIndex.from_product(iterables, names=index_names)
 
         results_df = pd.DataFrame(index=group_df_multi_index)
+        pickle_df_index = group_df_multi_index
     else:
         results_df = pd.DataFrame(index=simulation_control._df_multi_index)
 
@@ -257,11 +267,17 @@ def pandas_series_dict_to_dataframe(data: Dict[str, pd.Series], target_units=Non
         if target_units:
             variable = to_target_dimension(var_name, variable, target_units)
 
-        pickle_df = pd.DataFrame()
-        pickle_df[process] = variable
-        pickle_df = pickle_df.pint.dequantify()
+        if write_pickles:
+            if os.path.isfile(f'{simulation_control.output_directory}/pickles/{process}.pickle'):
+                pickle_df = pd.read_pickle(f'{simulation_control.output_directory}/pickles/{process}.pickle')
+                pickle_df = pickle_df.pint.quantify()
+            else:
+                pickle_df = pd.DataFrame(index=pickle_df_index)
 
-        pickle_df.to_pickle(f'output/{process}.pickle')
+            pickle_df[process + '_' + var_name] = variable
+            pickle_df[process + '_' + var_name].name = process
+            pickle_df = pickle_df.pint.dequantify()
+            pickle_df.to_pickle(f'{simulation_control.output_directory}/pickles/{process}.pickle')
 
         results_df[process] = variable
         metadata[process] = variable.pint.units
