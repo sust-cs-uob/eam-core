@@ -8,22 +8,21 @@ class MyTestCase(unittest.TestCase):
 
     @unittest.skip("too much effort to maintain")
     def test_youtube(self):
-        #cwd = set_cwd_to_script_dir()
         with use_test_dir():
             runners = run(setup_parser(['-l', '-a dev', '-d', get_static_path('models/youtube.yml')]))
-        #return_to_base_cwd(cwd)
 
     def test_ci_v2(self):
-        #cwd = set_cwd_to_script_dir()
         with use_test_dir():
             runners = run(setup_parser(['-l', '-a', 'ci', '-d', '-id', get_static_path('models/ci_v2.yml')]))
-        #return_to_base_cwd(cwd)
+
+    @unittest.skip("multithreading is unused, would only be for scenarios")
+    def test_ci_v2_multithreaded(self):
+        with use_test_dir():
+            runners = run(setup_parser(['-l', '-a', 'ci', '-d', '-m', '-id', get_static_path('models/ci_v2.yml')]))
 
     def test_countries(self):
-        #cwd = set_cwd_to_script_dir()
         with use_test_dir():
             runners = run(setup_parser(['-l', '-a', 'ci', '-d', get_static_path('models/countriestest.yml')]))
-        #return_to_base_cwd(cwd)
 
 
 if __name__ == '__main__':
