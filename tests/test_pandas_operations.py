@@ -155,11 +155,11 @@ class DataFrameOperationsTest(unittest.TestCase):
         def drop_nan(x):
             return x[~np.isnan(x)]
 
-        assert drop_nan(df_index['FULL_A'].values).max() == 26
-        assert drop_nan(df_index['TWO_COUNTRIES'].values).max() == 17
+        assert drop_nan(df_index['FULL_A']).max() == 26
+        assert drop_nan(df_index['TWO_COUNTRIES']).max() == 17
 
-        assert drop_nan(df_index['FULL_A'].values).sum() == 351
-        assert drop_nan(df_index['TWO_COUNTRIES'].values).sum() == 153
+        assert drop_nan(df_index['FULL_A']).sum() == 351
+        assert drop_nan(df_index['TWO_COUNTRIES']).sum() == 153
 
-        assert drop_nan(df_index['FULL_A'].values).mean() == 13.0
-        assert drop_nan(df_index['TWO_COUNTRIES'].values).mean() == 8.5
+        assert drop_nan(df_index['FULL_A']).mean() == 13.0
+        assert drop_nan(df_index['TWO_COUNTRIES']).mean() == 8.5
