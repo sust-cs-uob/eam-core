@@ -213,10 +213,12 @@ def run_scenario(scenario, model_run_base_directory=None, simulation_run_descrip
         # run with just mean values, so that we can deal with 'sub-zero' values during analysis
         # this is needed because of sampling effect when uncertainty is very high
         mean_run = run_mean(args, model_run_base_directory, simulation_run_description, yaml_struct, scenario)
+
     create_model_func, sim_control, yaml_struct = prepare_simulation(model_output_directory,
                                                                      simulation_run_description, yaml_struct,
                                                                      scenario, filename=args.yamlfile, IDs=args.IDs,
-                                                                     formula_checks=args.formula_checks, args=args)
+                                                                     formula_checks=args.formula_checks, args=args,
+                                                                     use_time_series=True)
     if args.sensitivity:
         # todo: untested with args.sensitivity
         runner = SimulationRunner()
