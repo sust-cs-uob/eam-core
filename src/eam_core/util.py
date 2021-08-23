@@ -239,7 +239,7 @@ def pandas_series_dict_to_dataframe(data: Dict[str, pd.Series], target_units=Non
 
     """
 
-    write_pickles = True
+    write_pickles = False
 
     if write_pickles:
         # from pathlib import Path
@@ -248,6 +248,7 @@ def pandas_series_dict_to_dataframe(data: Dict[str, pd.Series], target_units=Non
 
     metadata = {}
     pickle_df_index = simulation_control._df_multi_index
+
     if simulation_control.with_group:
         sample_size = simulation_control.sample_size
         times = simulation_control.times
@@ -882,7 +883,7 @@ def configue_sim_control_from_yaml(sim_control: SimulationControl, yaml_struct, 
 
     if yaml_struct['Metadata'].get('with_group', False):
         sim_control.with_group = True
-        sim_control.groupings = yaml_struct['Metadata']['groupings']
+        sim_control.groupings = yaml_struct['Metadata'].get('groupings', [])
         iterables = [sim_control.times, range(sim_control.sample_size), sim_control.groupings]
         index = sim_control.index_names.copy()
         index.append("group")
@@ -890,6 +891,7 @@ def configue_sim_control_from_yaml(sim_control: SimulationControl, yaml_struct, 
         sim_control.group_vars = yaml_struct['Metadata']['group_vars']
         sim_control.group_aggregation_vars = yaml_struct['Metadata'].get('group_aggregation_vars', None)
 
+    if sim_control.groupings == []: sim_control.with_group = False
 
     sim_control.output_directory = output_directory
     iterables = [sim_control.times, range(sim_control.sample_size)]
