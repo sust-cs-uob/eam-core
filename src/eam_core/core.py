@@ -89,6 +89,7 @@ class SimulationControl(object):
         self.variable_ids = False
         self.with_group = False
         self.with_pint_units = True
+        self.result_variables = []
 
     def reset(self):
         logger.info("Resetting Simulation Control Parameters")

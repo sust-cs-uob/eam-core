@@ -901,7 +901,10 @@ def configue_sim_control_from_yaml(sim_control: SimulationControl, yaml_struct, 
                 # the group varoid is a group variable.
                 sim_control.group_vars.append(group_varoid)
 
-        if sim_control.groupings == []: sim_control.with_group = False
+        if sim_control.groupings == []:
+            sim_control.with_group = False
+
+    sim_control.result_variables = yaml_struct['Analysis'].get('result_variables', [])
 
     sim_control.output_directory = output_directory
     iterables = [sim_control.times, range(sim_control.sample_size)]
