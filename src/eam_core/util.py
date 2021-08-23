@@ -838,6 +838,7 @@ def store_sim_config(sim_control, directory, simulation_run_description, **kwarg
     del sim_control___dict__['param_repo']
     del sim_control___dict__['_df_multi_index']
     del sim_control___dict__['group_df_multi_index']
+    sim_control___dict__['output_directory'] = str(sim_control___dict__['output_directory'])
     sim_config = {'simulation_run_description': simulation_run_description, **sim_control___dict__}
     sim_config.update(kwargs)
     with open(f'{str(directory)}/sim_config.json', 'w') as outfile:
@@ -888,10 +889,19 @@ def configue_sim_control_from_yaml(sim_control: SimulationControl, yaml_struct, 
         index = sim_control.index_names.copy()
         index.append("group")
         sim_control.group_df_multi_index = pd.MultiIndex.from_product(iterables, names=index)
-        sim_control.group_vars = yaml_struct['Metadata']['group_vars']
         sim_control.group_aggregation_vars = yaml_struct['Metadata'].get('group_aggregation_vars', None)
 
-    if sim_control.groupings == []: sim_control.with_group = False
+        sim_control.group_vars = []
+        for group_varoid in yaml_struct['Metadata']['group_vars']:
+            if isinstance(group_varoid, list):
+                # the group varoid isn't a group variable.
+                # instead its a list of group variables, all of which must have the same groups.
+                sim_control.group_vars = sim_control.group_vars + group_varoid
+            else:
+                # the group varoid is a group variable.
+                sim_control.group_vars.append(group_varoid)
+
+        if sim_control.groupings == []: sim_control.with_group = False
 
     sim_control.output_directory = output_directory
     iterables = [sim_control.times, range(sim_control.sample_size)]
@@ -899,17 +909,20 @@ def configue_sim_control_from_yaml(sim_control: SimulationControl, yaml_struct, 
     sim_control._df_multi_index = pd.MultiIndex.from_product(iterables, names=sim_control.index_names)
 
 
-def prepare_simulation(model_output_directory, simulation_run_description, yaml_struct, scenario, sim_control=None,
-                       filename=None,
-                       IDs=False, formula_checks=False, **kwargs):
-    if not sim_control:
-        sim_control = SimulationControl()
-        configue_sim_control_from_yaml(sim_control, yaml_struct, model_output_directory)
+def prepare_simulation(model_output_directory, simulation_run_description, yaml_struct, scenario,
+                       filename=None, IDs=False, formula_checks=False, sample_mean=None, use_time_series=False,
+                       **kwargs):
+    sim_control = SimulationControl()
+    configue_sim_control_from_yaml(sim_control, yaml_struct, model_output_directory)
     sim_control.process_ids = IDs
     sim_control.model_run_datetime = time.strftime("%m%d-%H%M")
     sim_control.variable_ids = IDs
     sim_control.filename = filename
     sim_control.scenario = scenario
+    if sample_mean is not None:
+        sim_control.sample_mean_value = sample_mean
+
+    sim_control.use_time_series = use_time_series
     args = kwargs.get('args', None)
     _kwargs = {}
     if args:
