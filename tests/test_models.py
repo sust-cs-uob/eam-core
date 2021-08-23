@@ -40,9 +40,9 @@ class MyTestCase(unittest.TestCase):
 
             print(output)
 
-            assert isclose(output['CDN'], 6.500000000000002e-07)
-            assert isclose(output['Internet Network'], 6.500000000000002e-07)
-            assert isclose(output['Laptop'], 0.0026000000000000007)
+            assert isclose(output['CDN'], 0.000000845, rel_tol=0, abs_tol=0.000000001)
+            assert isclose(output['Internet Network'], 0.000000845, rel_tol=0, abs_tol=0.000000001)
+            assert isclose(output['Laptop'], 0.00338, rel_tol=0, abs_tol=0.00001)
 
     @unittest.skip("multithreading is unused, would only be for scenarios")
     def test_ci_v2_multithreaded(self):
