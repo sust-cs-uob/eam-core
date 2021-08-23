@@ -15,7 +15,7 @@ def load_output_var(runners, variable):
     return df.mean(level='time').sum().to_dict()
 
 
-class MyTestCase(unittest.TestCase):
+class TestModels(unittest.TestCase):
 
     @unittest.skip("too much effort to maintain")
     def test_youtube(self):
