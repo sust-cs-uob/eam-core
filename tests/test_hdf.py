@@ -7,7 +7,7 @@ import pandas as pd
 from pandas.util.testing import assert_frame_equal, assert_series_equal
 
 from eam_core import Q_, ureg
-from eam_core.util import h5store, h5load, load_as_df_qantity
+from eam_core.util import h5store, h5load, load_as_df_quantity
 
 
 class MyTestCase(unittest.TestCase):

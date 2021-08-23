@@ -16,7 +16,7 @@ import json as json
 
 from shutil import copyfile
 from eam_core.util import get_sim_run_description, create_output_folder, \
-    draw_graph_from_dotfile, load_as_df_qantity, load_as_plain_df, prepare_simulation,find_node_by_name
+    draw_graph_from_dotfile, load_as_df_quantity, load_as_plain_df, prepare_simulation,find_node_by_name
 
 from eam_core.YamlLoader import YamlLoader
 from eam_core.common_graphical_analysis import load_metadata, plot_kind, plot_process_with_input_vars
@@ -401,7 +401,7 @@ def load_configuration(args):
 
 
 def plot_scenario_comparison(scenario_paths, model_run_base_directory, base_dir, yaml_struct, image_filetype=None):
-    load_data = load_as_df_qantity
+    load_data = load_as_df_quantity
     variable = yaml_struct['Metadata'].get('comparison_variable', 'energy')
     fig = plt.figure(figsize=(10, 5))
     ax = fig.add_subplot(111)
@@ -600,7 +600,7 @@ def analysis(runner, yaml_struct, analysis_config=None, mean_run=None, image_fil
         sheet_descriptions = {}
         pd.DataFrame.from_dict(sheet_descriptions, orient='index').to_excel(writer, 'toc')
         # df of x samples, monthly frequency between start and end date
-        load_data = load_as_df_qantity
+        load_data = load_as_df_quantity
 
         # ======================== GO ================
         variables = yaml_struct['Analysis'].get('numerical', [])

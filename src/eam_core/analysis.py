@@ -21,7 +21,7 @@ from eam_core.graphical_analysis import get_platform_total, \
     get_total_monthly_average, group_by, filter_by, exclude_by, \
     plot_platform_process_per_device_hour
 from eam_core.common_graphical_analysis import plot_kind, load_metadata, sum_interval
-from eam_core.util import load_trace_data, kWh_p_J, load_df, load_as_df_qantity
+from eam_core.util import load_trace_data, kWh_p_J, load_df, load_as_df_quantity
 
 # todo: this is all untested
 
@@ -66,7 +66,7 @@ def generate_plots_and_tables(scenario=None, metric='use_phase_energy', base_dir
     sheet_descriptions = {}
     pd.DataFrame.from_dict(sheet_descriptions, orient='index').to_excel(writer, 'toc')
     # df of x samples, monthly frequency between start and end date
-    load_data = partial(load_as_df_qantity, f'{output_directory}/result_data.hdf5')
+    load_data = partial(load_as_df_quantity, f'{output_directory}/result_data.hdf5')
 
     # ======================== GO ================
     data = load_data()

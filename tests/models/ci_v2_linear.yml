@@ -75,7 +75,7 @@ Metadata:
   description: |
     bla bla
   model_version: 0.0.1
-  table_file_name: data/ci_v2_data.xlsx
+  table_file_name: data/ci_v2_data_linear.xlsx
   datasource_version_hint: 2
   comparison_variable: energy
   start_date: 2019-01-01

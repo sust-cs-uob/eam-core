@@ -10,7 +10,7 @@ from eam_core.YamlLoader import YamlLoader
 
 class MyTestCase(unittest.TestCase):
 
-
+    @unittest.skip('Has no assertion, doesn\'t seem to do anything useful')
     def test_to_json(self):
             doc = u"""
         Processes:
@@ -49,6 +49,7 @@ class MyTestCase(unittest.TestCase):
             json_str: str = json.JSONEncoder(default=complex_encoder).encode(s)
             # print(json_str)
 
+    @unittest.skip('Has no assertion, doesn\'t seem to do anything useful')
     def test_serialise_to_yaml(self):
         sim_control = SimulationControl()
         sim_control.sample_size = 1
