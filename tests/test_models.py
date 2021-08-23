@@ -51,14 +51,14 @@ class MyTestCase(unittest.TestCase):
 
     def test_countries(self):
         with use_test_dir():
-            runners = run(setup_parser(['-l', '-a', 'ci', '-d', get_static_path('models/countriestest.yml')]))
+            runners = run(setup_parser(['-l', '-a', 'ci', '-d', get_static_path('models/ci_v2_group.yml')]))
             output = load_output_var(runners, 'energy')
 
             print(output)
 
-            assert isclose(output['CDN'], 0)
-            assert isclose(output['Internet Network'], 0)
-            assert isclose(output['Laptop'], 0)
+            assert isclose(output['CDN'], 2.4375000000000005e-07)
+            assert isclose(output['Internet Network'], 2.4375000000000005e-07)
+            assert isclose(output['Laptop'], 0.0020222222222222226)
 
 
 if __name__ == '__main__':
