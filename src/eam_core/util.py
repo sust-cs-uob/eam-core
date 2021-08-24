@@ -227,7 +227,7 @@ def get_maximum_country_list(data: Dict[str, pd.Series]) -> list:
     for s in data.values():
         if 'group' in s.index.names:
             countries = countries.union(set(s.index.get_level_values('group').values))
-    return list(countries)
+    return sorted(countries)
 
 
 def pandas_series_dict_to_dataframe(data: Dict[str, pd.Series], target_units=None, var_name=None,
