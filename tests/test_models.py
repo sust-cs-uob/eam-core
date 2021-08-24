@@ -3,16 +3,51 @@ import unittest
 
 from math import isclose
 
+import numpy as np
+
 from tests.directory_test_controller import get_static_path, use_test_dir
 from eam_core.yaml_runner import setup_parser, run
 from eam_core.util import load_as_df_quantity
 
+import pandas as pd
+from pandas.testing import assert_frame_equal
 
-def load_output_var(runners, variable):
+import pint
+import pint_pandas
+
+from datetime import datetime
+
+
+def load_output_dataframe(runners, variable):
     q_data, _ = load_as_df_quantity(f'{runners["default"].sim_control.output_directory}/result_data_{variable}.hdf5')
-    df = q_data.pint.dequantify()
+    return q_data
+
+
+def get_means(output):
+    df = output.pint.dequantify()
     df.columns = df.columns.droplevel(1)
     return df.mean(level='time').sum().to_dict()
+
+
+def assert_pint_frame_equal(a, b, **kwargs):
+    assert_frame_equal(a.pint.dequantify(), b.pint.dequantify(), **kwargs)
+
+
+dates = [
+    datetime(2019, 1, 1),
+    datetime(2019, 2, 1),
+    datetime(2019, 3, 1),
+    datetime(2019, 4, 1),
+    datetime(2019, 5, 1),
+    datetime(2019, 6, 1),
+    datetime(2019, 7, 1),
+    datetime(2019, 8, 1),
+    datetime(2019, 9, 1),
+    datetime(2019, 10, 1),
+    datetime(2019, 11, 1),
+    datetime(2019, 12, 1),
+    datetime(2020, 1, 1)
+]
 
 
 class TestModels(unittest.TestCase):
@@ -23,26 +58,97 @@ class TestModels(unittest.TestCase):
             runners = run(setup_parser(['-l', '-a dev', '-d', get_static_path('models/youtube.yml')]))
 
     def test_ci_v2(self):
+        expected_index = pd.MultiIndex.from_arrays([dates, np.zeros(13, dtype=int)], names=['time', 'samples'])
+
+        expected = pd.DataFrame(index=expected_index)
+
+        expected['CDN'] = pd.Series(index=expected_index, data=np.full(13, 5.000000000000002e-08),
+                                    dtype='pint[gigawatt_hour]')
+        expected['Internet Network'] = pd.Series(index=expected_index, data=np.full(13, 5.000000000000002e-08),
+                                                 dtype='pint[gigawatt_hour]')
+        expected['Laptop'] = pd.Series(index=expected_index, data=np.full(13, 0.00020000000000000006),
+                                       dtype='pint[gigawatt_hour]')
+
         with use_test_dir():
             runners = run(setup_parser(['-l', '-a', 'ci', '-d', '-id', get_static_path('models/ci_v2.yml')]))
-            output = load_output_var(runners, 'energy')
+            output = load_output_dataframe(runners, 'energy')
 
-            print(output)
+            assert_pint_frame_equal(output, expected)
 
-            assert isclose(output['CDN'], 6.500000000000002e-07)
-            assert isclose(output['Internet Network'], 6.500000000000002e-07)
-            assert isclose(output['Laptop'], 0.0026000000000000007)
+            means = get_means(output)
+
+            print(means)
+
+            assert isclose(means['CDN'], 6.500000000000002e-07)
+            assert isclose(means['Internet Network'], 6.500000000000002e-07)
+            assert isclose(means['Laptop'], 0.0026000000000000007)
 
     def test_ci_v2_linear(self):
+        expected_index = pd.MultiIndex.from_arrays([dates, np.zeros(13, dtype=int)], names=['time', 'samples'])
+
+        expected = pd.DataFrame(index=expected_index)
+
+        expected['CDN'] = pd.Series(index=expected_index, data=[
+            5.000E-08,
+            5.250E-08,
+            5.500E-08,
+            5.750E-08,
+            6.000E-08,
+            6.250E-08,
+            6.500E-08,
+            6.750E-08,
+            7.000E-08,
+            7.250E-08,
+            7.500E-08,
+            7.750E-08,
+            8.000E-08
+        ], dtype='pint[gigawatt_hour]')
+
+        expected['Internet Network'] = pd.Series(index=expected_index, data=[
+            5.000E-08,
+            5.250E-08,
+            5.500E-08,
+            5.750E-08,
+            6.000E-08,
+            6.250E-08,
+            6.500E-08,
+            6.750E-08,
+            7.000E-08,
+            7.250E-08,
+            7.500E-08,
+            7.750E-08,
+            8.000E-08
+        ], dtype='pint[gigawatt_hour]')
+
+        expected['Laptop'] = pd.Series(index=expected_index, data=[
+            0.000200,
+            0.000210,
+            0.000220,
+            0.000230,
+            0.000240,
+            0.000250,
+            0.000260,
+            0.000270,
+            0.000280,
+            0.000290,
+            0.000300,
+            0.000310,
+            0.000320
+        ], dtype='pint[gigawatt_hour]')
+
         with use_test_dir():
             runners = run(setup_parser(['-l', '-a', 'ci', '-d', '-id', get_static_path('models/ci_v2_linear.yml')]))
-            output = load_output_var(runners, 'energy')
+            output = load_output_dataframe(runners, 'energy')
 
-            print(output)
+            assert_pint_frame_equal(output, expected, rtol=1e-2)
 
-            assert isclose(output['CDN'], 0.000000845, rel_tol=0, abs_tol=0.000000001)
-            assert isclose(output['Internet Network'], 0.000000845, rel_tol=0, abs_tol=0.000000001)
-            assert isclose(output['Laptop'], 0.00338, rel_tol=0, abs_tol=0.00001)
+            means = get_means(output)
+
+            print(means)
+
+            assert isclose(means['CDN'], 0.000000845, rel_tol=0, abs_tol=0.000000001)
+            assert isclose(means['Internet Network'], 0.000000845, rel_tol=0, abs_tol=0.000000001)
+            assert isclose(means['Laptop'], 0.00338, rel_tol=0, abs_tol=0.00001)
 
     @unittest.skip("multithreading is unused, would only be for scenarios")
     def test_ci_v2_multithreaded(self):
@@ -50,15 +156,30 @@ class TestModels(unittest.TestCase):
             runners = run(setup_parser(['-l', '-a', 'ci', '-d', '-m', '-id', get_static_path('models/ci_v2.yml')]))
 
     def test_countries(self):
+        expected_index = pd.MultiIndex.from_product([dates, [0], ['A', 'B']], names=['time', 'samples', 'group'])
+
+        expected = pd.DataFrame(index=expected_index)
+
+        expected['CDN'] = pd.Series(index=expected_index, data=np.tile([2.5E-08, 1.25E-08], 13),
+                                    dtype='pint[gigawatt_hour]')
+        expected['Internet Network'] = pd.Series(index=expected_index, data=np.tile([2.5E-08, 1.25E-08], 13),
+                                                 dtype='pint[gigawatt_hour]')
+        expected['Laptop'] = pd.Series(index=expected_index, data=np.tile([2E-04, 1.11111111111E-04], 13),
+                                       dtype='pint[gigawatt_hour]')
+
         with use_test_dir():
             runners = run(setup_parser(['-l', '-a', 'ci', '-d', get_static_path('models/ci_v2_group.yml')]))
-            output = load_output_var(runners, 'energy')
+            output = load_output_dataframe(runners, 'energy')
 
-            print(output)
+            assert_pint_frame_equal(output, expected)
 
-            assert isclose(output['CDN'], 2.4375000000000005e-07)
-            assert isclose(output['Internet Network'], 2.4375000000000005e-07)
-            assert isclose(output['Laptop'], 0.0020222222222222226)
+            means = get_means(output)
+
+            print(means)
+
+            assert isclose(means['CDN'], 2.4375000000000005e-07)
+            assert isclose(means['Internet Network'], 2.4375000000000005e-07)
+            assert isclose(means['Laptop'], 0.0020222222222222226)
 
 
 if __name__ == '__main__':
