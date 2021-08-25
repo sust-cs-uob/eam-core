@@ -26,7 +26,7 @@ class SimulationRunner(object):
     Responsible for the execution of the simulation, including storage of results. It encapsulates the protocol of the
     simulation.
 
-    todo: most of this isnt tested
+    todo: most of this isnt tested, large parts arent used. remove them?
     """
 
     def __init__(self, sim_control=None):

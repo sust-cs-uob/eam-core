@@ -16,3 +16,5 @@ precision = 2
 omit =
     *migrations*
     src/eam_core/dsl/MuListener.py
+    src/eam_core/__main__.py
+    src/eam_core/cli.py
