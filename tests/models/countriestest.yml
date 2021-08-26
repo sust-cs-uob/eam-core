@@ -53,6 +53,7 @@ Processes:
       return energy
 
 Metadata:
+  status: test_resource
   model_name: country_test
   description: |
     bla bla

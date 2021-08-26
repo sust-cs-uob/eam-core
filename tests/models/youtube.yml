@@ -1380,7 +1380,7 @@ Analysis:
       Cable: #153A52
 
 Metadata:
-
+  status: test_resource
   model_name: youtube
   file_locations:
     - file_alias: youtube_model_params

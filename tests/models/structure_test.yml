@@ -117,6 +117,7 @@ Analysis:
   - endswith: energy
     to_unit: J
 Metadata:
+  status: test_resource
   model_name: structure test
   table_file_name: table.csv
   start_date: '2000-01-01'
