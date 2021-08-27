@@ -1,4 +1,7 @@
 import datetime
+import os
+from contextlib import contextmanager
+
 import unittest
 from typing import Dict
 
@@ -25,27 +28,49 @@ def load_valid_group_model():
             return yaml.load(model, Loader=yaml.RoundTripLoader)
 
 
+@contextmanager
+def use_model_temp_copy(model):
+    with use_test_dir():
+        with open('models/temp_copy.yml', 'w') as model_file:
+            yaml.dump(model, model_file, Dumper=yaml.RoundTripDumper)
+
+        try:
+            yield
+        finally:
+            os.remove('models/temp_copy.yml')
+
+
+
 class TestLevels(unittest.TestCase):
 
     def assert_invalid_throws_with_level(self, level, status):
-        with self.assertRaises(Exception) as context:
-            validate_model({
-                'Metadata': {
-                    'status': status
-                },
-                'INVALID': True
-            }, level)
-
-        assert str(context.exception) == 'yaml forced to be invalid',\
-            f'Expected exception message to be \'yaml forced to be invalid\', but was \'{str(context.exception)}\''
-
-    def assert_invalid_doesnt_throw_with_level(self, level, status):
-        validate_model({
+        model = {
             'Metadata': {
                 'status': status
             },
             'INVALID': True
-        }, level)
+        }
+
+        with use_model_temp_copy(model):
+            with self.assertRaises(Exception) as context:
+                validate_model('models/temp_copy.yml', level)
+
+            assert str(context.exception) == 'yaml forced to be invalid',\
+                f'Expected exception message to be \'yaml forced to be invalid\', but was \'{str(context.exception)}\''
+
+    def assert_invalid_doesnt_throw_with_level(self, level, status):
+        model = {
+            'Metadata': {
+                'status': status
+            },
+            'INVALID': True
+        }
+
+        with use_model_temp_copy(model):
+            try:
+                validate_model('models/temp_copy.yml', level)
+            except YAMLValidationError as e:
+                raise AssertionError(f'Expected no errors, but \'{str(e)}\' was raised.')
 
     def test_level_development(self):
         self.assert_invalid_throws_with_level('development', 'development')
@@ -86,20 +111,19 @@ class TestLevels(unittest.TestCase):
 class ValidationTestCase(unittest.TestCase):
 
     def assert_validate_throws_error(self, model, message):
-        with self.assertRaises(Exception) as context:
-            validate_model(model)
+        with use_model_temp_copy(model):
+            with self.assertRaises(Exception) as context:
+                validate_model('models/temp_copy.yml')
 
-        assert str(context.exception) == message, \
-            f'Expected exception message to be \'{message}\', but was \'{str(context.exception)}\''
+            assert str(context.exception) == message, \
+                f'Expected exception message to be \'{message}\', but was \'{str(context.exception)}\''
 
 
 class TestValid(unittest.TestCase):
 
     def test_valid_model(self):
-        model = load_valid_model()
-
         try:
-            validate_model(model)
+            validate_model('models/valid.yml')
         except YAMLValidationError as e:
             raise AssertionError(f'Expected no errors, but \'{str(e)}\' was raised.')
 
@@ -107,10 +131,11 @@ class TestValid(unittest.TestCase):
         model = load_valid_model()
         model['Metadata']['Description'] = 'test'
 
-        try:
-            validate_model(model)
-        except YAMLValidationError as e:
-            raise AssertionError(f'Expected no errors, but \'{str(e)}\' was raised.')
+        with use_model_temp_copy(model):
+            try:
+                validate_model('models/temp_copy.yml')
+            except YAMLValidationError as e:
+                raise AssertionError(f'Expected no errors, but \'{str(e)}\' was raised.')
 
 
 class TestMissing(ValidationTestCase):
@@ -236,7 +261,23 @@ class TestInvalidValues(ValidationTestCase):
 
     def test_model_version_not_semantic_versioning(self):
         model = load_valid_model()
+        model['Metadata']['model_version'] = 'potato'
+        self.assert_validate_throws_error(model, 'model_version must follow Semantic Versioning')
 
+    def test_model_version_not_semantic_versioning_too_few_numbers(self):
+        model = load_valid_model()
+        model['Metadata']['model_version'] = '1.0'
+        self.assert_validate_throws_error(model, 'model_version must follow Semantic Versioning')
+
+    def test_model_version_not_semantic_versioning_too_many_numbers(self):
+        model = load_valid_model()
+        model['Metadata']['model_version'] = '1.0.0.0'
+        self.assert_validate_throws_error(model, 'model_version must follow Semantic Versioning')
+
+    def test_model_version_not_semantic_versioning_not_numbers(self):
+        model = load_valid_model()
+        model['Metadata']['model_version'] = 'a.0.0'
+        self.assert_validate_throws_error(model, 'model_version must follow Semantic Versioning')
 
 if __name__ == '__main__':
     unittest.main()

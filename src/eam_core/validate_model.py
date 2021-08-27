@@ -1,4 +1,8 @@
 import datetime
+import re
+
+import yaml
+from ruamel import yaml
 
 statuses = ['development', 'testing', 'live', 'archived', 'test_resource']
 
@@ -34,13 +38,16 @@ def get_status(yaml_struct):
     return yaml_struct['Metadata']['status']
 
 
-def validate_model(yaml_struct, level='testing'):
-    validated_statuses = get_validated_statuses(level)
+def validate_model(filepath, level='testing'):
+    with open(filepath) as model:
+        yaml_struct = yaml.load(model, Loader=yaml.RoundTripLoader)
 
-    if get_status(yaml_struct) in validated_statuses:
-        assert_not_forced_invalid(yaml_struct)
+        validated_statuses = get_validated_statuses(level)
 
-        validate_metadata(yaml_struct['Metadata'])
+        if get_status(yaml_struct) in validated_statuses:
+            assert_not_forced_invalid(yaml_struct)
+
+            validate_metadata(yaml_struct['Metadata'])
 
 
 def assert_not_forced_invalid(yaml_struct):
@@ -51,6 +58,7 @@ def assert_not_forced_invalid(yaml_struct):
 def validate_metadata(metadata):
     assert_required_metadata_present(metadata)
     assert_metadata_types_correct(metadata)
+    assert_model_version_follows_semantic_versioning(metadata)
 
     if metadata.get('with_group', False):
         validate_countrified_metadata(metadata)
@@ -113,6 +121,11 @@ def assert_metadata_types_correct(metadata):
     if 'with_group' in metadata:
         if not isinstance(metadata['with_group'], bool):
             raise YAMLValidationError('with_group must be a boolean')
+
+
+def assert_model_version_follows_semantic_versioning(metadata):
+    if re.fullmatch('[0-9]*\.[0-9]*\.[0-9]', metadata['model_version']) is None:
+        raise YAMLValidationError('model_version must follow Semantic Versioning')
 
 
 def validate_countrified_metadata(metadata):
