@@ -238,7 +238,7 @@ class TestModels(unittest.TestCase):
             runners = run(setup_parser(['-l', '-a', 'ci', '-d', get_static_path('models/ci_v2_group.yml')]))
             output = load_output_dataframe(runners, 'energy')
 
-            assert_pint_frame_equal(output, expected, rtol=1e-4)
+            assert_pint_frame_equal(output, expected)
 
             means = get_means(output)
 
