@@ -1,19 +1,8 @@
 Metadata:
-
-  # type: string
-  # one of: development, testing, live, archived, test_resource
   status: test_resource
-
-  # type: string
   model_name: valid
-
-  # type: string
-  # Must be a Semantic Versioning version number.
   model_version: 1.0.0
-
-  # type: string
-  # Must point to a valid .xlsx, relative to the .yml file.
-  table_file_name: ../data/valid_data.xlsx
+  table_file_name: placeholder
 
 # description: |      skipped: optional?
 #   bla bla
@@ -29,4 +18,7 @@ Metadata:
 
 # individual_process_graphs_variable: placeholder       skipped: optional
 
-# with_group: false                skipped: optional
+  with_group: true
+  group_vars: []
+  group_aggregation_vars: [ ]
+# groupings: []
