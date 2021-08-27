@@ -86,9 +86,8 @@ Metadata:
   with_group: true
   group_vars:
     - carbon_intensity
-
-    - - power_laptop
-      - time_laptop
+    - power_laptop
+    - time_laptop
   group_aggregation_vars: [ ]
   groupings:
     - A
