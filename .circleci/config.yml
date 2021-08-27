@@ -37,7 +37,7 @@ jobs:
       - run:
           name: install eam_core
           command: |
-            pip install eam-data-tools @ git+https://github.com/sust-cs-uob/eam-data-tools.git@countries
+            pip install git+https://github.com/sust-cs-uob/eam-data-tools.git@countries
             pip install .[test]
 
       - save_cache:
