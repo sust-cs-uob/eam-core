@@ -122,10 +122,11 @@ class ValidationTestCase(unittest.TestCase):
 class TestValid(unittest.TestCase):
 
     def test_valid_model(self):
-        try:
-            validate_model('models/valid.yml')
-        except YAMLValidationError as e:
-            raise AssertionError(f'Expected no errors, but \'{str(e)}\' was raised.')
+        with use_test_dir():
+            try:
+                validate_model('models/valid.yml')
+            except YAMLValidationError as e:
+                raise AssertionError(f'Expected no errors, but \'{str(e)}\' was raised.')
 
     def test_description_added(self):
         model = load_valid_model()
