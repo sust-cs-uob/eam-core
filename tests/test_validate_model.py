@@ -34,7 +34,7 @@ class TestLevels(unittest.TestCase):
                     'status': status
                 },
                 'INVALID': True
-            }, None, level)
+            }, level)
 
         assert str(context.exception) == 'yaml forced to be invalid',\
             f'Expected exception message to be \'yaml forced to be invalid\', but was \'{str(context.exception)}\''
@@ -45,7 +45,7 @@ class TestLevels(unittest.TestCase):
                 'status': status
             },
             'INVALID': True
-        }, None, level)
+        }, level)
 
     def test_level_development(self):
         self.assert_invalid_throws_with_level('development', 'development')
