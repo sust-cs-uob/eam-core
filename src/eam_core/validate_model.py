@@ -1,8 +1,15 @@
 import datetime
+import os.path
 import re
 
 import yaml
 from ruamel import yaml
+
+from table_data_reader.table_handlers import OpenpyxlTableHandler
+
+import logging
+
+logger = logging.getLogger(__name__)
 
 statuses = ['development', 'testing', 'live', 'archived', 'test_resource']
 
@@ -38,7 +45,24 @@ def get_status(yaml_struct):
     return yaml_struct['Metadata']['status']
 
 
+def get_table_definitions(yaml_dir, yaml_struct):
+    if 'table_file_name' not in yaml_struct['Metadata']:
+        raise YAMLValidationError('table_file_name is missing from Metadata')
+
+    if not isinstance(yaml_struct['Metadata']['table_file_name'], str):
+        raise YAMLValidationError('table_file_name must be a string')
+
+    table_file_name = f'{yaml_dir}/{yaml_struct["Metadata"]["table_file_name"]}'
+    if not os.path.exists(table_file_name):
+        raise YAMLValidationError('table_file_name must point to a file')
+
+    # return OpenpyxlTableHandler().load_definitions(None, filename=table_file_name)
+    return None
+
+
 def validate_model(filepath, level='testing'):
+    logger.info(f'Validating {filepath}')
+
     with open(filepath) as model:
         yaml_struct = yaml.load(model, Loader=yaml.RoundTripLoader)
 
@@ -47,7 +71,12 @@ def validate_model(filepath, level='testing'):
         if get_status(yaml_struct) in validated_statuses:
             assert_not_forced_invalid(yaml_struct)
 
+            yaml_dir = os.path.dirname(filepath)
+            table_definitions = get_table_definitions(yaml_dir, yaml_struct)
+
             validate_metadata(yaml_struct['Metadata'])
+        else:
+            logger.info(f'Skipped: yaml has status {get_status(yaml_struct)}')
 
 
 def assert_not_forced_invalid(yaml_struct):
@@ -76,9 +105,6 @@ def assert_required_metadata_present(metadata):
     if 'model_version' not in metadata:
         raise YAMLValidationError('model_version is missing from Metadata')
 
-    if 'table_file_name' not in metadata:
-        raise YAMLValidationError('table_file_name is missing from Metadata')
-
     if 'start_date' not in metadata:
         raise YAMLValidationError('start_date is missing from Metadata')
 
@@ -91,6 +117,12 @@ def assert_required_metadata_present(metadata):
     if 'sample_mean' not in metadata:
         raise YAMLValidationError('sample_mean is missing from Metadata')
 
+    if 'description' not in metadata:
+        logger.warning('description is missing from Metadata')
+
+    if 'process_map' not in metadata:
+        logger.warning('process_map is missing from Metadata')
+
 
 def assert_metadata_types_correct(metadata):
     if not isinstance(metadata['model_name'], str):
@@ -98,9 +130,6 @@ def assert_metadata_types_correct(metadata):
 
     if not isinstance(metadata['model_version'], str):
         raise YAMLValidationError('model_version must be a string')
-
-    if not isinstance(metadata['table_file_name'], str):
-        raise YAMLValidationError('table_file_name must be a string')
 
     if not isinstance(metadata['start_date'], datetime.date):
         raise YAMLValidationError('start_date must be a date')
