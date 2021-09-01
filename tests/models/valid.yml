@@ -43,4 +43,6 @@ Metadata:
 
 # individual_process_graphs_variable: placeholder       skipped: optional
 
-# with_group: false                skipped: optional
+  # type: boolean
+  # optional
+# with_group: false
