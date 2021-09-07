@@ -5,6 +5,8 @@ import subprocess
 import matplotlib
 import sys
 import time
+
+import numpy as np
 from openpyxl.styles import Alignment
 
 from eam_core import SimulationControl
@@ -540,6 +542,36 @@ def style_result_worksheet(ws):
         cell.alignment = Alignment(horizontal='left')
 
 
+def provide_dummy_for_missing_process_vals(data, metadata):
+    """
+    VERY HACKY function for providing data for processes that don't calculate energy/carbon
+    We need data in the frame for it to be written in the results sheet, but we can't have strings directly
+    So, fill in with dummy data that is written to results, then overwritten with strings later on.
+    I'm using -1 for these dummy vals since they work with mean and *shouldn't* occur naturally (negative energy?)
+    :param data: The dataframe with processes and the result for a variable. This is mutated!
+    :param metadata: Stores information about processes, used to find missing vals.
+    :return: Boolean of whether any dummy values have been added to the dataframe
+    """
+    dummy_provided = False
+    for process in metadata.keys():
+        if not process in data:
+            dummy_vals = np.full((data.values.shape[0]), -1)
+            logger.info(f"storing dummy values for excel in {process}")
+            data[process] = dummy_vals
+            dummy_provided = True
+    return dummy_provided
+
+
+def overwrite_dummy_vals_with_null(sheets):
+    """
+    Given a list of sheets, iterate through them, find cells with the value -1 (indicating a dummy value),
+    and replace it with 'null;, indicating a process has not calculated that variable.
+    :param sheets: A list of the sheet names that need parsing.
+    :return:
+    """
+    for sheet_name in sheets:
+        pass
+
 def analysis(runner, yaml_struct, analysis_config=None, mean_run=None, image_filetype=None):
     """
 
@@ -615,6 +647,8 @@ def analysis(runner, yaml_struct, analysis_config=None, mean_run=None, image_fil
             # df.columns = df.columns.droplevel(1)
             data = df
 
+            dummy_provided = provide_dummy_for_missing_process_vals(data, metadata)
+
             unit = list(units.values())[0]
 
             sheet_name = f'total {variable} '
@@ -648,6 +682,10 @@ def analysis(runner, yaml_struct, analysis_config=None, mean_run=None, image_fil
                 sheet_descriptions[
                 sheet_name] = f'{sheet_name}: a direct load of the result data, monthly mean values. Unit: {unit}'
                 data.abs().groupby(level=['time']).quantile(.75).to_excel(writer, sheet_name)
+
+            if dummy_provided:
+                overwrite_dummy_vals_with_null([f'total {variable} ', f'month mean {variable} ',
+                                                f'25 quantiles {variable}', f'75 quantiles {variable}'])
 
         logger.info("plot_platform_process_annual_total")
 
