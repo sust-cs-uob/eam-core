@@ -1,4 +1,5 @@
 import copy
+import random
 import time
 from functools import partial
 
@@ -190,6 +191,8 @@ def store_dataframe(q_dict: Dict[str, pd.Series], simulation_control=None, targe
                     subdirectory=''):
     storage_df, metadata = pandas_series_dict_to_dataframe(q_dict, target_units=target_units, var_name=variable_name,
                                                            simulation_control=simulation_control)
+
+    calculate_group_sum_values(storage_df, variable_name)
     logger.info(f'metadata is {metadata}')
     filename = f'{simulation_control.output_directory}/{subdirectory}/result_data_{variable_name}.hdf5'
 
@@ -221,6 +224,10 @@ def load_as_plain_df(filename):
     df.columns = df.columns.droplevel(1)
     return df, units
 
+
+def calculate_group_sum_values(storage_df, variable_name):
+    #storage_df.pint.dequantify().to_pickle("store " + variable_name + ".pickle")
+    pass
 
 def get_maximum_country_list(data: Dict[str, pd.Series]) -> list:
     countries = set()
