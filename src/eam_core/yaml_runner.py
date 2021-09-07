@@ -552,6 +552,7 @@ def provide_dummy_for_missing_process_vals(data, metadata):
     :param metadata: Stores information about processes, used to find missing vals.
     :return: Boolean of whether any dummy values have been added to the dataframe
     """
+    return False # skip this while overwrite_dummy_vals_with_null is unimplemented.
     dummy_provided = False
     for process in metadata.keys():
         if not process in data:
@@ -570,6 +571,7 @@ def overwrite_dummy_vals_with_null(sheets):
     :return:
     """
     for sheet_name in sheets:
+        # unimplemented.
         pass
 
 def analysis(runner, yaml_struct, analysis_config=None, mean_run=None, image_filetype=None):
