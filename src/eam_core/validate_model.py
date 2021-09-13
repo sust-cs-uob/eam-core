@@ -158,25 +158,41 @@ def assert_model_version_follows_semantic_versioning(metadata):
 
 
 def validate_countrified_metadata(metadata):
+    assert_dependency_vars_are_countrified(metadata)
     assert_required_countrified_metadata_present(metadata)
     assert_countrified_metadata_types_correct(metadata)
     assert_countrified_vars_are_ui(metadata)
+
+
+def assert_dependency_vars_are_countrified(metadata):
+    if 'group_dependencies' in metadata:
+        group_dependencies = metadata['group_dependencies']
+        for group_dependency in group_dependencies:
+            linked_param_names = list(group_dependency.values())[0]
+            for linked_param_name in linked_param_names:
+                if linked_param_name not in metadata['group_vars']:
+                    raise YAMLValidationError(f'{linked_param_name} is in a group dependency, but is not in group_vars')
 
 
 def assert_required_countrified_metadata_present(metadata):
     if 'group_vars' not in metadata:
         raise YAMLValidationError('with_group is true, but group_vars is missing from Metadata')
 
+    """
+    @todo unsure if aggregation is required group metadata, since its not always used.
     if 'group_aggregation_vars' not in metadata:
         raise YAMLValidationError('with_group is true, but group_aggregation_vars is missing from Metadata')
-
+    """
 
 def assert_countrified_metadata_types_correct(metadata):
     if not isinstance(metadata['group_vars'], list):
         raise YAMLValidationError('group_vars must be a list')
 
+    """
+    same issue as in assert_required_countrified_metadata_present()
     if not isinstance(metadata['group_aggregation_vars'], list):
         raise YAMLValidationError('group_aggregation_vars must be a list')
+    """
 
     if 'groupings' in metadata:
         if not isinstance(metadata['groupings'], list):
