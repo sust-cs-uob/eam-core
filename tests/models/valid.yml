@@ -22,7 +22,7 @@ Metadata:
 
   # type: string
   # optional: warn
-  # Must point to a valid .xlsx, relative to the .yml file
+  # Must point to a valid .svg, relative to the .yml file
   process_map: placeholder.svg
 
 # comparison_variable: placeholder      skipped: don't understand
