@@ -184,15 +184,14 @@ def assert_required_countrified_metadata_present(metadata):
         raise YAMLValidationError('with_group is true, but group_aggregation_vars is missing from Metadata')
     """
 
+
 def assert_countrified_metadata_types_correct(metadata):
     if not isinstance(metadata['group_vars'], list):
         raise YAMLValidationError('group_vars must be a list')
 
-    """
-    same issue as in assert_required_countrified_metadata_present()
-    if not isinstance(metadata['group_aggregation_vars'], list):
-        raise YAMLValidationError('group_aggregation_vars must be a list')
-    """
+    if 'group_aggregation_vars' in metadata:
+        if not isinstance(metadata['group_aggregation_vars'], list):
+            raise YAMLValidationError('group_aggregation_vars must be a list')
 
     if 'groupings' in metadata:
         if not isinstance(metadata['groupings'], list):

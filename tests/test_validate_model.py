@@ -196,6 +196,7 @@ class TestMissingGroup(ValidationTestCase):
         self.assert_validate_raises_error(model, 'with_group is true, but group_vars is missing '
                                                  'from Metadata')
 
+    @unittest.skip("aggregation vars not required")
     def test_missing_group_aggregation_vars(self):
         model = load_valid_group_model()
         del model['Metadata']['group_aggregation_vars']
