@@ -908,6 +908,8 @@ def configue_sim_control_from_yaml(sim_control: SimulationControl, yaml_struct, 
                 # the group varoid is a group variable.
                 sim_control.group_vars.append(group_varoid)
 
+        sim_control.group_dependencies = yaml_struct['Metadata'].get('group_dependencies', [])
+
         if sim_control.groupings == []:
             sim_control.with_group = False
 
