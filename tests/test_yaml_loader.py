@@ -62,7 +62,7 @@ Metadata:
     def test_yaml_parsing(self):
         #cwd = set_cwd_to_script_dir()
         with use_test_dir():
-            yaml_def = yaml.load(YamlLoader_v1.doc)
+            yaml_def = yaml.safe_load(YamlLoader_v1.doc)
             assert len(yaml_def) == 3
             # print(yaml_def)
             process_def = yaml_def['Processes'][0]
@@ -101,7 +101,7 @@ Metadata:
     def test_excelvar(self):
         #cwd = set_cwd_to_script_dir()
         with use_test_dir():
-            yaml_def = yaml.load(YamlLoader_v1.doc)
+            yaml_def = yaml.safe_load(YamlLoader_v1.doc)
             metadata_struct = yaml_def['Metadata']
 
             formula_def = yaml_def['Processes'][0]
