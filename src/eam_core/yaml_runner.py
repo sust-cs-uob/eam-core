@@ -489,7 +489,7 @@ def summary_analysis(scenario_paths, model_run_base_directory, analysis_config, 
 
                 # data.rename(lambda x: f'{x}.{scenario}', axis='columns', inplace=True)
 
-                if not yaml_struct['Metadata']['with_group']:
+                if not yaml_struct['Metadata'].get('with_group', False):
                     data = data.mean(level='time').mean().to_frame(name=scenario)
                 else:
                     logger.info('writing group results to excel, untested with scenarios!')
