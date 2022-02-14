@@ -488,7 +488,13 @@ def summary_analysis(scenario_paths, model_run_base_directory, analysis_config, 
                 data, units = load_as_plain_df(f'{scenario_directory}/result_data_{variable}.hdf5')
 
                 # data.rename(lambda x: f'{x}.{scenario}', axis='columns', inplace=True)
-                data = data.mean(level='time').mean().to_frame(name=scenario)
+
+                if not yaml_struct['Metadata']['with_group']:
+                    data = data.mean(level='time').mean().to_frame(name=scenario)
+                else:
+                    logger.info('writing group results to excel, untested with scenarios!')
+                    data = data.reorder_levels(['group', 'time', 'samples']).groupby(level=['group']).mean()
+
                 # check all units are the same
                 units_set = set(units[p] for p in units.keys())
                 assert len(units_set) == 1
