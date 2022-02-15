@@ -10,7 +10,6 @@ from eam_core.YamlLoader import YamlLoader
 #from tests.directory_test_controller import set_cwd_to_script_dir, return_to_base_cwd
 from tests.directory_test_controller import use_test_dir
 
-
 class YamlLoader_v1(unittest.TestCase):
     doc = u"""
 Processes:
@@ -170,7 +169,7 @@ Metadata:
         yaml_structure = YamlLoader.load_definitions(doc)
 
         s = YamlLoader.create_service(yaml_structure, sim_control)
-        # for node in s.process_graph.nodes_iter():
+        # for node in s.process_graph.nodes():
         #     if node.name in ['a', 'b']:
         #         assert s.process_graph.out_edges(node) == []
         #
@@ -378,9 +377,9 @@ Metadata:
         yaml_structure = YamlLoader.load_definitions(doc)
 
         s = YamlLoader.create_service(yaml_structure, sim_control)
-        for node in s.process_graph.nodes_iter():
+        for node in s.process_graph.nodes():
             if node.name in ['a', 'b']:
-                assert s.process_graph.out_edges(node) == []
+                assert len(s.process_graph.out_edges(node)) == 0
 
             if node.name == 'c':
                 linked_nodes = set()
@@ -613,7 +612,7 @@ Metadata:
         # print(fp)
         assert np.allclose(fp['use_phase_energy']['a'], [8.], rtol=.1)
 
-        for node in s.process_graph.nodes_iter():
+        for node in s.process_graph.nodes():
             if node.name == 'a':
                 assert 'metadata' in node.__dict__
                 assert node.metadata['device_type'] == 'User Device'
@@ -682,7 +681,7 @@ Metadata:
 
         assert np.allclose(fp['use_phase_energy']['a'], [8.], rtol=.1)
 
-        for node in s.process_graph.nodes_iter():
+        for node in s.process_graph.nodes():
             if node.name == 'a':
                 assert 'metadata' in node.__dict__
                 assert node.metadata['device_type'] == 'Router'
@@ -760,10 +759,10 @@ Metadata:
 
             s = YamlLoader.create_service(yaml_structure, sim_control)
 
-            for node in s.process_graph.nodes_iter():
+            for node in s.process_graph.nodes():
                 if node.name in ['Net']:
                     assert node.formulaModel.formula.text == 'energy = data * intensity;'
-                    assert s.process_graph.out_edges(node) == []
+                    assert len(s.process_graph.out_edges(node)) == 0
 
                 if node.name == 'UD':
 
