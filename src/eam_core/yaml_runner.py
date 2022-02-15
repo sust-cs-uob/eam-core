@@ -490,10 +490,15 @@ def summary_analysis(scenario_paths, model_run_base_directory, analysis_config, 
                 # data.rename(lambda x: f'{x}.{scenario}', axis='columns', inplace=True)
 
                 if not yaml_struct['Metadata'].get('with_group', False):
+                    logger.info(f'building excel dataframe for non-grouped {scenario} scenario')
                     data = data.mean(level='time').mean().to_frame(name=scenario)
                 else:
-                    logger.info('writing group results to excel, untested with scenarios!')
+                    logger.info(f'building excel dataframe for grouped {scenario} scenario')
                     data = data.reorder_levels(['group', 'time', 'samples']).groupby(level=['group']).mean()
+
+                    # add an index level annotating output scenario
+                    # this is needed as grouped scenarios are concatenated and need a way of separating!
+                    data = pd.concat({scenario: data}, names=['Scenario'])
 
                 # check all units are the same
                 units_set = set(units[p] for p in units.keys())
@@ -501,13 +506,21 @@ def summary_analysis(scenario_paths, model_run_base_directory, analysis_config, 
 
                 unit = units_set.pop()
 
-
             else:
-                _dframe, _ = load_as_plain_df(f'{scenario_directory}/result_data_{variable}.hdf5')
-                # _dframe.rename(lambda x: f'{x}.{scenario}', axis='columns', inplace=True)
+                if not yaml_struct['Metadata'].get('with_group', False):
+                    logger.info(f'joining excel dataframe for non-grouped {scenario} scenario')
+                    _dframe, _ = load_as_plain_df(f'{scenario_directory}/result_data_{variable}.hdf5')
+                    # _dframe.rename(lambda x: f'{x}.{scenario}', axis='columns', inplace=True)
 
-                # data = pd.concat([s1, s2], axis=1)
-                data = data.join(_dframe.mean(level='time').mean().to_frame(name=scenario))
+                    # data = pd.concat([s1, s2], axis=1)
+                    data = data.join(_dframe.mean(level='time').mean().to_frame(name=scenario))
+                else:
+                    logger.info(f'concatenating excel dataframe for grouped {scenario} scenario')
+                    data_scenario, _ = load_as_plain_df(f'{scenario_directory}/result_data_{variable}.hdf5')
+                    data_scenario = data_scenario.reorder_levels(['group', 'time', 'samples']).groupby(level=['group']).mean()
+                    data_scenario = pd.concat({scenario: data_scenario}, names=['Scenario'])
+                    data = pd.concat([data, data_scenario])
+
         sheet_name = f'mean {variable}'
         sheet_descriptions[
             sheet_name] = f'{sheet_name}: a direct load of the result data, monthly mean values. Unit: {unit}'
