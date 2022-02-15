@@ -14,13 +14,28 @@ Why does this file exist, and why not put this in __main__?
 
   Also see (1) from http://click.pocoo.org/5/setuptools/#setuptools-integration
 """
+import sys
+
 import argparse
 
-parser = argparse.ArgumentParser(description='Command description.')
-parser.add_argument('names', metavar='NAME', nargs=argparse.ZERO_OR_MORE,
-                    help="A name of something.")
+from eam_core.yaml_runner import setup_parser, run
+import eam_core.log_configuration as logconf
+
+logconf.config_logging()
+
+import logging
+
+logger = logging.getLogger()
 
 
 def main(args=None):
-    args = parser.parse_args(args=args)
-    print(args.names)
+    args = setup_parser(sys.argv[1:])
+    logger.info(f"Running with parameters {args}")
+    if args.verbose:
+        level = logging.DEBUG
+        logger = logging.getLogger()
+        logger.setLevel(level)
+        for handler in logger.handlers:
+            handler.setLevel(level)
+
+    runners = run(args)
