@@ -25,11 +25,11 @@ logconf.config_logging()
 
 import logging
 
-logger = logging.getLogger()
 
 
 def main(args=None):
     args = setup_parser(sys.argv[1:])
+    logger = logging.getLogger()
     logger.info(f"Running with parameters {args}")
     if args.verbose:
         level = logging.DEBUG

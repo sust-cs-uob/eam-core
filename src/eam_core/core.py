@@ -573,7 +573,7 @@ class ServiceModel(object):
         logger.info(f"calculating footprint for model {self.name}")
         G = self.process_graph
 
-        unprocessed: List[FormulaProcess] = [x for x in G.nodes_iter() if G.in_degree(x) == 0]
+        unprocessed: List[FormulaProcess] = [x for x in G.nodes() if G.in_degree(x) == 0]
         processed: List[FormulaProcess] = []
 
         results = {}
