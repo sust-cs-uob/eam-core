@@ -1,13 +1,13 @@
+import sys
+
 import copy
-import random
+import os
 import time
 from functools import partial
 
 import matplotlib
-import pint
-import pint_pandas
-import os
 from pint.quantity import _Quantity
+from ruamel import yaml
 
 from eam_core.YamlLoader import YamlLoader
 
@@ -21,7 +21,7 @@ import logging
 
 import subprocess
 from operator import itemgetter
-from typing import Dict, Any, Optional, Tuple
+from typing import Dict, Any, Optional
 
 import numpy as np
 import pandas as pd
@@ -31,9 +31,6 @@ from networkx.drawing.nx_pydot import to_pydot
 from tabulate import tabulate
 
 import networkx as nx
-from networkx.drawing.nx_agraph import graphviz_layout, write_dot
-
-import errno
 
 # todo: large parts of this are untested
 
@@ -226,8 +223,9 @@ def load_as_plain_df(filename):
 
 
 def calculate_group_sum_values(storage_df, variable_name):
-    #storage_df.pint.dequantify().to_pickle("store " + variable_name + ".pickle")
+    # storage_df.pint.dequantify().to_pickle("store " + variable_name + ".pickle")
     pass
+
 
 def get_maximum_country_list(data: Dict[str, pd.Series]) -> list:
     countries = set()
@@ -800,8 +798,6 @@ def compare_dataframes(assert_structural_identity, df_a, df_b, simrun_a, simrun_
     return changed_variables
 
 
-
-
 def get_sim_run_description():
     from os import system
     from platform import system as platform
@@ -892,6 +888,15 @@ def configue_sim_control_from_yaml(sim_control: SimulationControl, yaml_struct, 
     if yaml_struct['Metadata'].get('with_group', False):
         sim_control.with_group = True
         sim_control.groupings = yaml_struct['Metadata'].get('groupings', [])
+        groupings_include = yaml_struct['Metadata'].get('groupings_include', None)
+        if groupings_include:
+            with open(groupings_include, 'r') as stream:
+                try:
+                    groupings = yaml.load(stream, Loader=yaml.RoundTripLoader)
+                    sim_control.groupings = groupings
+                except yaml.YAMLError as exc:
+                    logger.error(f'Error while loading yaml file {groupings_include} {exc}')
+                    sys.exit(1)
         iterables = [sim_control.times, range(sim_control.sample_size), sim_control.groupings]
         index = sim_control.index_names.copy()
         index.append("group")
