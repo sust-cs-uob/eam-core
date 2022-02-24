@@ -520,6 +520,7 @@ def summary_analysis(scenario_paths, model_run_base_directory, analysis_config, 
                     data_scenario = data_scenario.reorder_levels(['group', 'time', 'samples']).groupby(level=['group']).mean()
                     data_scenario = pd.concat({scenario: data_scenario}, names=['Scenario'])
                     data = pd.concat([data, data_scenario])
+                    data.to_pickle(model_run_base_directory + f'/result_data_full_{variable}.pkl')
 
         sheet_name = f'mean {variable}'
         sheet_descriptions[
@@ -660,6 +661,7 @@ def analysis(runner, yaml_struct, analysis_config=None, mean_run=None, image_fil
         # ======================== GO ================
         variables = yaml_struct['Analysis'].get('numerical', [])
         for variable in variables:
+
             logger.info(f'numerical analysis for var {variable}')
 
             pint_pandas_data, m = load_data(f'{output_directory}/result_data_{variable}.hdf5')
