@@ -159,6 +159,7 @@ def create_documentation(runner):
     if runner.use_docker:
         logger.info("writing pandoc")
         cwd = os.getcwd()
+
         # cmd = f"docker run -v {cwd}:{project_dir} -w {project_dir} markfletcher/graphviz dot {dot_file} -T{file_type} -Gsplines=ortho -Grankdir=LR -Gnodesep=0.1 -Gratio=compress"
         # cmd = f"docker run -v {cwd}:{project_dir} -w {project_dir} markfletcher/graphviz dot {dot_file} -T{file_type} -Gsplines=ortho -Grankdir=BT"
         # cmd = f"docker run -v {cwd}:{project_dir} -w {project_dir} markfletcher/graphviz dot {dot_file} -T{file_type} -Gsplines=ortho -Grankdir=BT > {dot_render_filename}"
@@ -372,7 +373,7 @@ def load_configuration(args):
         simulation_run_description = args.comment
     yamlfile = args.yamlfile
     yaml_struct = None
-    with open(yamlfile, 'r') as stream:
+    with open(yamlfile, encoding="utf-8", mode="r", errors='ignore') as stream:
         try:
             yaml_struct = yaml.load(stream, Loader=yaml.RoundTripLoader)
         except yaml.YAMLError as exc:

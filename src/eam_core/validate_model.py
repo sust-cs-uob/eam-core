@@ -63,7 +63,9 @@ def get_table_definitions(yaml_dir, yaml_struct):
 def validate_model(filepath, level='testing'):
     logger.info(f'Validating {filepath}')
 
-    with open(filepath) as model:
+    with open(filepath, encoding="latin_1", mode="r", errors='ignore') as model:
+        #contents = model.read()
+        #x = contents[1992]
         yaml_struct = yaml.load(model, Loader=yaml.RoundTripLoader)
 
         validated_statuses = get_validated_statuses(level)

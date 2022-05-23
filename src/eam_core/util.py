@@ -550,7 +550,7 @@ def draw_graph_from_dotfile(model, file_type='pdf', show_variables=True, metric=
     l_cmd = shlex.split(cmd)
 
     logger.info(f'removing "lp" statements from {dot_file}')
-    with subprocess.Popen(l_cmd, stdout=subprocess.PIPE) as proc:
+    with subprocess.Popen(l_cmd, stdout=subprocess.PIPE, shell=True) as proc:
         logger.info('output from shell process: ' + str(proc.stdout.read()))
 
     # time.sleep(2)
@@ -566,7 +566,7 @@ def draw_graph_from_dotfile(model, file_type='pdf', show_variables=True, metric=
         l_cmd = shlex.split(cmd)
         logger.info(f'running docker cmd {l_cmd}')
         with open(dot_render_filename, 'w') as output:
-            with subprocess.Popen(l_cmd, stdout=output) as proc:
+            with subprocess.Popen(l_cmd, stdout=output, shell=True) as proc:
                 pass
     else:
         cmd = f"dot '{dot_file}' -T{file_type} -Gsplines=ortho -Grankdir=BT > '{dot_render_filename}'"
