@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 default_cycler = (cycler(color=['r', 'g', 'b', 'y']) +
                   cycler(linestyle=['-', '--', ':', '-.']))
 
+# todo: large parts of this are untested. Does this matter?
 
 def plot_grid(df, file_name, xlabel, ylabel, title, base_dir, output_scenario_directory, **kwargs):
     data = df.ix[:, df.groupby(level=['time']).quantile(.75).max().sort_values(ascending=False).index]
@@ -509,5 +510,5 @@ def sum_interval(df, start_date=None, end_date=None):
         start_date = df.index[0][0].date()
     if not end_date:
         end_date = df.index[-1][0].date()
-    df = df.loc[start_date:end_date].sum(level='samples')
+    df = df.loc[pd.date_range(start_date, end_date, freq='MS')].sum(level='samples')
     return df

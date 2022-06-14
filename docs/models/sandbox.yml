@@ -1,0 +1,138 @@
+# Example YAML [https://en.wikipedia.org/wiki/YAML] service definition
+Processes:
+
+  - name: A
+    formula:
+      text: |
+        energy = power * ref_duration
+        carbon = energy * carbon_intensity
+        return energy
+
+    input_variables:
+      - type: ExcelVariableSet
+        variables:
+          - power
+          - time
+      - type: Constants
+        variables:
+          - ref_duration
+          - carbon_intensity
+    metadata:
+      category: alpha
+
+  - name: B
+    formula:
+      text: |
+        energy = power * ref_duration
+        carbon = energy * carbon_intensity
+        return energy
+
+    input_variables:
+      - type: ExcelVariableSet
+        variables:
+          - power
+          - time
+      - type: Constants
+        variables:
+          - ref_duration
+          - carbon_intensity
+    metadata:
+      category: beta
+
+    link_to:
+      - C
+      - A
+
+  - name: C
+    formula:
+      text: |
+        energy = power * ref_duration
+        carbon = energy * carbon_intensity
+        return energy
+
+    input_variables:
+      - type: ExcelVariableSet
+        variables:
+          - power
+          - time
+      - type: Constants
+        variables:
+          - ref_duration
+          - carbon_intensity
+    metadata:
+      category: alpha
+
+Constants:
+  - type: StaticVariables
+    variables:
+      #     Mean seconds per month (60 * 60 * ((365 * 3 + 1 * 366) / 4) / 12)
+      ref_duration: 2628000s # 2629800
+      carbon_intensity: 0.5kW/kWh # 2629800
+
+
+Analysis:
+
+  scenarios:
+    - S1
+
+  result_variables:
+    - energy
+
+  units:
+    - __eq__: energy
+      to_unit: Wh
+
+  numerical:
+    - energy
+
+  plots:
+    - name: process_grid
+      variable: energy
+      kind: grid
+      title: Monthly Energy Consumption per Process
+
+    - name: all_area
+      variable: energy
+      kind: area
+      title: Total Monthly Energy Consumption (GWh)
+      ylabel: Energy per Month [{unit}]
+      xlabel: Time
+      groups:
+        - name: Alpha
+          categories:
+            category: alpha
+
+Metadata:
+  model_name: sandbox
+  individual_process_graphs_variable: energy
+  analysis_configs:
+    - name: dev
+      named_plots:
+        - all_area
+        - process_grid
+
+      individual_process_graphs:
+        - process C
+
+
+      process_tree:
+        process_group_colours:
+          category_name: platform_name
+          colours:
+            Cellular: '#037E8C'
+            B: '#F26C27'
+
+      input_vars:
+        variables:
+          - power
+
+
+  file_locations:
+    - file_alias: test_data
+      file_name: docs/models/example_model_data.xlsx
+      type: local_file
+
+  start_date: 2016-01-01
+  end_date: 2016-01-01
+  sample_size: 10
+  sample_mean: True

@@ -5,20 +5,24 @@ import subprocess
 import matplotlib
 import sys
 import time
+
+import numpy as np
 from openpyxl.styles import Alignment
 
 from eam_core import SimulationControl
 
 matplotlib.use('Agg')
-from matplotlib import pyplot as plt, MatplotlibDeprecationWarning
+from matplotlib import pyplot as plt# , #MatplotlibDeprecationWarning
 
 import json as json
 
 from shutil import copyfile
+from eam_core.util import get_sim_run_description, create_output_folder, \
+    draw_graph_from_dotfile, load_as_df_quantity, load_as_plain_df, prepare_simulation,find_node_by_name
 
 from eam_core.YamlLoader import YamlLoader
 from eam_core.common_graphical_analysis import load_metadata, plot_kind, plot_process_with_input_vars
-from eam_core.util import create_output_folder, prepare_simulation, find_node_by_name, load_as_df_qantity, load_as_plain_df
+
 from eam_core.dataframe_result_utils import group_data
 
 from eam_core.SimulationRunner import SimulationRunner
@@ -40,7 +44,7 @@ logconf.config_logging()
 # @todo: upgrade pandas 0.24 to stay compatible
 import warnings
 
-warnings.filterwarnings("ignore", category=MatplotlibDeprecationWarning)
+# warnings.filterwarnings("ignore", category=MatplotlibDeprecationWarning)
 
 try:
     CONFIG_FILE = "local.cfg"
@@ -64,9 +68,7 @@ def setup_parser(args):
     parser.add_argument('--docker', '-d', help="generate graphviz graphs in a docker container", action='store_true')
     parser.add_argument('--filetype', '-f', help="generate graphviz graphs in a docker container", default='pdf')
     parser.add_argument('--formula_checks', '-fc', help="perform checks on formulas and variables", action='store_true')
-    parser.add_argument('--local', '-l',
-                        help="When using cloud datasources, don't check for updates cloud spreadsheets",
-                        action='store_true')
+    parser.add_argument('--local', '-l', help="When using cloud datasources, don't check for updates cloud spreadsheets", action='store_true')
     parser.add_argument('--IDs', '-id', help="give each process and variable an ID", action='store_true')
     parser.add_argument('--multithreaded', '-m', help="use multicore speed ups", action='store_true')
 
@@ -157,12 +159,13 @@ def create_documentation(runner):
     if runner.use_docker:
         logger.info("writing pandoc")
         cwd = os.getcwd()
+
         # cmd = f"docker run -v {cwd}:{project_dir} -w {project_dir} markfletcher/graphviz dot {dot_file} -T{file_type} -Gsplines=ortho -Grankdir=LR -Gnodesep=0.1 -Gratio=compress"
         # cmd = f"docker run -v {cwd}:{project_dir} -w {project_dir} markfletcher/graphviz dot {dot_file} -T{file_type} -Gsplines=ortho -Grankdir=BT"
         # cmd = f"docker run -v {cwd}:{project_dir} -w {project_dir} markfletcher/graphviz dot {dot_file} -T{file_type} -Gsplines=ortho -Grankdir=BT > {dot_render_filename}"
         pdf_file_name = f"{runner.sim_control.output_directory}/{model.name}_model_documentation.pdf"
 
-        cmd = f"docker run -v  $(pwd):/source jagregory/pandoc -f markdown -t latex {runner.sim_control.output_directory}/{model.name}_model_documentation.md -o {pdf_file_name} -V geometry:margin=0.2in, landscape"
+        cmd = f"docker run -v  $(pwd):/source jagregory/pandoc -f markdown -t latex {runner.sim_control.output_directory}/{model.name}_model_documentation.md -o {pdf_file_name} -V 'geometry:margin=0.2in, landscape'"
         logger.info(f'running docker cmd {cmd}')
         l_cmd = shlex.split(cmd)
         logger.info(f'running docker cmd {l_cmd}')
@@ -171,6 +174,7 @@ def create_documentation(runner):
         #         pass
         ps = subprocess.Popen(cmd, shell=True)
     else:
+        # todo: untested without docker
         logger.info("writing pandoc")
         output = pypandoc.convert_file(f'{output_directory}/{model.name}_model_documentation.md', 'pdf',
                                        outputfile=f'{output_directory}/{model.name}_model_documentation.pdf',
@@ -212,11 +216,14 @@ def run_scenario(scenario, model_run_base_directory=None, simulation_run_descrip
         # run with just mean values, so that we can deal with 'sub-zero' values during analysis
         # this is needed because of sampling effect when uncertainty is very high
         mean_run = run_mean(args, model_run_base_directory, simulation_run_description, yaml_struct, scenario)
+
     create_model_func, sim_control, yaml_struct = prepare_simulation(model_output_directory,
                                                                      simulation_run_description, yaml_struct,
                                                                      scenario, filename=args.yamlfile, IDs=args.IDs,
-                                                                     formula_checks=args.formula_checks, args=args)
+                                                                     formula_checks=args.formula_checks, args=args,
+                                                                     use_time_series=True)
     if args.sensitivity:
+        # todo: untested with args.sensitivity
         runner = SimulationRunner()
         # model, variances = runner.run_SA(create_model_func=create_model_func, embodied=False, sim_control=sim_control)
         model, correlations = runner.run_OTA_SA(create_model_func=create_model_func, embodied=False, sim_control=None)
@@ -324,6 +331,7 @@ def run(args, analysis_config=None):
                              output_persistence_config=output_persistence_config, analysis_config=analysis_config)
 
     if args.multithreaded:
+        #todo: this doesn't work, needs review
         logger.info("Running in parallel")
         from pathos.multiprocessing import ThreadPool
         import multiprocessing
@@ -365,7 +373,7 @@ def load_configuration(args):
         simulation_run_description = args.comment
     yamlfile = args.yamlfile
     yaml_struct = None
-    with open(yamlfile, 'r') as stream:
+    with open(yamlfile, encoding="utf-8", mode="r", errors='ignore') as stream:
         try:
             yaml_struct = yaml.load(stream, Loader=yaml.RoundTripLoader)
         except yaml.YAMLError as exc:
@@ -374,6 +382,8 @@ def load_configuration(args):
     model_basedir = f"output/{yaml_struct['Metadata']['model_name']}/"
     model_run_base_directory = create_output_folder(model_basedir)
     for file_location in yaml_struct['Metadata'].get('file_locations', []):
+        # todo: this isn't tested. is it ever used?
+
         if file_location['type'] == 'google_spreadsheet':
             google_id_alias = file_location['google_id_alias']
 
@@ -396,8 +406,8 @@ def load_configuration(args):
 
 
 def plot_scenario_comparison(scenario_paths, model_run_base_directory, base_dir, yaml_struct, image_filetype=None):
-    load_data = load_as_df_qantity
-    variable = yaml_struct['Metadata']['comparison_variable']
+    load_data = load_as_df_quantity
+    variable = yaml_struct['Metadata'].get('comparison_variable', 'energy')
     fig = plt.figure(figsize=(10, 5))
     ax = fig.add_subplot(111)
 
@@ -479,20 +489,40 @@ def summary_analysis(scenario_paths, model_run_base_directory, analysis_config, 
                 data, units = load_as_plain_df(f'{scenario_directory}/result_data_{variable}.hdf5')
 
                 # data.rename(lambda x: f'{x}.{scenario}', axis='columns', inplace=True)
-                data = data.mean(level='time').mean().to_frame(name=scenario)
+
+                if not yaml_struct['Metadata'].get('with_group', False):
+                    logger.info(f'building excel dataframe for non-grouped {scenario} scenario')
+                    data = data.mean(level='time').mean().to_frame(name=scenario)
+                else:
+                    logger.info(f'building excel dataframe for grouped {scenario} scenario')
+                    data = data.reorder_levels(['group', 'time', 'samples']).groupby(level=['group']).mean()
+
+                    # add an index level annotating output scenario
+                    # this is needed as grouped scenarios are concatenated and need a way of separating!
+                    data = pd.concat({scenario: data}, names=['Scenario'])
+
                 # check all units are the same
                 units_set = set(units[p] for p in units.keys())
                 assert len(units_set) == 1
 
                 unit = units_set.pop()
 
-
             else:
-                _dframe, _ = load_as_plain_df(f'{scenario_directory}/result_data_{variable}.hdf5')
-                # _dframe.rename(lambda x: f'{x}.{scenario}', axis='columns', inplace=True)
+                if not yaml_struct['Metadata'].get('with_group', False):
+                    logger.info(f'joining excel dataframe for non-grouped {scenario} scenario')
+                    _dframe, _ = load_as_plain_df(f'{scenario_directory}/result_data_{variable}.hdf5')
+                    # _dframe.rename(lambda x: f'{x}.{scenario}', axis='columns', inplace=True)
 
-                # data = pd.concat([s1, s2], axis=1)
-                data = data.join(_dframe.mean(level='time').mean().to_frame(name=scenario))
+                    # data = pd.concat([s1, s2], axis=1)
+                    data = data.join(_dframe.mean(level='time').mean().to_frame(name=scenario))
+                else:
+                    logger.info(f'concatenating excel dataframe for grouped {scenario} scenario')
+                    data_scenario, _ = load_as_plain_df(f'{scenario_directory}/result_data_{variable}.hdf5')
+                    data_scenario = data_scenario.reorder_levels(['group', 'time', 'samples']).groupby(level=['group']).mean()
+                    data_scenario = pd.concat({scenario: data_scenario}, names=['Scenario'])
+                    data = pd.concat([data, data_scenario])
+                    data.to_pickle(model_run_base_directory + f'/result_data_full_{variable}.pkl')
+
         sheet_name = f'mean {variable}'
         sheet_descriptions[
             sheet_name] = f'{sheet_name}: a direct load of the result data, monthly mean values. Unit: {unit}'
@@ -533,7 +563,48 @@ def style_result_worksheet(ws):
         cell.alignment = Alignment(horizontal='left')
 
 
+def provide_dummy_for_missing_process_vals(data, metadata):
+    """
+    VERY HACKY function for providing data for processes that don't calculate energy/carbon
+    We need data in the frame for it to be written in the results sheet, but we can't have strings directly
+    So, fill in with dummy data that is written to results, then overwritten with strings later on.
+    I'm using -1 for these dummy vals since they work with mean and *shouldn't* occur naturally (negative energy?)
+    :param data: The dataframe with processes and the result for a variable. This is mutated!
+    :param metadata: Stores information about processes, used to find missing vals.
+    :return: Boolean of whether any dummy values have been added to the dataframe
+    """
+    return False # skip this while overwrite_dummy_vals_with_null is unimplemented.
+    dummy_provided = False
+    for process in metadata.keys():
+        if not process in data:
+            dummy_vals = np.full((data.values.shape[0]), -1)
+            logger.info(f"storing dummy values for excel in {process}")
+            data[process] = dummy_vals
+            dummy_provided = True
+    return dummy_provided
+
+
+def overwrite_dummy_vals_with_null(sheets):
+    """
+    Given a list of sheets, iterate through them, find cells with the value -1 (indicating a dummy value),
+    and replace it with 'null;, indicating a process has not calculated that variable.
+    :param sheets: A list of the sheet names that need parsing.
+    :return:
+    """
+    for sheet_name in sheets:
+        # unimplemented.
+        pass
+
 def analysis(runner, yaml_struct, analysis_config=None, mean_run=None, image_filetype=None):
+    """
+
+    :param runner:
+    :param yaml_struct:
+    :param analysis_config:
+    :param mean_run:
+    :param image_filetype:
+    :return:
+    """
     if analysis_config is None or not analysis_config:
         logger.info(f'analysis_config not provided, nothing to analyse')
         return
@@ -586,11 +657,12 @@ def analysis(runner, yaml_struct, analysis_config=None, mean_run=None, image_fil
         sheet_descriptions = {}
         pd.DataFrame.from_dict(sheet_descriptions, orient='index').to_excel(writer, 'toc')
         # df of x samples, monthly frequency between start and end date
-        load_data = load_as_df_qantity
+        load_data = load_as_df_quantity
 
         # ======================== GO ================
         variables = yaml_struct['Analysis'].get('numerical', [])
         for variable in variables:
+
             logger.info(f'numerical analysis for var {variable}')
 
             pint_pandas_data, m = load_data(f'{output_directory}/result_data_{variable}.hdf5')
@@ -598,6 +670,8 @@ def analysis(runner, yaml_struct, analysis_config=None, mean_run=None, image_fil
             df = pint_pandas_data.pint.dequantify()
             # df.columns = df.columns.droplevel(1)
             data = df
+
+            dummy_provided = provide_dummy_for_missing_process_vals(data, metadata)
 
             unit = list(units.values())[0]
 
@@ -623,25 +697,19 @@ def analysis(runner, yaml_struct, analysis_config=None, mean_run=None, image_fil
                 # print(data)
                 sheet_name = f'25 quantiles {variable}'
                 sheet_descriptions[
-                    sheet_name] = f'{sheet_name}: a direct load of the result data, monthly mean values. Unit: {unit}'
+                sheet_name] = f'{sheet_name}: a direct load of the result data, monthly mean values. Unit: {unit}'
                 logger.info("storing quantile values to excel")
                 low = data.abs().groupby(level=['time']).quantile(.25)
                 low.to_excel(writer, sheet_name)
 
                 sheet_name = f'75 quantiles {variable}'
                 sheet_descriptions[
-                    sheet_name] = f'{sheet_name}: a direct load of the result data, monthly mean values. Unit: {unit}'
+                sheet_name] = f'{sheet_name}: a direct load of the result data, monthly mean values. Unit: {unit}'
                 data.abs().groupby(level=['time']).quantile(.75).to_excel(writer, sheet_name)
 
-        # sum up monthly values to aggregate - duration depends on distance between start and end date
-        #    load_data_aggegrate = lambda : load_data().sum(level='samples')
-        xlabel = f'{unit}/a'
-        common_args = {'start_date': start_date,
-                       'end_date': end_date,
-                       'base_dir': base_dir,
-                       'xlabel': xlabel,
-                       'metadata': metadata,
-                       'output_scenario_directory': output_directory}
+            if dummy_provided:
+                overwrite_dummy_vals_with_null([f'total {variable} ', f'month mean {variable} ',
+                                                f'25 quantiles {variable}', f'75 quantiles {variable}'])
 
         logger.info("plot_platform_process_annual_total")
 
@@ -669,7 +737,15 @@ def analysis(runner, yaml_struct, analysis_config=None, mean_run=None, image_fil
 
                 unit = units_set.pop()
 
-                common_args.update({'unit': unit})
+                # sum up monthly values to aggregate - duration depends on distance between start and end date
+                #    load_data_aggegrate = lambda : load_data().sum(level='samples')
+                xlabel = f'{unit}/a'
+                common_args = {'start_date': start_date,
+                               'end_date': end_date,
+                               'base_dir': base_dir,
+                               'metadata': metadata,
+                               'unit': unit,
+                               'output_scenario_directory': output_directory}
 
                 if 'xlabel' in plot_def:
                     xlabel = plot_def['xlabel'].format(unit=unit)

@@ -14,22 +14,217 @@ import yaml
 from pip._vendor.pkg_resources import resource_filename, Requirement
 
 from eam_core import SimulationControl
+from eam_core.util import store_dataframe, \
+    store_process_metadata, store_parameter_repo_variables, get_param_names, to_target_dimension, \
+    pandas_series_dict_to_dataframe
 
 logger = logging.getLogger(__name__)
 
-from eam_core.util import store_process_metadata, store_dataframe, to_target_dimension, store_parameter_repo_variables
 
 class SimulationRunner(object):
     """"
     Responsible for the execution of the simulation, including storage of results. It encapsulates the protocol of the
     simulation.
 
-
+    todo: most of this isnt tested, large parts arent used. remove them?
     """
 
     def __init__(self, sim_control=None):
         self.sim_control = sim_control
         self.use_docker = False
+
+    def run_SA(self, create_model_func=None, embodied=False, sim_control=None):
+        """
+        1. calc correlation coefficient dividing the covariance by the product of the two variables' standard deviations
+        :param create_model_func:
+        :type create_model_func:
+        :param embodied:
+        :type embodied:
+        :param sim_control:
+        :type sim_control:
+        :return:
+        :rtype:
+        """
+
+        output_directory = sim_control.output_directory
+        sim_control = SimulationControl()
+        sim_control.use_time_series = True
+        samples = 2
+        sim_control.sample_size = samples
+
+        # evaluate model to get input variables
+        model = create_model_func(sim_control=sim_control)
+        model.footprint(use_phase=True, embodied=embodied, simulation_control=sim_control)
+
+        traces: Dict[str, Dict[str, pd.Series]] = model.collect_calculation_traces()
+        Y = pd.DataFrame(traces['energy'])  # .sum(axis=1)
+
+        Y.pint.dequantify().to_hdf(f'{output_directory}/Y.h5', 'Y', table=True, mode='a')
+
+        # logger.debug(Y.head())
+        param_names = get_param_names(sim_control)
+        count = len(param_names)
+
+        idx = 0
+
+        # calculate all relevant sets
+        # single param names
+        # two param names
+        s = set()
+        for k in param_names:
+            s.add(frozenset({k}))
+            for j in param_names:
+                s.add(frozenset({k, j}))
+
+        param_name_tuple = next(iter(next(iter(s))))
+
+        logger.debug(f'param_name_tuple = {param_name_tuple}')
+        # sim_control = SimulationControl()
+        sim_control.param_repo.clear_cache()
+        # sim_control.use_time_series = False
+        # sim_control.sample_size = samples
+
+        sim_control.single_variable_run = True
+        sim_control.single_variable_names = param_name_tuple
+
+        model = create_model_func(sim_control=sim_control)
+
+        model.footprint(use_phase=True, embodied=embodied, simulation_control=sim_control)
+
+        traces: Dict[str, Dict[str, pd.Series]] = model.collect_calculation_traces()
+
+        p = traces[param_name_tuple]
+        # a variable might be used in a variety of processes
+        # we just take the first
+        p = next(iter(p.values()))
+        logger.debug(p)
+        p.pint.m.to_hdf(f'{output_directory}/p.h5', param_name_tuple, table=True, mode='a')
+
+    @staticmethod
+    def get_stddev_and_mean(Y, Xi):
+        Y = [i.pint.m for i in Y.values()]
+        s=sum(Y)
+        c=Y[0]
+        std_dev = np.std(sum(Y))
+        men = np.mean(sum(Y))
+
+        return {'std_dev': std_dev,
+                'mean': men,
+                'cv': std_dev / men,
+                'Xi_std_dev': np.std(Xi),
+                'Xi_mu': np.mean(Xi),
+                'Xi_cv': np.std(Xi) / np.mean(Xi),
+                }
+    #turns a dictionary of series into a list of arrays, removing pint units
+    def dict_to_array(self,a):
+        for k in a.keys():
+            a[k]=a[k].pint.m
+        a=list(a.values())
+        for i in range(len(a)):
+            a[i]=a[i].to_numpy()
+        return a
+
+    #calculates the multiple correlation between a dependent and any number of independent variables. if only one independent variable is given it returns the correlation
+    def multiple_correlation(self, dep,indep):
+        assert len(dep)==1
+        if len(indep)>=2:
+            Rxx=np.corrcoef(np.array(indep))
+            Rxx=np.linalg.inv(Rxx)
+            c=np.zeros(len(indep))
+            for i in range(len(indep)):
+                c[i]=np.corrcoef(indep[i],dep)[0,1]
+            return math.sqrt(np.matmul(np.transpose(c),np.matmul(Rxx,c)))
+        else:
+            return np.corrcoef(indep,dep)[0,1]
+
+
+    def run_OTA_SA(self, create_model_func=None, embodied=True, sim_control=None):
+        """
+        @todo implement http://www.real-statistics.com/correlation/basic-concepts-correlation/
+        http://www.real-statistics.com/correlation/multiple-correlation/
+
+        Perform one at a time sensitivity analysis
+
+        (1)	Get list of variables
+            ⁃	run once, get dump of variables
+        (2)	For each var:
+            ⁃	run the model in single mode, with all other variables fixed to mean
+            ⁃	get variance/std dev of var and Y var
+            ⁃	store variance value in table
+
+        for efficiency reasons
+        - uses local data
+        - does not store traces
+        - does not run in time series mode
+
+        :return:
+        """
+        sim_control = SimulationControl()
+        sim_control.use_time_series = True
+        samples = 2
+        sim_control.sample_size = samples
+
+        # evaluate model to get input variables
+        model = create_model_func(sim_control=sim_control)
+        fp = model.footprint(use_phase=True, embodied=embodied, simulation_control=sim_control)
+        cor={}
+        fparray=self.dict_to_array(fp['use_phase_energy'])
+        cor['all'] = SimulationRunner.multiple_correlation(self,fparray, [np.ones(len(fparray[0]))])
+
+        param_names = get_param_names(sim_control)
+        count = len(param_names)
+
+        idx = 0
+
+        # calculate all relevant sets
+        # single param names
+        # two param names
+        s = set()
+        for k in param_names:
+            s.add(frozenset({k}))
+            for j in param_names:
+                s.add(frozenset({k, j}))
+
+        # for param_name in ['num_online_TV_HH']:
+        for param_name_tuple in s:
+
+            # ignore intermediate variables
+            exists = [sim_control.param_repo.exists(param_name) for param_name in param_name_tuple]
+            if not all(exists):
+                continue
+
+            if any([sim_control.param_repo[param].cache is None for param in param_name_tuple]):
+                # ignore parameters that were not used
+                continue
+
+            idx = idx + 1
+            print(f"{idx} of {count}")
+            if idx > 9:
+                return model, cor
+            print(f"running model for var(s) {param_name_tuple}")
+
+            # sim_control = SimulationControl()
+            sim_control.param_repo.clear_cache()
+            # sim_control.use_time_series = False
+            # sim_control.sample_size = samples
+
+            sim_control.single_variable_run = True
+            sim_control.single_variable_names = param_name_tuple
+
+            model = create_model_func(sim_control=sim_control)
+            fp = model.footprint(use_phase=True, embodied=embodied, simulation_control=sim_control)
+
+            # for p in param_name_tuple:
+            # param = sim_control.param_repo[p]
+            # stddev_and_mean = SimulationRunner.get_stddev_and_mean(fp['use_phase_energy'], None)
+            # stddevs.append(stddev_and_mean)
+            # if stddev_and_mean['std_dev'] > 1:
+            # variances[str(list(param_name_tuple))] = stddev_and_mean
+            # print(outcome_var)
+
+            cor[str(list(param_name_tuple))]=[self.multiple_correlation(self.dict_to_array(fp['use_phase_energy']), self.dict_to_array(fp['traces']))]
+
+        return model, cor
 
     def run(self, create_model_func=None, embodied=False,
             pickle_average=True, debug=False, target_units=None, result_variables=None, output_persistence_config=None):

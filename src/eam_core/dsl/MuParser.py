@@ -5,6 +5,8 @@ from io import StringIO
 from typing.io import TextIO
 import sys
 
+# todo: error handling is untested
+
 def serializedATN():
     with StringIO() as buf:
         buf.write("\3\u608b\ua72a\u8133\ub9ed\u417c\u3be7\u7786\u5964\3&")
@@ -63,17 +65,17 @@ class MuParser ( Parser ):
 
     sharedContextCache = PredictionContextCache()
 
-    literalNames = [ "<INVALID>", "'return'", "'||'", "'&&'", "'=='", "'!='", 
-                     "'>'", "'<'", "'>='", "'<='", "'+'", "'-'", "'*'", 
-                     "'/'", "'%'", "'^'", "'!'", "';'", "'='", "'('", "')'", 
-                     "'{'", "'}'", "'true'", "'false'", "'nil'", "'if'", 
+    literalNames = [ "<INVALID>", "'return'", "'||'", "'&&'", "'=='", "'!='",
+                     "'>'", "'<'", "'>='", "'<='", "'+'", "'-'", "'*'",
+                     "'/'", "'%'", "'^'", "'!'", "';'", "'='", "'('", "')'",
+                     "'{'", "'}'", "'true'", "'false'", "'nil'", "'if'",
                      "'else'", "'while'", "'log'" ]
 
-    symbolicNames = [ "<INVALID>", "<INVALID>", "OR", "AND", "EQ", "NEQ", 
-                      "GT", "LT", "GTEQ", "LTEQ", "PLUS", "MINUS", "MULT", 
-                      "DIV", "MOD", "POW", "NOT", "SCOL", "ASSIGN", "OPAR", 
-                      "CPAR", "OBRACE", "CBRACE", "TRUE", "FALSE", "NIL", 
-                      "IF", "ELSE", "WHILE", "LOG", "ID", "INT", "FLOAT", 
+    symbolicNames = [ "<INVALID>", "<INVALID>", "OR", "AND", "EQ", "NEQ",
+                      "GT", "LT", "GTEQ", "LTEQ", "PLUS", "MINUS", "MULT",
+                      "DIV", "MOD", "POW", "NOT", "SCOL", "ASSIGN", "OPAR",
+                      "CPAR", "OBRACE", "CBRACE", "TRUE", "FALSE", "NIL",
+                      "IF", "ELSE", "WHILE", "LOG", "ID", "INT", "FLOAT",
                       "STRING", "COMMENT", "SPACE", "OTHER" ]
 
     RULE_parse = 0
@@ -89,8 +91,8 @@ class MuParser ( Parser ):
     RULE_expr = 10
     RULE_atom = 11
 
-    ruleNames =  [ "parse", "block", "stat", "return_expr", "assignment", 
-                   "if_stat", "condition_block", "stat_block", "while_stat", 
+    ruleNames =  [ "parse", "block", "stat", "return_expr", "assignment",
+                   "if_stat", "condition_block", "stat_block", "while_stat",
                    "log", "expr", "atom" ]
 
     EOF = Token.EOF
@@ -526,7 +528,7 @@ class MuParser ( Parser ):
                     self.state = 53
                     self.match(MuParser.IF)
                     self.state = 54
-                    self.condition_block() 
+                    self.condition_block()
                 self.state = 59
                 self._errHandler.sync(self)
                 _alt = self._interp.adaptivePredict(self._input,2,self._ctx)
@@ -797,7 +799,7 @@ class MuParser ( Parser ):
         def getRuleIndex(self):
             return MuParser.RULE_expr
 
-     
+
         def copyFrom(self, ctx:ParserRuleContext):
             super().copyFrom(ctx)
 
@@ -1279,7 +1281,7 @@ class MuParser ( Parser ):
                         self.expr(3)
                         pass
 
-             
+
                 self.state = 115
                 self._errHandler.sync(self)
                 _alt = self._interp.adaptivePredict(self._input,7,self._ctx)
@@ -1302,7 +1304,7 @@ class MuParser ( Parser ):
         def getRuleIndex(self):
             return MuParser.RULE_atom
 
-     
+
         def copyFrom(self, ctx:ParserRuleContext):
             super().copyFrom(ctx)
 
@@ -1532,8 +1534,7 @@ class MuParser ( Parser ):
             self.exitRule()
         return localctx
 
-
-
+    # todo: untested
     def sempred(self, localctx:RuleContext, ruleIndex:int, predIndex:int):
         if self._predicates == None:
             self._predicates = dict()
@@ -1544,34 +1545,35 @@ class MuParser ( Parser ):
         else:
             return pred(localctx, predIndex)
 
+    # todo: untested
     def expr_sempred(self, localctx:ExprContext, predIndex:int):
             if predIndex == 0:
                 return self.precpred(self._ctx, 10)
-         
+
 
             if predIndex == 1:
                 return self.precpred(self._ctx, 7)
-         
+
 
             if predIndex == 2:
                 return self.precpred(self._ctx, 6)
-         
+
 
             if predIndex == 3:
                 return self.precpred(self._ctx, 5)
-         
+
 
             if predIndex == 4:
                 return self.precpred(self._ctx, 4)
-         
+
 
             if predIndex == 5:
                 return self.precpred(self._ctx, 3)
-         
+
 
             if predIndex == 6:
                 return self.precpred(self._ctx, 2)
-         
+
 
 
 

@@ -18,8 +18,24 @@ Overview
 
 EAM core framework
 
+
 Development
 ===========
 
 Requires pandoc https://pandoc.org/installing.html
+
+create new virtual env (e.g on the CLI)::
+
+    python3 -m venv eam-core
+    source eam-core/bin/activate
+
+then install eam-core::
+
+    pip install -e .
+
+
+To run the all tests run::
+
+    tox
+
 

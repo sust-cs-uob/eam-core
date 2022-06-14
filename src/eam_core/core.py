@@ -6,6 +6,7 @@ from pint import UnitRegistry
 from eam_core import dsl
 from eam_core.dsl import EvalVisitor, DSLError
 import eam_core.dsl.check_visitor
+from table_data_reader.table_handlers import TableParameterLoader
 
 ureg = UnitRegistry(auto_reduce_dimensions=False)
 Q_ = ureg.Quantity
@@ -22,7 +23,7 @@ import copy
 import networkx as nx
 import numpy as np
 import pandas as pd
-from table_data_reader import ParameterRepository, TableParameterLoader, DistributionFunctionGenerator, \
+from table_data_reader import ParameterRepository, DistributionFunctionGenerator, \
     GrowthTimeSeriesGenerator
 from networkx import DiGraph, ancestors
 from networkx.readwrite import json_graph
@@ -43,6 +44,8 @@ days_per_month = 365 / 12
 
 metrics = ['use_phase_energy', 'use_phase_carbon', 'embodied_carbon']
 
+# todo: could this be broken up into several files?
+# todo: this needs to be tested more
 
 class SimulationControl(object):
     """
@@ -86,6 +89,7 @@ class SimulationControl(object):
         self.variable_ids = False
         self.with_group = False
         self.with_pint_units = True
+        self.result_variables = []
 
     def reset(self):
         logger.info("Resetting Simulation Control Parameters")
@@ -569,39 +573,11 @@ class ServiceModel(object):
         logger.info(f"calculating footprint for model {self.name}")
         G = self.process_graph
 
-        unprocessed: List[FormulaProcess] = [x for x in G.nodes_iter() if G.in_degree(x) == 0]
+        unprocessed: List[FormulaProcess] = [x for x in G.nodes() if G.in_degree(x) == 0]
         processed: List[FormulaProcess] = []
 
         results = {}
 
-        """
-        elements:[
-            {group: 'nodes', data: { id: x}},
-            {group: "edges", data: { id: x,  source: 'a', target: 'b' }},
-
-        ]
-        { nodes:{
-            'Laptop':
-            {
-                'input vars': {'power':51},
-                'import vars': [
-                {    'formula_name': 'test',
-                    'edge_name': 'power',
-                    'value': 15}
-                ]
-
-            }
-            }
-        edges:[
-            {'sourceNode':'', 'targetNode': '',
-                data: {
-                    'time': val
-                }
-            }
-        ]
-
-        }
-        """
         simulation_control.trace = []
 
         while unprocessed:

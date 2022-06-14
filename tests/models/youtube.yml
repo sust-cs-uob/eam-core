@@ -1,0 +1,1428 @@
+# Example YAML [https://en.wikipedia.org/wiki/YAML] service definition
+Processes:
+
+  # Google Origin DC
+  - name: Google Origin DC
+    formula:
+      text: |
+        energy = GGC_energy * 2.5
+        carbon = energy * carbon_intensity
+
+        return energy
+
+    input_variables:
+      - type: ExcelVariableSet
+        file_alias: youtube_model_params
+
+        variables:
+          - carbon_intensity: carbon_intensity_google
+
+    import_variables:
+      - external_name: energy
+        formula_name: GGC_energy
+
+    metadata:
+      platform_name: Google
+
+  - name: Network Metro and Core
+    formula:
+      text: |
+        energy = (energy_intensity_core + energy_intensity_metro) * data_volume
+        carbon = energy * carbon_intensity
+        return energy
+
+    input_variables:
+      - type: ExcelVariableSet
+        file_alias: youtube_model_params
+        variables:
+          - carbon_intensity: carbon_intensity_global
+          - energy_intensity_core: energy_intensity_core_network
+          - energy_intensity_metro: energy_intensity_metro_network
+
+    import_variables:
+      - external_name: origin_data_volume
+        formula_name: data_volume
+    export_variables:
+      - data_volume
+    link_to:
+      - Google Origin DC
+
+    metadata:
+      platform_name: Core Network
+
+  - name: Google Global Cache (CDN)
+    formula:
+      text: |
+        energy = energy_intensity * data_volume
+        carbon = energy * carbon_intensity
+        return energy
+    input_variables:
+      - type: ExcelVariableSet
+        file_alias: youtube_model_params
+        variables:
+          - carbon_intensity: carbon_intensity_global
+          - energy_intensity: energy_intensity_youtube_server
+    export_variables:
+      - energy
+    import_variables:
+      - external_name: ggc_data_volume
+        formula_name: data_volume
+    metadata:
+      platform_name: Google
+    link_to:
+      - Google Origin DC
+
+
+  - name: Network Edge
+    formula:
+      text: |
+        origin_data_volume = global_data_volume * portion_origin_traffic
+        ggc_data_volume = global_data_volume * portion_ggc
+        energy = energy_intensity_edge_router * global_data_volume
+        carbon = energy * carbon_intensity
+        return energy
+
+    input_variables:
+      - type: ExcelVariableSet
+        file_alias: youtube_model_params
+        variables:
+#          @todo review
+          - carbon_intensity: carbon_intensity_global
+          - energy_intensity_edge_router: energy_intensity_edge_network
+
+    export_variables:
+      - origin_data_volume
+      - ggc_data_volume
+
+    import_variables:
+      - external_name: data_volume
+        formula_name: global_data_volume
+      - external_name: origin_traffic_coefficient
+        formula_name: portion_origin_traffic
+      - external_name: ggc_hitrate
+        formula_name: portion_ggc
+    link_to:
+      - Network Metro and Core
+      - Google Global Cache (CDN)
+
+    metadata:
+      platform_name: Core Network
+
+#  - name: Google Global Cache (CDN)
+
+# ===================== DSL
+
+
+  - name: AN Prototype
+    type: prototype
+    formula:
+      text: |
+        energy = power * time
+        carbon = energy * carbon_intensity
+
+        return energy
+    input_variables:
+      - type: ExcelVariableSet
+        variables:
+          - carbon_intensity: carbon_intensity_global
+          - hh_total_data
+          - seconds_per_ref
+    export_variables:
+      - data_volume
+      - time
+    import_variables:
+      - time
+      - data_volume
+
+  - name: DSL Router
+    prototype: AN Prototype
+
+    input_variables:
+      - type: ExcelVariableSet
+        substitution: DSL
+        variables:
+          - power: Power_CPE
+          - subscriptions: global_subscriptions
+
+    link_to:
+      - DSL Router Port (DSLAM)
+    metadata:
+      device_type: Wired Access Network
+      platform_name: DSL
+
+  - name: DSL Router Port (DSLAM)
+    prototype: AN Prototype
+
+    input_variables:
+    - type: ExcelVariableSet
+      substitution: DSL
+      variables:
+      - power: Power_AN_port
+      - subscriptions: global_subscriptions
+    link_to:
+      - DSL Backhaul
+    metadata:
+      platform_name: DSL
+      device_type: Wired Access Network
+
+  - name: DSL Backhaul
+    prototype: AN Prototype
+    input_variables:
+      - type: ExcelVariableSet
+        substitution: DSL
+        variables:
+        - power: Power_backhaul
+        - subscriptions: global_subscriptions
+    link_to:
+      - Network Edge
+    metadata:
+      platform_name: DSL
+      device_type: Wired Access Network
+
+  # ====================== DSL DEVICES ======================
+
+  - name: DSL User Device
+    type: prototype
+    metadata:
+      platform_name: DSL
+      device_type: User Device
+
+  # ====================== DSL TV      ======================
+  - name: TV DSL
+    prototype: DSL User Device
+    formula:
+      text: |
+        data_volume = average_bitrate * time
+
+        energy = power * time
+
+        carbon = energy * carbon_intensity
+
+        return energy
+
+    input_variables:
+      - type: ExcelVariableSet
+        variables:
+          - carbon_intensity: carbon_intensity_global
+          - power: power_tv
+      - type: ExcelVariableSet
+        variables:
+          - carbon_intensity: carbon_intensity_global
+          - power: power_tv
+    export_variables:
+      - data_volume
+      - time
+    import_variables:
+      - formula_name: time
+        external_name: video_minutes_monthly_TV_DSL
+      - average_bitrate
+    link_to:
+      - DSL Router
+
+  # ====================== Smartphone TV      ======================
+  - name: Smartphone DSL
+    prototype: DSL User Device
+    formula:
+      text: |
+        data_volume = average_bitrate * time
+
+        energy = power * time
+        carbon = energy * carbon_intensity
+        return energy
+
+    input_variables:
+      - type: ExcelVariableSet
+        file_alias: youtube_model_params
+        variables:
+          - carbon_intensity: carbon_intensity_global
+          - power: power_smartphone
+    export_variables:
+      - data_volume
+      - time
+    import_variables:
+      - formula_name: time
+        external_name: video_minutes_monthly_smartphone_wifi_DSL
+      - average_bitrate
+    link_to:
+      - DSL Router
+  # ====================== Tablet TV      ======================
+  - name: Tablet DSL
+    prototype: DSL User Device
+    formula:
+      text: |
+        data_volume = average_bitrate * time
+
+        energy = power * time
+        carbon = energy * carbon_intensity
+        return energy
+
+    input_variables:
+      - type: ExcelVariableSet
+        file_alias: youtube_model_params
+        variables:
+          - carbon_intensity: carbon_intensity_global
+          - power: power_tablet
+    export_variables:
+      - data_volume
+      - time
+    import_variables:
+      - formula_name: time
+        external_name: video_minutes_monthly_tablet_wifi_DSL
+      - average_bitrate
+    link_to:
+      - DSL Router
+
+  # ====================== IP STB TV      ======================
+  - name: IP STB DSL
+    prototype: DSL User Device
+    formula:
+      text: |
+        data_volume = average_bitrate * time
+
+        energy = power * time
+        carbon = energy * carbon_intensity
+        return energy
+
+    input_variables:
+      - type: ExcelVariableSet
+        file_alias: youtube_model_params
+        variables:
+          - carbon_intensity: carbon_intensity_global
+          - power: power_ip_stb
+    export_variables:
+      - data_volume
+      - time
+    import_variables:
+      - formula_name: time
+        external_name: video_minutes_monthly_IP_STB_DSL
+      - average_bitrate
+    link_to:
+      - DSL Router
+  # ====================== Games Console TV      ======================
+  - name: Games Console DSL
+    prototype: DSL User Device
+    formula:
+      text: |
+        data_volume = average_bitrate * time
+
+        energy = power * time
+        carbon = energy * carbon_intensity
+        return energy
+
+    input_variables:
+      - type: ExcelVariableSet
+        file_alias: youtube_model_params
+        variables:
+          - carbon_intensity: carbon_intensity_global
+          - power: power_gamesconsole
+    export_variables:
+      - data_volume
+      - time
+    import_variables:
+      - formula_name: time
+        external_name: video_minutes_monthly_gamesconsole_DSL
+      - average_bitrate
+    link_to:
+      - DSL Router
+
+    # ====================== Desktop TV      ======================
+  - name: Desktop PC DSL
+    prototype: DSL User Device
+    formula:
+      text: |
+        data_volume = average_bitrate * time
+
+        energy = power * time
+        carbon = energy * carbon_intensity
+        return energy
+
+    input_variables:
+      - type: ExcelVariableSet
+        file_alias: youtube_model_params
+        variables:
+          - carbon_intensity: carbon_intensity_global
+          - power: power_desktop
+    export_variables:
+      - data_volume
+      - time
+    import_variables:
+      - formula_name: time
+        external_name: video_minutes_monthly_Desktop_DSL
+      - average_bitrate
+    link_to:
+      - DSL Router
+
+    # ====================== Laptop ======================
+  - name: Laptop DSL
+    prototype: DSL User Device
+    formula:
+      text: |
+        data_volume = average_bitrate * time
+
+        energy = power * time
+        carbon = energy * carbon_intensity
+        return energy
+
+    input_variables:
+      - type: ExcelVariableSet
+        file_alias: youtube_model_params
+        variables:
+          - carbon_intensity: carbon_intensity_global
+          - power: power_laptop
+    export_variables:
+      - data_volume
+      - time
+    import_variables:
+      - formula_name: time
+        external_name: video_minutes_monthly_Laptop_only_DSL
+      - average_bitrate
+    link_to:
+      - DSL Router
+
+  # ====================== Laptop and Screen TV      ======================
+  - name: Laptop and Screen DSL
+    prototype: DSL User Device
+    formula:
+      text: |
+        data_volume = average_bitrate * time
+
+        energy = power * time
+        carbon = energy * carbon_intensity
+        return energy
+
+    input_variables:
+      - type: ExcelVariableSet
+        file_alias: youtube_model_params
+        variables:
+          - carbon_intensity: carbon_intensity_global
+          - power: power_laptop_and_screen
+    export_variables:
+      - data_volume
+      - time
+    import_variables:
+      - formula_name: time
+        external_name: video_minutes_monthly_Laptop_and_Screen_DSL
+      - average_bitrate
+    link_to:
+      - DSL Router
+
+  # ====================== Aux DSL HH ======================
+  - name: Aux DSL HH
+    formula:
+      text: |
+        video_minutes_monthly_TV_DSL                = video_minutes_monthly_TV                * share_DSL
+        video_minutes_monthly_smartphone_wifi_DSL   = video_minutes_monthly_smartphone_wifi   * share_DSL
+        video_minutes_monthly_Laptop_and_Screen_DSL = video_minutes_monthly_Laptop_and_Screen * share_DSL
+        video_minutes_monthly_tablet_wifi_DSL       = video_minutes_monthly_tablet_wifi       * share_DSL
+        video_minutes_monthly_IP_STB_DSL            = video_minutes_monthly_IP_STB            * share_DSL
+        video_minutes_monthly_gamesconsole_DSL      = video_minutes_monthly_gamesconsole      * share_DSL
+        video_minutes_monthly_Laptop_only_DSL       = video_minutes_monthly_Laptop_only       * share_DSL
+        video_minutes_monthly_Desktop_DSL           = video_minutes_monthly_Desktop           * share_DSL
+
+    input_variables:
+      - type: ExcelVariableSet
+        variables:
+          - share_DSL
+    export_variables:
+      - video_minutes_monthly_TV_DSL
+      - video_minutes_monthly_smartphone_wifi_DSL
+      - video_minutes_monthly_Laptop_and_Screen_DSL
+      - video_minutes_monthly_tablet_wifi_DSL
+      - video_minutes_monthly_IP_STB_DSL
+      - video_minutes_monthly_gamesconsole_DSL
+      - video_minutes_monthly_Laptop_only_DSL
+      - video_minutes_monthly_Desktop_DSL
+
+      - average_bitrate
+
+    import_variables:
+      - average_bitrate
+
+      - video_minutes_monthly_smartphone_wifi
+      - video_minutes_monthly_tablet_wifi
+
+      - video_minutes_monthly_TV
+      - video_minutes_monthly_IP_STB
+      - video_minutes_monthly_gamesconsole
+
+      - video_minutes_monthly_Desktop
+      - video_minutes_monthly_Laptop_only
+      - video_minutes_monthly_Laptop_and_Screen
+    link_to:
+      - TV DSL
+      - Smartphone DSL
+      - Tablet DSL
+      - IP STB DSL
+      - Games Console DSL
+      - Desktop PC DSL
+      - Laptop DSL
+      - Laptop and Screen DSL
+
+  # ================== FIBRE ----------
+
+  - name: Fibre Router
+    prototype: AN Prototype
+
+    input_variables:
+    - type: ExcelVariableSet
+      substitution: Fibre
+      variables:
+      - power: Power_CPE
+      - subscriptions: global_subscriptions
+
+    link_to:
+    - Fibre Router Port
+    metadata:
+      access_network_type: Fibre
+      device_type: Wired Access Network
+
+  - name: Fibre Router Port
+    prototype: AN Prototype
+
+    input_variables:
+    - type: ExcelVariableSet
+      substitution: Fibre
+      variables:
+      - power: Power_AN_port
+      - subscriptions: global_subscriptions
+    link_to:
+      - Fibre Backhaul
+    metadata:
+      access_network_type: Fibre
+      device_type: Wired Access Network
+
+  - name: Fibre Backhaul
+    prototype: AN Prototype
+    input_variables:
+    - type: ExcelVariableSet
+      substitution: Fibre
+      variables:
+      - power: Power_backhaul
+      - subscriptions: global_subscriptions
+    link_to:
+    - Network Edge
+    metadata:
+      access_network_type: Fibre
+      device_type: Wired Access Network
+
+# ====================== Fibre DEVICES ======================
+
+  - name: Fibre User Device
+    type: prototype
+    metadata:
+      access_network_type: Fibre
+      device_type: User Device
+
+# ====================== Fibre TV      ======================
+  - name: TV Fibre
+    prototype: Fibre User Device
+    formula:
+      text: |
+        data_volume = average_bitrate * time
+
+        energy = power * time
+        carbon = energy * carbon_intensity
+        return energy
+
+    input_variables:
+      - type: ExcelVariableSet
+        file_alias: youtube_model_params
+        variables:
+          - carbon_intensity: carbon_intensity_global
+          - power: power_tv
+    export_variables:
+      - data_volume
+      - time
+    import_variables:
+      - formula_name: time
+        external_name: video_minutes_monthly_TV_Fibre
+      - average_bitrate
+    link_to:
+      - Fibre Router
+
+  # ====================== Smartphone TV      ======================
+  - name: Smartphone Fibre
+    prototype: Fibre User Device
+    formula:
+      text: |
+        data_volume = average_bitrate * time
+
+        energy = power * time
+        carbon = energy * carbon_intensity
+        return energy
+
+    input_variables:
+      - type: ExcelVariableSet
+        file_alias: youtube_model_params
+        variables:
+          - carbon_intensity: carbon_intensity_global
+          - power: power_smartphone
+    export_variables:
+      - data_volume
+      - time
+    import_variables:
+      - formula_name: time
+        external_name: video_minutes_monthly_smartphone_wifi_Fibre
+      - average_bitrate
+    link_to:
+      - Fibre Router
+  # ====================== Tablet TV      ======================
+  - name: Tablet Fibre
+    prototype: Fibre User Device
+    formula:
+      text: |
+        data_volume = average_bitrate * time
+
+        energy = power * time
+        carbon = energy * carbon_intensity
+        return energy
+
+    input_variables:
+      - type: ExcelVariableSet
+        file_alias: youtube_model_params
+        variables:
+          - carbon_intensity: carbon_intensity_global
+          - power: power_tablet
+    export_variables:
+      - data_volume
+      - time
+    import_variables:
+      - formula_name: time
+        external_name: video_minutes_monthly_tablet_wifi_Fibre
+      - average_bitrate
+    link_to:
+      - Fibre Router
+
+  # ====================== IP STB TV      ======================
+  - name: IP STB Fibre
+    prototype: Fibre User Device
+    formula:
+      text: |
+        data_volume = average_bitrate * time
+
+        energy = power * time
+        carbon = energy * carbon_intensity
+        return energy
+
+    input_variables:
+      - type: ExcelVariableSet
+        file_alias: youtube_model_params
+        variables:
+          - carbon_intensity: carbon_intensity_global
+          - power: power_ip_stb
+    export_variables:
+      - data_volume
+      - time
+    import_variables:
+      - formula_name: time
+        external_name: video_minutes_monthly_IP_STB_Fibre
+      - average_bitrate
+    link_to:
+      - Fibre Router
+  # ====================== Games Console TV      ======================
+  - name: Games Console Fibre
+    prototype: Fibre User Device
+    formula:
+      text: |
+        data_volume = average_bitrate * time
+
+        energy = power * time
+        carbon = energy * carbon_intensity
+        return energy
+
+    input_variables:
+      - type: ExcelVariableSet
+        file_alias: youtube_model_params
+        variables:
+          - carbon_intensity: carbon_intensity_global
+          - power: power_gamesconsole
+    export_variables:
+      - data_volume
+      - time
+    import_variables:
+      - formula_name: time
+        external_name: video_minutes_monthly_gamesconsole_Fibre
+      - average_bitrate
+    link_to:
+      - Fibre Router
+
+    # ====================== Desktop TV      ======================
+  - name: Desktop PC Fibre
+    prototype: Fibre User Device
+    formula:
+      text: |
+        data_volume = average_bitrate * time
+
+        energy = power * time
+        carbon = energy * carbon_intensity
+        return energy
+
+    input_variables:
+      - type: ExcelVariableSet
+        file_alias: youtube_model_params
+        variables:
+          - carbon_intensity: carbon_intensity_global
+          - power: power_desktop
+    export_variables:
+      - data_volume
+      - time
+    import_variables:
+      - formula_name: time
+        external_name: video_minutes_monthly_Desktop_Fibre
+      - average_bitrate
+    link_to:
+      - Fibre Router
+
+    # ====================== Laptop ======================
+  - name: Laptop Fibre
+    prototype: Fibre User Device
+    formula:
+      text: |
+        data_volume = average_bitrate * time
+
+        energy = power * time
+        carbon = energy * carbon_intensity
+        return energy
+
+    input_variables:
+      - type: ExcelVariableSet
+        file_alias: youtube_model_params
+        variables:
+          - carbon_intensity: carbon_intensity_global
+          - power: power_laptop
+    export_variables:
+      - data_volume
+      - time
+    import_variables:
+      - formula_name: time
+        external_name: video_minutes_monthly_Laptop_only_Fibre
+      - average_bitrate
+    link_to:
+      - Fibre Router
+
+  # ====================== Laptop and Screen TV      ======================
+  - name: Laptop and Screen Fibre
+    prototype: Fibre User Device
+    formula:
+      text: |
+        data_volume = average_bitrate * time
+
+        energy = power * time
+        carbon = energy * carbon_intensity
+        return energy
+
+    input_variables:
+      - type: ExcelVariableSet
+        file_alias: youtube_model_params
+        variables:
+          - carbon_intensity: carbon_intensity_global
+          - power: power_laptop_and_screen
+    export_variables:
+      - data_volume
+      - time
+    import_variables:
+      - formula_name: time
+        external_name: video_minutes_monthly_Laptop_and_Screen_Fibre
+      - average_bitrate
+    link_to:
+      - Fibre Router
+
+
+    # ====================== Aux Fibre HH ======================
+  - name: Aux Fibre HH
+    formula:
+      text: |
+        video_minutes_monthly_TV_Fibre                = video_minutes_monthly_TV                * share_Fibre
+        video_minutes_monthly_smartphone_wifi_Fibre   = video_minutes_monthly_smartphone_wifi   * share_Fibre
+        video_minutes_monthly_Laptop_and_Screen_Fibre = video_minutes_monthly_Laptop_and_Screen * share_Fibre
+        video_minutes_monthly_tablet_wifi_Fibre       = video_minutes_monthly_tablet_wifi       * share_Fibre
+        video_minutes_monthly_IP_STB_Fibre            = video_minutes_monthly_IP_STB            * share_Fibre
+        video_minutes_monthly_gamesconsole_Fibre      = video_minutes_monthly_gamesconsole      * share_Fibre
+        video_minutes_monthly_Laptop_only_Fibre       = video_minutes_monthly_Laptop_only       * share_Fibre
+        video_minutes_monthly_Desktop_Fibre           = video_minutes_monthly_Desktop           * share_Fibre
+
+    input_variables:
+      - type: ExcelVariableSet
+        variables:
+          - share_Fibre
+    export_variables:
+      - video_minutes_monthly_TV_Fibre
+      - video_minutes_monthly_smartphone_wifi_Fibre
+      - video_minutes_monthly_Laptop_and_Screen_Fibre
+      - video_minutes_monthly_tablet_wifi_Fibre
+      - video_minutes_monthly_IP_STB_Fibre
+      - video_minutes_monthly_gamesconsole_Fibre
+      - video_minutes_monthly_Laptop_only_Fibre
+      - video_minutes_monthly_Desktop_Fibre
+
+      - average_bitrate
+
+    import_variables:
+      - average_bitrate
+
+      - video_minutes_monthly_smartphone_wifi
+      - video_minutes_monthly_tablet_wifi
+
+      - video_minutes_monthly_TV
+      - video_minutes_monthly_IP_STB
+      - video_minutes_monthly_gamesconsole
+
+      - video_minutes_monthly_Desktop
+      - video_minutes_monthly_Laptop_only
+      - video_minutes_monthly_Laptop_and_Screen
+    link_to:
+      - TV Fibre
+      - Smartphone Fibre
+      - Tablet Fibre
+      - IP STB Fibre
+      - Games Console Fibre
+      - Desktop PC Fibre
+      - Laptop Fibre
+      - Laptop and Screen Fibre
+#  # ================== CABLE
+
+  # ================== CABLE ----------
+
+  - name: Cable Router
+    prototype: AN Prototype
+
+    input_variables:
+    - type: ExcelVariableSet
+      substitution: Cable
+      variables:
+      - power: Power_CPE
+      - subscriptions: global_subscriptions
+
+    link_to:
+    - Cable Backhaul
+    metadata:
+      access_network_type: Cable
+      device_type: Wired Access Network
+
+
+  - name: Cable Backhaul
+    prototype: AN Prototype
+    input_variables:
+    - type: ExcelVariableSet
+      substitution: Cable
+      variables:
+      - power: Power_backhaul
+      - subscriptions: global_subscriptions
+    link_to:
+    - Network Edge
+    metadata:
+      access_network_type: Cable
+      device_type: Wired Access Network
+
+
+
+# ====================== Cable DEVICES ======================
+
+  - name: Cable User Device
+    type: prototype
+    metadata:
+      access_network_type: Fibre
+      device_type: User Device
+
+# ====================== Cable TV      ======================
+  - name: TV Cable
+    prototype: Cable User Device
+    formula:
+      text: |
+        data_volume = average_bitrate * time
+
+        energy = power * time
+        carbon = energy * carbon_intensity
+        return energy
+
+    input_variables:
+      - type: ExcelVariableSet
+        file_alias: youtube_model_params
+        variables:
+          - carbon_intensity: carbon_intensity_global
+          - power: power_tv
+    export_variables:
+      - data_volume
+      - time
+    import_variables:
+      - formula_name: time
+        external_name: video_minutes_monthly_TV_Cable
+      - average_bitrate
+    link_to:
+      - Cable Router
+
+  # ====================== Smartphone TV      ======================
+  - name: Smartphone Cable
+    prototype: Cable User Device
+    formula:
+      text: |
+        data_volume = average_bitrate * time
+
+        energy = power * time
+        carbon = energy * carbon_intensity
+        return energy
+
+    input_variables:
+      - type: ExcelVariableSet
+        file_alias: youtube_model_params
+        variables:
+          - carbon_intensity: carbon_intensity_global
+          - power: power_smartphone
+    export_variables:
+      - data_volume
+      - time
+    import_variables:
+      - formula_name: time
+        external_name: video_minutes_monthly_smartphone_wifi_Cable
+      - average_bitrate
+    link_to:
+      - Cable Router
+  # ====================== Tablet TV      ======================
+  - name: Tablet Cable
+    prototype: Cable User Device
+    formula:
+      text: |
+        data_volume = average_bitrate * time
+
+        energy = power * time
+        carbon = energy * carbon_intensity
+        return energy
+
+    input_variables:
+      - type: ExcelVariableSet
+        file_alias: youtube_model_params
+        variables:
+          - carbon_intensity: carbon_intensity_global
+          - power: power_tablet
+    export_variables:
+      - data_volume
+      - time
+    import_variables:
+      - formula_name: time
+        external_name: video_minutes_monthly_tablet_wifi_Cable
+      - average_bitrate
+    link_to:
+      - Cable Router
+
+  # ====================== IP STB TV      ======================
+  - name: IP STB Cable
+    prototype: Cable User Device
+    formula:
+      text: |
+        data_volume = average_bitrate * time
+
+        energy = power * time
+        carbon = energy * carbon_intensity
+        return energy
+
+    input_variables:
+      - type: ExcelVariableSet
+        file_alias: youtube_model_params
+        variables:
+          - carbon_intensity: carbon_intensity_global
+          - power: power_ip_stb
+    export_variables:
+      - data_volume
+      - time
+    import_variables:
+      - formula_name: time
+        external_name: video_minutes_monthly_IP_STB_Cable
+      - average_bitrate
+    link_to:
+      - Cable Router
+  # ====================== Games Console TV      ======================
+  - name: Games Console Cable
+    prototype: Cable User Device
+    formula:
+      text: |
+        data_volume = average_bitrate * time
+
+        energy = power * time
+        carbon = energy * carbon_intensity
+        return energy
+
+    input_variables:
+      - type: ExcelVariableSet
+        file_alias: youtube_model_params
+        variables:
+          - carbon_intensity: carbon_intensity_global
+          - power: power_gamesconsole
+    export_variables:
+      - data_volume
+      - time
+    import_variables:
+      - formula_name: time
+        external_name: video_minutes_monthly_gamesconsole_Cable
+      - average_bitrate
+    link_to:
+      - Cable Router
+
+    # ====================== Desktop TV      ======================
+  - name: Desktop PC Cable
+    prototype: Cable User Device
+    formula:
+      text: |
+        data_volume = average_bitrate * time
+
+        energy = power * time
+        carbon = energy * carbon_intensity
+        return energy
+
+    input_variables:
+      - type: ExcelVariableSet
+        file_alias: youtube_model_params
+        variables:
+          - carbon_intensity: carbon_intensity_global
+          - power: power_desktop
+    export_variables:
+      - data_volume
+      - time
+    import_variables:
+      - formula_name: time
+        external_name: video_minutes_monthly_Desktop_Cable
+      - average_bitrate
+    link_to:
+      - Cable Router
+
+    # ====================== Laptop ======================
+  - name: Laptop Cable
+    prototype: Cable User Device
+    formula:
+      text: |
+        data_volume = average_bitrate * time
+
+        energy = power * time
+        carbon = energy * carbon_intensity
+        return energy
+
+    input_variables:
+      - type: ExcelVariableSet
+        file_alias: youtube_model_params
+        variables:
+          - carbon_intensity: carbon_intensity_global
+          - power: power_laptop
+    export_variables:
+      - data_volume
+      - time
+    import_variables:
+      - formula_name: time
+        external_name: video_minutes_monthly_Laptop_only_Cable
+      - average_bitrate
+    link_to:
+      - Cable Router
+
+  # ====================== Laptop and Screen TV      ======================
+  - name: Laptop and Screen Cable
+    prototype: Cable User Device
+    formula:
+      text: |
+        data_volume = average_bitrate * time
+
+        energy = power * time
+        carbon = energy * carbon_intensity
+        return energy
+
+    input_variables:
+      - type: ExcelVariableSet
+        file_alias: youtube_model_params
+        variables:
+          - carbon_intensity: carbon_intensity_global
+          - power: power_laptop_and_screen
+    export_variables:
+      - data_volume
+      - time
+    import_variables:
+      - formula_name: time
+        external_name: video_minutes_monthly_Laptop_and_Screen_Cable
+      - average_bitrate
+    link_to:
+      - Cable Router
+
+
+    # ====================== Aux Cable HH ======================
+  - name: Aux Cable HH
+    formula:
+      text: |
+        video_minutes_monthly_TV_Cable                = video_minutes_monthly_TV                * share_Cable
+        video_minutes_monthly_smartphone_wifi_Cable   = video_minutes_monthly_smartphone_wifi   * share_Cable
+        video_minutes_monthly_Laptop_and_Screen_Cable = video_minutes_monthly_Laptop_and_Screen * share_Cable
+        video_minutes_monthly_tablet_wifi_Cable       = video_minutes_monthly_tablet_wifi       * share_Cable
+        video_minutes_monthly_IP_STB_Cable            = video_minutes_monthly_IP_STB            * share_Cable
+        video_minutes_monthly_gamesconsole_Cable      = video_minutes_monthly_gamesconsole      * share_Cable
+        video_minutes_monthly_Laptop_only_Cable       = video_minutes_monthly_Laptop_only       * share_Cable
+        video_minutes_monthly_Desktop_Cable           = video_minutes_monthly_Desktop           * share_Cable
+
+    input_variables:
+      - type: ExcelVariableSet
+        variables:
+          - share_Cable
+    export_variables:
+      - video_minutes_monthly_TV_Cable
+      - video_minutes_monthly_smartphone_wifi_Cable
+      - video_minutes_monthly_Laptop_and_Screen_Cable
+      - video_minutes_monthly_tablet_wifi_Cable
+      - video_minutes_monthly_IP_STB_Cable
+      - video_minutes_monthly_gamesconsole_Cable
+      - video_minutes_monthly_Laptop_only_Cable
+      - video_minutes_monthly_Desktop_Cable
+
+      - average_bitrate
+
+    import_variables:
+      - average_bitrate
+
+      - video_minutes_monthly_smartphone_wifi
+      - video_minutes_monthly_tablet_wifi
+
+      - video_minutes_monthly_TV
+      - video_minutes_monthly_IP_STB
+      - video_minutes_monthly_gamesconsole
+
+      - video_minutes_monthly_Desktop
+      - video_minutes_monthly_Laptop_only
+      - video_minutes_monthly_Laptop_and_Screen
+    link_to:
+      - TV Cable
+      - Smartphone Cable
+      - Tablet Cable
+      - IP STB Cable
+      - Games Console Cable
+      - Desktop PC Cable
+      - Laptop Cable
+      - Laptop and Screen Cable
+
+
+  # ======================== Cellular Mobile Network
+  - name: Cellular Mobile Network
+    formula:
+      text: |
+
+        energy_intensity_cellular_3g_4g_mix = share_4g * energy_intensity_cellular_4g + (1-share_4g) * energy_intensity_cellular_3g
+        energy = energy_intensity_cellular_3g_4g_mix * data_volume
+        carbon = energy * carbon_intensity
+        return energy
+    input_variables:
+      - type: ExcelVariableSet
+        variables:
+          - carbon_intensity: carbon_intensity_global
+          - share_4g
+          - energy_intensity_cellular_4g
+          - energy_intensity_cellular_3g
+    import_variables:
+      - video_minutes_monthly
+      - average_bitrate
+      - data_volume
+    export_variables:
+      - data_volume
+    link_to:
+      - Network Edge
+    metadata:
+      platform_name: Cellular
+
+  - name: Smartphone Cell
+    formula:
+      text: |
+        data_volume = average_bitrate * time
+        energy = power * time
+        carbon = energy * carbon_intensity
+        return energy
+    input_variables:
+      - type: ExcelVariableSet
+        file_alias: youtube_model_params
+        variables:
+          - carbon_intensity: carbon_intensity_global
+          - power: power_smartphone
+    import_variables:
+      - average_bitrate
+      - formula_name: time
+        external_name: video_minutes_monthly_smartphone_cell
+    export_variables:
+      - data_volume
+    link_to:
+      - Cellular Mobile Network
+    metadata:
+      platform_name: Cellular
+      device_type: User Device
+
+  - name: Tablet Cell
+    formula:
+      text: |
+        data_volume = average_bitrate * time
+        energy = power * time
+        carbon = energy * carbon_intensity
+        return energy
+    input_variables:
+      - type: ExcelVariableSet
+        file_alias: youtube_model_params
+        variables:
+          - carbon_intensity: carbon_intensity_global
+          - power: power_tablet
+    import_variables:
+      - average_bitrate
+      - formula_name: time
+        external_name: video_minutes_monthly_tablet_cell
+    export_variables:
+      - data_volume
+    link_to:
+      - Cellular Mobile Network
+    metadata:
+      platform_name: Cellular
+      device_type: User Device
+  # ========================   Aux view share
+  - name: Aux view share
+    formula:
+      text: |
+        share_non_mobile      = 1 - share_mobile
+
+        share_tablet          = 1 - share_smartphone
+        share_tablet_wifi     = 1 - share_tablet_cell
+
+
+        # <<<<<<< HANDHELD / MOBILE DEVICES >>>>>>>>>
+        video_minutes_monthly_smartphone_cell = video_minutes_monthly * share_mobile * share_smartphone * share_smartphone_cell
+        video_minutes_monthly_smartphone_wifi = video_minutes_monthly * share_mobile * share_smartphone * (1 - share_smartphone_cell)
+
+        video_minutes_monthly_tablet_cell     = video_minutes_monthly * share_mobile * share_tablet * share_tablet_cell
+        video_minutes_monthly_tablet_wifi     = video_minutes_monthly * share_mobile * share_tablet * (1 - share_tablet_cell)
+
+        # <<<<<<< NON-MOBILE DEVICES >>>>>>>>>
+        video_minutes_monthly_TV              = video_minutes_monthly * share_non_mobile * share_TV
+        video_minutes_monthly_IP_STB          = video_minutes_monthly * share_non_mobile * share_IP_STB
+        video_minutes_monthly_gamesconsole    = video_minutes_monthly * share_non_mobile * share_gamesconsole
+
+        # <<<<<<< COMPUTERS >>>>>>>>>
+        video_minutes_monthly_Desktop          = video_minutes_monthly * share_non_mobile * share_Computer * share_Desktop
+
+        share_Laptop_like = 1 - share_Desktop
+        share_Laptop_only = 1 - share_Laptop_and_Screen
+
+        video_minutes_monthly_Laptop_only       = video_minutes_monthly * share_non_mobile * share_Computer * share_Laptop_like * share_Laptop_only
+        video_minutes_monthly_Laptop_and_Screen = video_minutes_monthly * share_non_mobile * share_Computer * share_Laptop_like * share_Laptop_and_Screen
+
+    input_variables:
+      - type: ExcelVariableSet
+        file_alias: youtube_model_params
+        variables:
+          - video_minutes_monthly
+          - share_mobile
+          - share_smartphone
+          - share_smartphone_cell
+          - share_tablet_cell
+          - share_TV
+          - share_IP_STB
+          - share_gamesconsole
+          - share_Computer
+          - share_Desktop
+          - share_Laptop_and_Screen
+
+
+    import_variables:
+      - average_bitrate
+
+    export_variables:
+      - average_bitrate
+
+      - video_minutes_monthly_smartphone_cell
+      - video_minutes_monthly_tablet_cell
+      - video_minutes_monthly_smartphone_wifi
+      - video_minutes_monthly_tablet_wifi
+
+      - video_minutes_monthly_TV
+      - video_minutes_monthly_IP_STB
+      - video_minutes_monthly_gamesconsole
+      - video_minutes_monthly_Desktop
+
+      - video_minutes_monthly_Laptop_only
+      - video_minutes_monthly_Laptop_and_Screen
+
+    link_to:
+      - Smartphone Cell
+      - Tablet Cell
+
+      - Aux DSL HH
+      - Aux Fibre HH
+      - Aux Cable HH
+
+
+# ============ Aux origin traffic
+  - name: Aux origin traffic
+    formula:
+      text: |
+        origin_traffic_coefficient = (1 - ggc_hitrate + overhead_ggc_synch)
+    input_variables:
+      - type: ExcelVariableSet
+        file_alias: youtube_model_params
+
+        variables:
+          - overhead_ggc_synch
+          - ggc_hitrate: GGC_hitrate
+
+    export_variables:
+      - ggc_hitrate
+      - origin_traffic_coefficient
+
+    link_to:
+      - Google Origin DC
+      - Network Metro and Core
+      - Google Global Cache (CDN)
+      - Network Edge
+
+# ============ Aux global average bitrate
+  - name: Aux global average bitrate
+    formula:
+      text: |
+        # share_audio_streams - the assumed portion of content that will be delivered in audio only (percent of total)
+        share_audio_streams = share_music_videos * share_audio_only
+
+        share_videos = 1 - share_audio_streams
+
+        # global average bitrate -- We assume an average global bitrate that is the determined by the available material and network bandwidth, rather than screen pixels
+        # the global average bitrate is what we are trying to reduce by swapping video for audio content
+        average_bitrate = (share_videos * video_bitrate + share_audio_streams * audio_bitrate)
+
+    input_variables:
+      - type: ExcelVariableSet
+        file_alias: youtube_model_params
+
+        variables:
+          - share_audio_only
+          - share_music_videos
+          - video_bitrate
+          - audio_bitrate
+
+    export_variables:
+      - average_bitrate
+
+    link_to:
+      - Aux view share
+
+Formulas:
+
+Analysis:
+  # these are stored with uncertainty
+  result_variables:
+  - energy
+  - carbon
+
+  # these end up in the excel tables
+  numerical:
+  - carbon
+  - energy
+
+  scenarios:
+    - AO_10
+    - AO_25
+    - AO_50
+
+  plots:
+    - name: device_groups_bar
+      variable: energy
+      # a bar chart of the mean of the samples
+      # summed up over the entire duration of the simulation time
+      kind: bar
+      groups:
+        - name: User Devices
+          categories:
+            device_type: User Device
+        - name: Access Network
+          categories:
+            device_type: Wired Access Network
+        - name: Core and Metro Network
+          categories:
+            platform_name : Core Network
+        - name: YouTube Servers
+          categories:
+            platform_name: Google
+
+    - name: device_groups_areas
+      variable: energy
+      kind: area
+      groups:
+        - name: User Devices
+          categories:
+            device_type: User Device
+        - name: Access Network
+          categories:
+            device_type: Wired Access Network
+        - name: Core and Metro Network
+          categories:
+            platform_name : Core Network
+        - name: YouTube Servers
+          categories:
+            platform_name: Google
+
+    - name: compare_AO_50
+      variable: energy
+      kind: compare
+
+  units:
+    # includes idle_energy, on_energy
+    - endswith: energy
+      to_unit: GWh
+    - __eq__: carbon
+      to_unit: Mt
+    - __eq__: data_volume
+      to_unit: TB
+    - __eq__: time
+      to_unit: kyear
+    - startswith: video_minutes_monthly
+      to_unit: kyear
+    - __eq__: result
+      to_unit: GWh
+
+  process_group_colours:
+    category_name: platform_name
+    colours:
+      DSL: #037E8C
+      Cellular: #F26C27
+      Google: #024959
+      Fibre: #024959
+      Cable: #153A52
+
+Metadata:
+  status: test_resource
+  model_name: youtube
+  file_locations:
+    - file_alias: youtube_model_params
+      file_name: data/youtube_model_params.xlsx
+      type: local_file
+#      google_id_alias: youtube_model_params
+
+  start_date: 2016-01-01
+  end_date: 2017-01-01
+  sample_size: 100
+  sample_mean: True
+
+  individual_process_graphs_variable: energy
+  comparison_variable: energy
+
+  analysis_configs:
+    - name: dev
+      named_plots:
+        - all_area
+      #        - individual_processes
+      #
+      #      individual_process_graphs:
+      #        - Cellular Infrastructure
+      #        - Backhaul Fibre Network
+
+#      input_vars:
+#        variables:
+#          - adsl_access_network_energy_per_hh_per_reference_period
+#          - adsl_modem_router_energy_per_hh_per_reference_period
+
+    #      standard_plots:
+    #        - process_tree
+
+    - name: complete
+      named_plots:
+        - device_groups_bar
+        - device_groups_areas
+      #
+#      individual_process_graphs:
+#        - Cellular Infrastructure
+
+
+
+#      standard_plots:
+#        - process_tree

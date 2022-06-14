@@ -1,0 +1,20 @@
+[paths]
+source =
+   src
+
+
+[run]
+branch = true
+source =
+    eam_core
+parallel = false
+dynamic_context = test_function
+
+[report]
+show_missing = true
+precision = 2
+omit =
+    *migrations*
+    src/eam_core/dsl/MuListener.py
+    src/eam_core/__main__.py
+    src/eam_core/cli.py

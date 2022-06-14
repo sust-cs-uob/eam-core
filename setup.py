@@ -26,7 +26,7 @@ def read(*names, **kwargs):
 
 setup(
     name='eam-core',
-    version='0.1.0',
+    version='0.2.0',
     description='EAM core framework',
     long_description='%s\n%s' % (
         re.compile('^.. start-badges.*^.. end-badges', re.M | re.S).sub('', read('README.rst')),
@@ -34,7 +34,7 @@ setup(
     ),
     author='Dan Schien',
     author_email='daniel.schien@bristol.ac.uk',
-    url='https://github.com/sust-cs-uob/eam-core',
+    url='https://github.com/dschien/eam-core',
     packages=find_packages('src'),
     package_dir={'': 'src'},
     include_package_data=True,

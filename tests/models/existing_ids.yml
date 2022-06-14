@@ -1,0 +1,113 @@
+variant: 2
+Processes:
+
+- name: CDN
+  id: 0
+  metadata:
+    model_layer: 3rd Party
+  tableVariables:
+  - value: energy_intensity_network
+  - value: carbon_intensity
+  constants: []
+  importVariables:
+  - value: data_volume
+  exportVariables: []
+  device_type: IP Networking
+  formula: |
+    energy = energy_intensity_network * data_volume
+    carbon = energy * carbon_intensity
+    return energy
+- name: Internet Network
+  id: 1
+  metadata:
+    model_layer: 3rd Party
+  tableVariables:
+  - value: energy_intensity_network
+  - value: carbon_intensity
+  constants: []
+  importVariables:
+  - value: data_volume_laptop
+  exportVariables:
+  - value: data_volume
+  device_type: IP Networking
+  link_to:
+  - CDN
+  formula: |
+    energy = data_volume_laptop * energy_intensity_network
+    carbon = energy * carbon_intensity
+    data_volume = data_volume_laptop
+    return energy
+- name: Laptop
+  id: 2
+  metadata:
+    model_layer: User Device
+  tableVariables:
+  - value: power_latop
+  - value: time_laptop
+  - value: bitrate_laptop
+  - value: carbon_intensity
+  constants: []
+  importVariables: []
+  exportVariables:
+  - value: data_volume_laptop
+  formula: |
+    energy = power_latop * time_laptop
+    data_volume_laptop = time_laptop * bitrate_laptop
+    carbon = energy * carbon_intensity
+
+    return energy
+  link_to:
+  - Internet Network
+Metadata:
+  status: test_resource
+  model_name: CI_model
+  description: |
+    bla bla
+  model_version: 0.0.1
+  table_file_name: tests/data/ci_v2_data.xlsx
+  datasource_version_hint: 2
+  comparison_variable: energy
+  start_date: 2019-01-01
+  end_date: 2036-01-01
+  sample_size: 2
+  sample_mean: false
+  individual_process_graphs_variable: energy
+  analysis_configs:
+  - name: ci
+    named_plots:
+#        - all_area
+    - individual_processes
+    - input_vars
+    individual_process_graphs:
+    - Laptop
+    standard_plots:
+    - process_tree
+Analysis:
+  result_variables:
+  - energy
+  scenarios:
+  - S1
+
+  numerical:
+  - energy
+  units:
+  - endswith: energy
+    to_unit: GWh
+  - __eq__: carbon
+    to_unit: Mt
+  - __eq__: data_volume
+    to_unit: TB
+  - __eq__: time
+    to_unit: kyear
+  - __eq__: result
+    to_unit: GWh
+  plots:
+  - name: individual_processes
+    variable: energy
+    kind: grid
+    title: Monthly Energy Consumption per Process
+    xlabel: Time
+    ylabel: Energy per Month [{unit}]
+Constants:
+- name: ref_duration
+  value: 2628000s

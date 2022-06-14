@@ -1,11 +1,13 @@
+import sys
+
 import copy
+import os
 import time
 from functools import partial
 
 import matplotlib
-import pint
-import os
 from pint.quantity import _Quantity
+from ruamel import yaml
 
 from eam_core.YamlLoader import YamlLoader
 
@@ -19,7 +21,7 @@ import logging
 
 import subprocess
 from operator import itemgetter
-from typing import Dict, Any, Optional, Tuple
+from typing import Dict, Any, Optional
 
 import numpy as np
 import pandas as pd
@@ -29,15 +31,71 @@ from networkx.drawing.nx_pydot import to_pydot
 from tabulate import tabulate
 
 import networkx as nx
-from networkx.drawing.nx_agraph import graphviz_layout, write_dot
 
-import errno
+# todo: large parts of this are untested
 
 logger = logging.getLogger(__name__)
 
 
 def find_node_by_name(model, name) -> FormulaProcess:
     return [node for node in model.process_graph.nodes() if node.name == name][0]
+
+
+def make_subs(aliasFunc, var_names):
+    """
+    :param aliasFunc: the function used to produce an alias for an element of `var_names`.
+    :param var_names: a list of the names of variables in a process, e.g. ['energy_efficiency', ...]
+    :return         : a list of tuples containing an alias for the variable name, and the variable name. For example,
+                      given a function that made each var name uppercase, and the var names ['x', 'y', 'z'], the result
+                      is [('X', 'x'), ('Y', 'y'), ('Z', 'z')].
+    """
+    return [(aliasFunc(key), key) for key in var_names]
+
+
+def make_postfix_subs(postfix, var_names):
+    """
+    :param postfix  : a posfix for each element in `var_name`, which is used to create an alias for each var_name.
+    :param var_names: a list of the names of variables in a process, e.g. ['energy_efficiency', ...]
+    :return         : a list of tuples containing an alias for the variable name, and the variable name. For example,
+                      given the postfix is '_laptop', and the list of var names is ['x', 'y', z'], the result is
+                      [('x_laptop', 'x'), ('y_laptop', 'y'), ('z_laptop', 'z')].
+    """
+
+    def aliasFunc(var_name):
+        return var_name + postfix
+
+    return make_subs(aliasFunc, var_names)
+
+
+def make_prefix_subs(prefix, var_names):
+    """
+    :param prefix   : a prefix for each element in `var_name`, which is used to create an alias for each var_name.
+    :param var_names: a list of the names of variables in a process, e.g. ['energy_efficiency', ...]
+    :return         : a list of tuples containing an alias for the variable name, and the variable name. For example,
+                      given the prefix is 'laptop_', and the list of var names is ['x', 'y', z'], the result is
+                      [('laptop_x', 'x'), ('laptop_y', 'y'), ('laptop_z', 'z')].
+    """
+
+    def aliasFunc(var_name):
+        return prefix + var_name
+
+    return make_subs(aliasFunc, var_names)
+
+
+def append_to_dict(dictionary: Dict[str, Any], key: str, value: Optional[Any]) -> Dict[str, Any]:
+    """
+    :param dictionary: the dictionary to append to.
+    :param key: the key to maybe add to the dictionary.
+    :param value: the value to maybe add to the dictionary.
+    :return: if `value` is not None the pair is added to the dictionary and the result is returned, otherwise `dict`
+    is simply returned.
+    """
+    if value is None:
+        return dictionary
+
+    new_dict = dictionary
+    new_dict[key] = value
+    return new_dict
 
 
 def store_trace_data(model, trace_data: Dict[str, Dict[str, pd.Series]], simulation_control=None, average=True):
@@ -69,6 +127,7 @@ def load_trace_data(output_directory, variable: str, base_dir='.') -> pd.DataFra
     return pd.read_pickle(f'{base_dir}/{output_directory}/traces/{variable}.pdpkl')
 
 
+# this isn't called anywhere that I can see. Is it still needed?
 def store_calculation_debug_info(model, simulation_control, store_input_vars=True, average=True, target_units=None,
                                  result_variables=None):
     """
@@ -106,7 +165,7 @@ def store_calculation_debug_info(model, simulation_control, store_input_vars=Tru
         if not os.path.exists(f'{simulation_control.output_directory}/pd_pickles/'):
             os.makedirs(f'{simulation_control.output_directory}/pd_pickles/')
 
-        h5store(f'{simulation_control.output_directory}/pd_pickles/input_variables.hd5', df, **metadata)
+        h5store(f'{simulation_control.output_directory}/pd_pickles/input_variables.hd5', df)
         df.to_pickle(f'{simulation_control.output_directory}/pd_pickles/input_variables.pdpkl')
 
 
@@ -129,6 +188,8 @@ def store_dataframe(q_dict: Dict[str, pd.Series], simulation_control=None, targe
                     subdirectory=''):
     storage_df, metadata = pandas_series_dict_to_dataframe(q_dict, target_units=target_units, var_name=variable_name,
                                                            simulation_control=simulation_control)
+
+    calculate_group_sum_values(storage_df, variable_name)
     logger.info(f'metadata is {metadata}')
     filename = f'{simulation_control.output_directory}/{subdirectory}/result_data_{variable_name}.hdf5'
 
@@ -138,13 +199,9 @@ def store_dataframe(q_dict: Dict[str, pd.Series], simulation_control=None, targe
     h5store(filename, storage_df.pint.dequantify(), **metadata)
 
 
-def load_as_qantity_dict(filename) -> Dict[str, _Quantity]:
-    val, metadata = h5load(filename)
-    result_dict = {k: Q_(val[k], metadata[k]['unit']) for k in val.columns}
-    return result_dict
-
-
-def load_as_df_qantity(filename) -> _Quantity:
+# loads a dataframe val from hdf5
+# then converts into a dataframe with pint object dtypes instead of float64
+def load_as_df_quantity(filename) -> _Quantity:
     val, metadata = h5load(filename)
     # check all units are the same
     # logger.debug(metadata.items())
@@ -154,17 +211,28 @@ def load_as_df_qantity(filename) -> _Quantity:
 
 
 def load_as_plain_df(filename):
-    data, metadata = load_as_df_qantity(filename)
+    """
+    loads a dataframe using method above, then dequantifies back to floats
+    and drops the units
+    """
+    data, metadata = load_as_df_quantity(filename)
     units = {v[0]: v[1] for v in data.pint.dequantify().columns.values}
     df = data.pint.dequantify()
     df.columns = df.columns.droplevel(1)
     return df, units
 
 
-def load_as_df(filename) -> Tuple[pd.DataFrame, Dict[str, Dict[str, str]]]:
-    val, metadata = h5load(filename)
+def calculate_group_sum_values(storage_df, variable_name):
+    # storage_df.pint.dequantify().to_pickle("store " + variable_name + ".pickle")
+    pass
 
-    return val, metadata
+
+def get_maximum_country_list(data: Dict[str, pd.Series]) -> list:
+    countries = set()
+    for s in data.values():
+        if 'group' in s.index.names:
+            countries = countries.union(set(s.index.get_level_values('group').values))
+    return sorted(countries)
 
 
 def pandas_series_dict_to_dataframe(data: Dict[str, pd.Series], target_units=None, var_name=None,
@@ -175,48 +243,52 @@ def pandas_series_dict_to_dataframe(data: Dict[str, pd.Series], target_units=Non
     output pd.DataFrame with with result pd.Series for columns of process keys
 
     """
+
+    write_pickles = False
+
+    if write_pickles:
+        # from pathlib import Path
+        # pickle_directory = Path(f'{simulation_control.output_directory}/pickles')
+        os.makedirs(f'{simulation_control.output_directory}/pickles', exist_ok=True)
+
     metadata = {}
+    pickle_df_index = simulation_control._df_multi_index
+
     if simulation_control.with_group:
-        results_df = pd.DataFrame(index=simulation_control.group_df_multi_index)
+        sample_size = simulation_control.sample_size
+        times = simulation_control.times
+        groups = get_maximum_country_list(data)
+
+        index_names = ['time', 'samples', 'group']
+        iterables = [times, range(sample_size), groups]
+        group_df_multi_index = pd.MultiIndex.from_product(iterables, names=index_names)
+
+        results_df = pd.DataFrame(index=group_df_multi_index)
+        pickle_df_index = group_df_multi_index
     else:
         results_df = pd.DataFrame(index=simulation_control._df_multi_index)
+
     for process, variable in data.items():
         logger.debug(f'converting results for process {process}')
         if target_units:
             variable = to_target_dimension(var_name, variable, target_units)
+
+        if write_pickles:
+            if os.path.isfile(f'{simulation_control.output_directory}/pickles/{process}.pickle'):
+                pickle_df = pd.read_pickle(f'{simulation_control.output_directory}/pickles/{process}.pickle')
+                pickle_df = pickle_df.pint.quantify()
+            else:
+                pickle_df = pd.DataFrame(index=pickle_df_index)
+
+            pickle_df[process + '_' + var_name] = variable
+            pickle_df[process + '_' + var_name].name = process
+            pickle_df = pickle_df.pint.dequantify()
+            pickle_df.to_pickle(f'{simulation_control.output_directory}/pickles/{process}.pickle')
+
         results_df[process] = variable
         metadata[process] = variable.pint.units
+
     return results_df, metadata
-
-
-def quantity_dict_to_dataframe(q_data: Dict[str, _Quantity], target_units=None, var_name=None,
-                               simulation_control: SimulationControl = None) \
-        -> Tuple[pd.DataFrame, Dict[str, str]]:
-    data = None
-    metadata = {}
-    logger.debug(f'result data has the following processes {q_data.keys()}')
-    for process, results in q_data.items():
-        logger.debug(f'Converting <Quantity> back to <Pandas DF> {process}')
-        if isinstance(results, Q_):
-
-            if target_units:
-                results = to_target_dimension(var_name, results, target_units)
-
-            d = results.m
-
-            metadata[process] = {'unit': str(results.units)}
-
-            results_df = pd.DataFrame(data=d)
-            results_df.columns = [process]
-            if not isinstance(results_df.index, pd.MultiIndex):
-                results_df.index = simulation_control._df_multi_index
-
-        if data is None:
-            data = results_df
-        else:
-            data[process] = results_df
-    # print(data)
-    return data, metadata
 
 
 def generate_model_definition_markdown(model, in_docker=False, output_directory=None):
@@ -478,7 +550,7 @@ def draw_graph_from_dotfile(model, file_type='pdf', show_variables=True, metric=
     l_cmd = shlex.split(cmd)
 
     logger.info(f'removing "lp" statements from {dot_file}')
-    with subprocess.Popen(l_cmd, stdout=subprocess.PIPE) as proc:
+    with subprocess.Popen(l_cmd, stdout=subprocess.PIPE, shell=True) as proc:
         logger.info('output from shell process: ' + str(proc.stdout.read()))
 
     # time.sleep(2)
@@ -494,7 +566,7 @@ def draw_graph_from_dotfile(model, file_type='pdf', show_variables=True, metric=
         l_cmd = shlex.split(cmd)
         logger.info(f'running docker cmd {l_cmd}')
         with open(dot_render_filename, 'w') as output:
-            with subprocess.Popen(l_cmd, stdout=output) as proc:
+            with subprocess.Popen(l_cmd, stdout=output, shell=True) as proc:
                 pass
     else:
         cmd = f"dot '{dot_file}' -T{file_type} -Gsplines=ortho -Grankdir=BT > '{dot_render_filename}'"
@@ -548,7 +620,7 @@ def generate_graph_node_barcharts(model_name, metric, start_date=None, end_date=
         start_date = df.index[0][0].date()
     if not end_date:
         end_date = df.index[-1][0].date()
-    df = df.loc[start_date:end_date]
+    df = df.loc[pd.date_range(start_date, end_date, freq='MS')]
 
     s = [*df.mean(level='time').sum().items()]
     labels, values = zip(*sorted(s, key=itemgetter(1)))
@@ -655,12 +727,121 @@ def load_df(scenario, metric, group=None, mean_values=False, base_dir='.', outpu
     return df
 
 
+def compare_dataframes(assert_structural_identity, df_a, df_b, simrun_a, simrun_b, tolerance):
+    """
+    Compares the content of two dataframes.
+    Assumes that
+
+    :param assert_structural_identity:
+    :type assert_structural_identity:
+    :param df_a:
+    :type df_a:
+    :param df_b:
+    :type df_b:
+    :param simrun_a:
+    :type simrun_a:
+    :param simrun_b:
+    :type simrun_b:
+    :param tolerance:
+    :type tolerance:
+    :return:
+    :rtype:
+    """
+    L1 = df_a.index.values
+    L2 = df_b.index.values
+    #   check same input variables
+    if assert_structural_identity:
+        assert len(L1) == len(L2) and sorted(L1) == sorted(L2)
+
+    def get_start_date(df):
+        if isinstance(df.index, pd.core.index.MultiIndex):
+            return df.index[0][0].to_pydatetime()
+        return df.index[0].to_pydatetime()
+
+    def get_end_date(df):
+        if isinstance(df.index, pd.core.index.MultiIndex):
+            return df.index[-1][0].to_pydatetime()
+        return df.index[-1].to_pydatetime()
+
+    start_date_a = get_start_date(df_a)
+    start_date_b = get_start_date(df_b)
+    end_date_a = get_end_date(df_a)
+    end_date_b = get_end_date(df_b)
+
+    start_date = max(start_date_a, start_date_b)
+    end_date = min(end_date_a, end_date_b)
+    logger.info(f'using date range {start_date} - {end_date}')
+    changed_variables = {}
+
+    variables = set(df_a.index.values).union(set(df_b.index.values))
+
+    for var in variables:
+        #         print (var)
+        try:
+
+            if var in df_a.index and var in df_b.index:
+                vm_b = df_b.loc[var][start_date:end_date].mean()
+                vm_a = df_a.loc[var][start_date:end_date].mean()
+                diff_rel = np.abs(vm_b - vm_a) / vm_a * 100
+                diff_rel_signed = (vm_b - vm_a) / vm_a * 100
+                if diff_rel > tolerance:  # more than .1% change
+                    changed_variables[var] = {simrun_a: vm_a, simrun_b: vm_b, 'change': diff_rel_signed}
+            else:
+                if var in df_a.index:
+                    vm_a = df_a.loc[var][start_date:end_date].mean()
+                    changed_variables[var] = {simrun_a: vm_a, simrun_b: 0, 'change': 0}
+                else:
+                    vm_b = df_b.loc[var][start_date:end_date].mean()
+                    changed_variables[var] = {simrun_a: 0, simrun_b: vm_b, 'change': 0}
+        except Exception as e:
+            logger.warning(e)
+    return changed_variables
+
+
+def get_sim_run_description():
+    from os import system
+    from platform import system as platform
+
+    import tkinter as tk
+
+    class Prompt(tk.Tk):
+        def __init__(self):
+            self.answer = None
+            tk.Tk.__init__(self)
+
+            # label = tk.Label(frame, text="Enter a digit that you guessed:").pack()
+            self.entry = tk.Entry(self)
+            labelText = tk.StringVar()
+            labelText.set("Sim Run Description")
+            labelDir = tk.Label(self, textvariable=labelText, height=4)
+            labelDir.pack(side="left")
+            self.entry.bind('<Return>', self.on_button)
+            self.button = tk.Button(self, text="Submit", command=self.on_button)
+            self.entry.pack()
+            self.entry.focus()
+            self.button.pack()
+
+        def on_button(self, event=None):
+            self.answer = self.entry.get()
+            self.quit()
+
+    promptData = Prompt()
+    promptData.lift()
+    if platform() == 'Darwin':  # How Mac OS X is identified by Python
+        system('''/usr/bin/osascript -e 'tell app "Finder" to set frontmost of process "Python" to true' ''')
+    promptData.mainloop()
+    promptData.destroy()
+    simulation_run_description = promptData.answer
+    return simulation_run_description
+
+
 def store_sim_config(sim_control, directory, simulation_run_description, **kwargs):
     sim_control___dict__ = copy.deepcopy(sim_control.__dict__)
     del sim_control___dict__['times']
     del sim_control___dict__['param_repo']
     del sim_control___dict__['_df_multi_index']
     del sim_control___dict__['group_df_multi_index']
+    sim_control___dict__['output_directory'] = str(sim_control___dict__['output_directory'])
     sim_config = {'simulation_run_description': simulation_run_description, **sim_control___dict__}
     sim_config.update(kwargs)
     with open(f'{str(directory)}/sim_config.json', 'w') as outfile:
@@ -706,13 +887,38 @@ def configue_sim_control_from_yaml(sim_control: SimulationControl, yaml_struct, 
 
     if yaml_struct['Metadata'].get('with_group', False):
         sim_control.with_group = True
-        sim_control.groupings = yaml_struct['Metadata']['groupings']
+        sim_control.groupings = yaml_struct['Metadata'].get('groupings', [])
+        groupings_include = yaml_struct['Metadata'].get('groupings_include', None)
+        if groupings_include:
+            with open(groupings_include, 'r') as stream:
+                try:
+                    groupings = yaml.load(stream, Loader=yaml.RoundTripLoader)
+                    sim_control.groupings = groupings
+                except yaml.YAMLError as exc:
+                    logger.error(f'Error while loading yaml file {groupings_include} {exc}')
+                    sys.exit(1)
         iterables = [sim_control.times, range(sim_control.sample_size), sim_control.groupings]
         index = sim_control.index_names.copy()
         index.append("group")
         sim_control.group_df_multi_index = pd.MultiIndex.from_product(iterables, names=index)
-        sim_control.group_vars = yaml_struct['Metadata']['group_vars']
         sim_control.group_aggregation_vars = yaml_struct['Metadata'].get('group_aggregation_vars', None)
+
+        sim_control.group_vars = []
+        for group_varoid in yaml_struct['Metadata']['group_vars']:
+            if isinstance(group_varoid, list):
+                # the group varoid isn't a group variable.
+                # instead its a list of group variables, all of which must have the same groups.
+                sim_control.group_vars = sim_control.group_vars + group_varoid
+            else:
+                # the group varoid is a group variable.
+                sim_control.group_vars.append(group_varoid)
+
+        sim_control.group_dependencies = yaml_struct['Metadata'].get('group_dependencies', [])
+
+        if sim_control.groupings == []:
+            sim_control.with_group = False
+
+    sim_control.result_variables = yaml_struct['Analysis'].get('result_variables', [])
 
     sim_control.output_directory = output_directory
     iterables = [sim_control.times, range(sim_control.sample_size)]
@@ -720,17 +926,20 @@ def configue_sim_control_from_yaml(sim_control: SimulationControl, yaml_struct, 
     sim_control._df_multi_index = pd.MultiIndex.from_product(iterables, names=sim_control.index_names)
 
 
-def prepare_simulation(model_output_directory, simulation_run_description, yaml_struct, scenario, sim_control=None,
-                       filename=None,
-                       IDs=False, formula_checks=False, **kwargs):
-    if not sim_control:
-        sim_control = SimulationControl()
-        configue_sim_control_from_yaml(sim_control, yaml_struct, model_output_directory)
+def prepare_simulation(model_output_directory, simulation_run_description, yaml_struct, scenario,
+                       filename=None, IDs=False, formula_checks=False, sample_mean=None, use_time_series=False,
+                       **kwargs):
+    sim_control = SimulationControl()
+    configue_sim_control_from_yaml(sim_control, yaml_struct, model_output_directory)
     sim_control.process_ids = IDs
     sim_control.model_run_datetime = time.strftime("%m%d-%H%M")
     sim_control.variable_ids = IDs
     sim_control.filename = filename
     sim_control.scenario = scenario
+    if sample_mean is not None:
+        sim_control.sample_mean_value = sample_mean
+
+    sim_control.use_time_series = use_time_series
     args = kwargs.get('args', None)
     _kwargs = {}
     if args:

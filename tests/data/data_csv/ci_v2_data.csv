@@ -1,0 +1,9 @@
+variable,scenario,type,param,ref value,mean growth,initial_value_proportional_variation,variability growth,ref date,unit,label,source,comment,control,scenario notes,description,ui variable,user name,id
+power_latop,,interp,linear,"{""2020-01-01"":10, ""2031-06-01"":9.5}",0,0.1,0.05,01/06/2019,W,,,,,,what does it mean? How do collect this info?,d,power draw of laptop,0
+time_laptop,,interp,linear,"{""2020-01-01"":100, ""2031-06-01"":95}",0,0.1,0.05,01/06/2019,minute,,,,,,,d,,1
+energy_intensity_network,,exp,,20,0.25,0.1,0.1,01/06/2016,kWh/GB,,,,,,,,,2
+bitrate_laptop,,exp,,40000000,0,0.1,0.05,01/06/2019,bps,,,,,,,,,3
+carbon_intensity,,exp,,0.5,-0.1,0.1,0.05,01/06/2019,kg/kWh,,,,,,,p,,4
+carbon_intensity,S1,exp,,0.5,-0.2,0.1,0.05,01/06/2019,kg/kWh,,,,,,,,,5
+
+,,,,,,,,,,,,,,,,,,

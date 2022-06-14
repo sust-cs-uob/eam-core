@@ -1,0 +1,95 @@
+variant: 2
+Processes:
+
+  - name: Origin Datacentre
+    id: 2
+    metadata:
+      model_layer: 3rd Party
+    tableVariables:
+      - value: power_B
+    constants: []
+    importVariables:
+      - value: time_B
+#        group_statistic: sum
+    exportVariables: []
+    device_type: IP Networking
+    formula: |2
+      energy = power_B * time_B;
+      return energy
+
+  - name: CDN
+    id: 0
+    metadata:
+      model_layer: 3rd Party
+    tableVariables:
+      - value: power_B
+      - value: time_B
+    constants: []
+    importVariables: []
+    exportVariables:
+      - value: time_B
+    device_type: IP Networking
+    formula: |2
+      energy = power_B * time_B;
+      return energy
+    link_to:
+      - Origin Datacentre
+
+  - name: Internet Network
+    id: 1
+    metadata:
+      model_layer: 3rd Party
+    tableVariables:
+      - value: power_A
+      - value: time_A
+    constants: []
+    importVariables: []
+    exportVariables: []
+    device_type: IP Networking
+    link_to:
+      - CDN
+    formula: |2
+      energy = power_A * time_A;
+      return energy
+
+Metadata:
+  status: test_resource
+  model_name: country_test
+  description: |
+    bla bla
+  model_version: 0.0.1
+  table_file_name: data/full_country_data.xlsx
+  datasource_version_hint: 2
+  comparison_variable: energy
+  start_date: 2019-01-01
+  end_date: 2036-01-01
+  sample_size: 2
+  sample_mean: false
+  individual_process_graphs_variable: energy
+  with_group: True
+  groupings:
+    - UK
+    - DE
+  group_vars:
+    - power_B
+    - time_B
+    - power_A
+    - time_A
+  analysis_configs:
+    - name: ci
+Analysis:
+  result_variables:
+    - energy
+  numerical:
+    - energy
+  units:
+  - endswith: energy
+    to_unit: GWh
+  - __eq__: time
+    to_unit: kyear
+  - __eq__: result
+    to_unit: GWh
+
+Constants:
+- name: ref_duration
+  value: 2628000s

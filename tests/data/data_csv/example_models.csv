@@ -1,0 +1,30 @@
+variable,scenario,module,distribution,param 1,param 2,param 3,unit,CAGR,ref date,label,comment,source,tags,,,,,,,Use Phase Energy per month,Value,Unit,,Embodied Carbon per month,Value,Unit
+Server,,,,,,,,,,,,,,,,,,,,Laptop Data Vol,1095000000000000000.000000,b,,Laptop,2500000000.000000,gCO2e
+server_energy_efficiency,,numpy.random,choice,0.000020,,,J/b,,,,,,,,,,,,,Phone Data Vol,1642500000000000000.000000,b,,Phone,12500000000.000000,gCO2e
+embodied_carbon_intensity_per_dv,,numpy.random,choice,0.000000,,,gCO2e/b,,,,,,,,,,,,,Network2 Data Vol,1095000000000000000.000000,b,,Network2,31755000.000000,gCO2e
+,,numpy.random,,,,,,,,,,,,,,,,,,Network1 Data Vol,2737500000000000000.000000,b,,Network1,79387500.000000,gCO2e
+Networks,,numpy.random,,,,,,,,,,,,,,,,,,Server Data Vol,2737500000000000000.000000,b,,Server,79387500.000000,gCO2e
+network1_energy_efficiency,,numpy.random,choice,0.000002,,,J/b,,,,,,,,,,,,,,,,,Total,15190530000,gCO2e
+network2_energy_efficiency,,numpy.random,choice,0.000002,,,J/b,,,,,,,,,,,,,Laptop Energy,2737500000000.000000,J,,,,
+,,numpy.random,,,,,,,,,,,,,,,,,,Phone Energy,1642500000000.000000,J,,,,
+Laptop,,numpy.random,,,,,,,,,,,,,,,,,,Network2 Energy,2190000000000.000000,J,,,,
+laptop_power,,numpy.random,choice,5,,,W,,,,,,,,,,,,,Network1 Energy,5475000000000.000000,J,,,,
+laptop_bitrate,,numpy.random,choice,2000000.000000,,,b/s,,,,,,,,,,,,,Server Energy,54750000000000.007812,J,,,,
+laptop_num_devices,,numpy.random,choice,1000000.000000,,,,,,,,,,,,,,,,Total Energy,66795000000000.007812,J,,,,
+laptop_duration_s,,numpy.random,choice,18000,,,s,,,,,,,,,,,,,,,,,,,
+laptop_days_per_month,,numpy.random,choice,30.416667,,,d,,,,,,,,,,,,,,,,,,,
+laptop_allocated_share,,numpy.random,choice,0.3,,,,,,,,,,,,,,,,,,,,,,
+laptop_lifetime_months,,numpy.random,choice,48,,,,,,,,,,,,,,,,,,,,,,
+laptop_embodied_impact,,numpy.random,choice,400000,,,gCO2e,,,,,,,,,,,,,,,,,,,
+laptop_impact per month,,numpy.random,choice,8333.333333,,,gCO2e,,,,,,,,,,,,,,,,,,,
+,,numpy.random,,,,,,,,,,,,,,,,,,,,,,,,
+Phone,,numpy.random,,,,,,,,,,,,,,,,,,,,,,,,
+phone_power,,numpy.random,choice,1,,,W,,,,,,,,,,,,,,,,,,,
+phone_bitrate,,numpy.random,choice,1000000.000000,,,b/s,,,,,,,,,,,,,,,,,,,
+phone_num_devices,,numpy.random,choice,10000000.000000,,,,,,,,,,,,,,,,,,,,,,
+phone_duration_s,,numpy.random,choice,5400,,,s,,,,,,,,,,,,,,,,,,,
+phone_days_per_month,,numpy.random,choice,30.416667,,,d,,,,,,,,,,,,,,,,,,,
+phone_allocated_share,,numpy.random,choice,0.3,,,,,,,,,,,,,,,,,,,,,,
+phone_lifetime_months,,numpy.random,choice,12,,,,,,,,,,,,,,,,,,,,,,
+phone_embodied_impact,,numpy.random,choice,50000,,,gCO2e,,,,,,,,,,,,,,,,,,,
+phone_impact per month,,numpy.random,choice,4166.666667,,,gCO2e,,,,,,,,,,,,,,,,,,,
