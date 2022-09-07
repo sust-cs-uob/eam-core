@@ -20,7 +20,7 @@ default_cycler = (cycler(color=['r', 'g', 'b', 'y']) +
 # todo: large parts of this are untested. Does this matter?
 
 def plot_grid(df, file_name, xlabel, ylabel, title, base_dir, output_scenario_directory, **kwargs):
-    data = df.ix[:, df.groupby(level=['time']).quantile(.75).max().sort_values(ascending=False).index]
+    data = df.loc[:, df.groupby(level=['time']).quantile(.75).max().sort_values(ascending=False).index]
 
     maxima = data[data.columns[0]].groupby(level=['time']).quantile(.75).mean()
     minima = data[data.columns[-1]].groupby(level=['time']).quantile(.75).mean()
@@ -62,6 +62,10 @@ def plot_grid(df, file_name, xlabel, ylabel, title, base_dir, output_scenario_di
 
         mean = high.mean()
         logger.debug(mean)
+        if mean_.min() <= 0:
+            logger.info(f"Min value >= 0, cannot plot. Skipping {file_name}...")
+            continue
+
         mean_.plot(ax=ax,
                    kind='line',
                    legend=False,
