@@ -700,10 +700,17 @@ def analysis(runner, yaml_struct, analysis_config=None, mean_run=None, image_fil
             mean = data.mean(level='time').mean()
             mean.to_excel(writer, sheet_name)
 
-            use_f_units = yaml_struct['Analysis'].get('functional_units', True)
+            use_f_units = yaml_struct['Analysis'].get('functional_units', False)
             if use_f_units:
                 logger.info(f'Calculating functional units for {variable}...')
-                extract_functional_units(yaml_struct, data, sim_control, variable)
+                data_per_f_unit, f_unit_type = extract_functional_units(yaml_struct, data, sim_control, variable)
+                if data_per_f_unit is not None:
+                    sheet_name = f'functional unit {variable}'
+                    sheet_descriptions[
+                        sheet_name] = f'{sheet_name}: The data presented in terms of {variable} per {f_unit_type}.'
+
+                    mean_data_per_f_unit = data_per_f_unit.mean(level='time').mean()
+                    mean_data_per_f_unit.to_excel(writer, sheet_name)
             else:
                 logger.info('Functional units are not calculated for this model')
 
@@ -781,7 +788,7 @@ def extract_functional_units(yaml_struct, data,  sim_control, variable):
     Functional units are specified in the Analysis section of the yaml model.
     todo needs tests!
     """
-    f_unit = yaml_struct['Analysis'].get('functional_unit_type', "UNDEFINED")
+    f_unit_type = yaml_struct['Analysis'].get('functional_unit_type', "UNDEFINED")
     f_unit_var_list = yaml_struct['Analysis'].get('functional_unit_vars', [])
 
     f_unit_cumulative_value = 0
@@ -791,6 +798,16 @@ def extract_functional_units(yaml_struct, data,  sim_control, variable):
         logger.info(f'Fetching functional unit value for {f_unit_var}')
         f_unit_value = parameter_set[f_unit_var].scenarios[scenario].kwargs.get('ref value', 0)
         f_unit_cumulative_value += f_unit_value
+    logger.info(f'Total summed functional units: {f_unit_cumulative_value} {f_unit_type}')
+
+    if f_unit_cumulative_value > 0:
+        data_per_f_unit = data / f_unit_cumulative_value
+        data_per_f_unit.columns = data_per_f_unit.columns.droplevel(1)
+        #data_per_f_unit = data_per_f_unit.pint.quantify()
+        return data_per_f_unit, f_unit_type
+    else:
+        logger.warning(f'{f_unit_type} value was not greater than 0. Value was {f_unit_cumulative_value}')
+        return None, None
 
 
 def plot_scenario_def(yaml_struct, plot_def, output_directory, start_date, end_date, base_dir,
