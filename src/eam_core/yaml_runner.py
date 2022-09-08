@@ -66,6 +66,7 @@ def setup_parser(args):
     parser.add_argument('--comment', '-c',
                         help="Provide a comment to this simulation run. This will skip a UI prompt and can be used for headless environments.")
     parser.add_argument('--docker', '-d', help="generate graphviz graphs in a docker container", action='store_true')
+    parser.add_argument('--save_pickle', '-sp', help="For grouped scenario-enabled runs, save a .pkl summary file of the run", action='store_true')
     parser.add_argument('--filetype', '-f', help="generate graphviz graphs in a docker container", default='pdf')
     parser.add_argument('--formula_checks', '-fc', help="perform checks on formulas and variables", action='store_true')
     parser.add_argument('--local', '-l', help="When using cloud datasources, don't check for updates cloud spreadsheets", action='store_true')
@@ -354,7 +355,7 @@ def run(args, analysis_config=None):
                           runners.items()}
         if args.analysis_config:
             summary_analysis(scenario_paths, model_run_base_directory, analysis_config, yaml_struct,
-                             image_filetype=args.filetype)
+                             image_filetype=args.filetype, save_pickle=args.save_pickle)
     return runners
 
 
@@ -454,7 +455,8 @@ def plot_scenario_comparison(scenario_paths, model_run_base_directory, base_dir,
     return numeric_values
 
 
-def summary_analysis(scenario_paths, model_run_base_directory, analysis_config, yaml_struct, image_filetype=None):
+def summary_analysis(scenario_paths, model_run_base_directory,
+                     analysis_config, yaml_struct, image_filetype=None, save_pickle=False):
     """
     Compare all scenarios with each other.
 
@@ -521,7 +523,9 @@ def summary_analysis(scenario_paths, model_run_base_directory, analysis_config, 
                     data_scenario = data_scenario.reorder_levels(['group', 'time', 'samples']).groupby(level=['group']).mean()
                     data_scenario = pd.concat({scenario: data_scenario}, names=['Scenario'])
                     data = pd.concat([data, data_scenario])
-                    data.to_pickle(model_run_base_directory + f'/result_data_full_{variable}.pkl')
+                    if save_pickle:
+                        logger.info(f'saving pickled dataframe for grouped {scenario} scenario')
+                        data.to_pickle(model_run_base_directory + f'/result_data_full_{variable}.pkl')
 
         sheet_name = f'mean {variable}'
         sheet_descriptions[
