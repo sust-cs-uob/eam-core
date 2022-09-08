@@ -63,7 +63,7 @@ def plot_grid(df, file_name, xlabel, ylabel, title, base_dir, output_scenario_di
         mean = high.mean()
         logger.debug(mean)
         if mean_.min() <= 0:
-            logger.info(f"Min value >= 0, cannot plot. Skipping {file_name}...")
+            logger.warning(f"Min value >= 0, cannot plot. Skipping {file_name}...")
             continue
 
         mean_.plot(ax=ax,

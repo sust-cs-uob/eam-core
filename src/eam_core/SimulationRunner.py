@@ -227,7 +227,7 @@ class SimulationRunner(object):
         return model, cor
 
     def run(self, create_model_func=None, embodied=False,
-            pickle_average=True, debug=False, target_units=None, result_variables=None, output_persistence_config=None):
+            debug=False, target_units=None, result_variables=None, output_persistence_config=None):
 
         self.model = create_model_func(sim_control=self.sim_control)
 

@@ -718,6 +718,10 @@ def analysis(runner, yaml_struct, analysis_config=None, mean_run=None, image_fil
                 overwrite_dummy_vals_with_null([f'total {variable} ', f'month mean {variable} ',
                                                 f'25 quantiles {variable}', f'75 quantiles {variable}'])
 
+        logger.info("writing TOC")
+        writer.save()
+        write_TOC_to_excel(sheet_descriptions, variables, xlsx_file_name)
+
         logger.info("plot_platform_process_annual_total")
 
         plot_defs = yaml_struct['Analysis'].get('plots', [])
@@ -725,70 +729,8 @@ def analysis(runner, yaml_struct, analysis_config=None, mean_run=None, image_fil
         for plot_def in plot_defs:
             name = plot_def['name']
             if name in analysis_config.get('named_plots', []):
-                variable = plot_def['variable']
-                logger.info(plot_def['name'])
-                title = plot_def.get('title', 'Annual Total Energy Consumption')
-                # sum up monthly values to aggregate - duration depends on distance between start and end date
-                #    load_data_aggegrate = lambda : load_data().sum(level='samples')
-
-                pint_pandas_data, m = load_data(f'{output_directory}/result_data_{variable}.hdf5')
-
-                units = {v[0]: v[1] for v in pint_pandas_data.pint.dequantify().columns.values}
-                df = pint_pandas_data.pint.dequantify()
-                df.columns = df.columns.droplevel(1)
-                data = df
-
-                # check all units are the same
-                units_set = set(units[p] for p in units.keys())
-                assert len(units_set) == 1
-
-                unit = units_set.pop()
-
-                # sum up monthly values to aggregate - duration depends on distance between start and end date
-                #    load_data_aggegrate = lambda : load_data().sum(level='samples')
-                xlabel = f'{unit}/a'
-                common_args = {'start_date': start_date,
-                               'end_date': end_date,
-                               'base_dir': base_dir,
-                               'metadata': metadata,
-                               'unit': unit,
-                               'output_scenario_directory': output_directory}
-
-                if 'xlabel' in plot_def:
-                    xlabel = plot_def['xlabel'].format(unit=unit)
-
-                ylabel = None
-                if 'ylabel' in plot_def:
-                    ylabel = plot_def['ylabel'].format(unit=unit)
-
-                common_args.update({'xlabel': xlabel, 'ylabel': ylabel})
-
-                kind = plot_def.get('kind', 'box')
-                if kind == 'area':
-                    # for area charts if mean_run parameter is not null, we can assume this analysis here is of a run
-                    # with random sampling. In this case, we need the results from a 'non-sampling' run so zero-values
-                    # don't mess up the statistics
-                    mean_run_df = data
-                    if mean_run:
-                        mean_run_df, mean_run_metadata = mean_run.get_process_variable_values(variable,
-                                                                                              YamlLoader.get_target_units(
-                                                                                                  yaml_struct),
-                                                                                              mean_run.sim_control)
-
-                        mean_run_df = mean_run_df.pint.dequantify()
-                        mean_run_df.columns = mean_run_df.columns.droplevel(1)
-                if 'groups' in plot_def:
-                    if mean_run:
-                        mean_run_df = group_data(mean_run_df, metadata, plot_def)
-                        common_args.update({'mean_data': mean_run_df})
-
-                    data = group_data(data, metadata, plot_def)
-
-                data.to_pickle(f'{output_directory}/graph_data_{name}.pdpkl')
-
-                d = plot_kind(data, figsize=(15, 12), file_name=f'{scenario}_{name}_{variable}.{image_filetype}',
-                              title=title,
-                              kind=kind, **common_args)
+                plot_scenario_def(yaml_struct, plot_def, output_directory, start_date, end_date, base_dir,
+                                  metadata, mean_run, name, scenario, image_filetype, load_data)
             else:
                 logger.debug(f"Named plot {plot_def['name']} not used in analysis config")
 
@@ -911,11 +853,76 @@ def analysis(runner, yaml_struct, analysis_config=None, mean_run=None, image_fil
                 f.savefig(file_name_)
             plt.close('all')
             plt.rcParams.update(rcParams_bkp)
-        logger.info("writing TOC")
-        writer.save()
 
-        write_TOC_to_excel(sheet_descriptions, variables, xlsx_file_name)
+        return
 
+
+def plot_scenario_def(yaml_struct, plot_def, output_directory, start_date, end_date, base_dir,
+                      metadata, mean_run, name, scenario, image_filetype, load_data):
+    variable = plot_def['variable']
+    logger.info(plot_def['name'])
+    title = plot_def.get('title', 'Annual Total Energy Consumption')
+    # sum up monthly values to aggregate - duration depends on distance between start and end date
+    #    load_data_aggegrate = lambda : load_data().sum(level='samples')
+
+    pint_pandas_data, m = load_data(f'{output_directory}/result_data_{variable}.hdf5')
+
+    units = {v[0]: v[1] for v in pint_pandas_data.pint.dequantify().columns.values}
+    df = pint_pandas_data.pint.dequantify()
+    df.columns = df.columns.droplevel(1)
+    data = df
+
+    # check all units are the same
+    units_set = set(units[p] for p in units.keys())
+    assert len(units_set) == 1
+
+    unit = units_set.pop()
+
+    # sum up monthly values to aggregate - duration depends on distance between start and end date
+    #    load_data_aggegrate = lambda : load_data().sum(level='samples')
+    xlabel = f'{unit}/a'
+    common_args = {'start_date': start_date,
+                   'end_date': end_date,
+                   'base_dir': base_dir,
+                   'metadata': metadata,
+                   'unit': unit,
+                   'output_scenario_directory': output_directory}
+
+    if 'xlabel' in plot_def:
+        xlabel = plot_def['xlabel'].format(unit=unit)
+
+    ylabel = None
+    if 'ylabel' in plot_def:
+        ylabel = plot_def['ylabel'].format(unit=unit)
+
+    common_args.update({'xlabel': xlabel, 'ylabel': ylabel})
+
+    kind = plot_def.get('kind', 'box')
+    if kind == 'area':
+        # for area charts if mean_run parameter is not null, we can assume this analysis here is of a run
+        # with random sampling. In this case, we need the results from a 'non-sampling' run so zero-values
+        # don't mess up the statistics
+        mean_run_df = data
+        if mean_run:
+            mean_run_df, mean_run_metadata = mean_run.get_process_variable_values(variable,
+                                                                                  YamlLoader.get_target_units(
+                                                                                      yaml_struct),
+                                                                                  mean_run.sim_control)
+
+            mean_run_df = mean_run_df.pint.dequantify()
+            mean_run_df.columns = mean_run_df.columns.droplevel(1)
+    if 'groups' in plot_def:
+        if mean_run:
+            mean_run_df = group_data(mean_run_df, metadata, plot_def)
+            common_args.update({'mean_data': mean_run_df})
+
+        data = group_data(data, metadata, plot_def)
+
+    data.to_pickle(f'{output_directory}/graph_data_{name}.pdpkl')
+
+    d = plot_kind(data, figsize=(15, 12), file_name=f'{scenario}_{name}_{variable}.{image_filetype}',
+                  title=title,
+                  kind=kind, **common_args)
 
 if __name__ == '__main__':
     args = setup_parser(sys.argv[1:])
