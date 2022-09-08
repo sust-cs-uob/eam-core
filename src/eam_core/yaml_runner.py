@@ -332,7 +332,7 @@ def run(args, analysis_config=None):
                              output_persistence_config=output_persistence_config, analysis_config=analysis_config)
 
     if args.multithreaded:
-        #todo: this doesn't work, needs review
+        # todo: this doesn't work, needs review
         logger.info("Running in parallel")
         from pathos.multiprocessing import ThreadPool
         import multiprocessing
@@ -718,10 +718,6 @@ def analysis(runner, yaml_struct, analysis_config=None, mean_run=None, image_fil
                 overwrite_dummy_vals_with_null([f'total {variable} ', f'month mean {variable} ',
                                                 f'25 quantiles {variable}', f'75 quantiles {variable}'])
 
-        logger.info("writing TOC")
-        writer.save()
-        write_TOC_to_excel(sheet_descriptions, variables, xlsx_file_name)
-
         logger.info("plot_platform_process_annual_total")
 
         plot_defs = yaml_struct['Analysis'].get('plots', [])
@@ -763,97 +759,11 @@ def analysis(runner, yaml_struct, analysis_config=None, mean_run=None, image_fil
                 input_vars_df.mean(level='time').to_excel(writer, sheet_name)
 
         if 'input_vars' in analysis_config:
-            logger.info("plotting input vars")
-            logger.debug("collecting input vars from model")
-            all_vars = model.collect_input_variables()
+            plot_input_vars(model, analysis_config, image_filetype, sim_control, base_dir, output_directory)
 
-            _vars = {}
-
-            iv_ac = None
-
-            for _, p_vars in all_vars.items():
-                _vars.update(p_vars)
-
-            # remove all vars that were not defined in the analysis config
-            input_vars_ac = analysis_config['input_vars']
-            if input_vars_ac is not None and 'variables' in input_vars_ac:
-                iv_ac = set(input_vars_ac['variables'])
-                _vars = {k: v for k, v in _vars.items() if k in iv_ac}
-            logger.debug(f"plotting vars: {_vars}")
-
-            file_name = f'input_vars.{image_filetype}'
-
-            import copy
-            rcParams_bkp = copy.deepcopy(plt.rcParams)
-            plt.rcParams['axes.grid'] = True
-            plt.rcParams['axes.linewidth'] = .2
-            plt.rcParams['axes.spines.top'] = True
-            plt.rcParams['axes.spines.right'] = True
-            plt.rcParams['axes.spines.bottom'] = True
-            plt.rcParams['axes.spines.left'] = True
-            plt.rcParams['font.size'] = 8
-            plt.rcParams['grid.linestyle'] = ':'
-            plt.rcParams['lines.linewidth'] = .1
-            plt.rcParams['hatch.linewidth'] = 0.3
-
-            import math
-            n = len(_vars)
-            # n = 50
-            rows = math.ceil(n / 3)
-            f, axarr = plt.subplots(rows, 3, sharex='col', sharey=False)
-            f.set_size_inches(15, n * 0.5)
-
-            var_names = sorted(_vars.keys())
-            for i, ax in enumerate(axarr.flat):
-                if i == len(var_names):
-                    break
-                var_name = var_names[i]
-                val = _vars[var_name]
-                logger.info(f"plotting input variable {var_name}")
-                # for var_name, val in sorted(_vars.items()):
-                #     fig = plt.figure(figsize=(10, 5))
-                #     ax = fig.add_subplot(111)
-
-                try:
-                    data = _vars[var_name].pint.to_reduced_units()
-                except:
-                    logger.error(f"could not reduce units {_vars[var_name].pint.units}")
-                    pass
-
-                p_df = pd.DataFrame(data=data.pint.m)
-                p_df.columns = [var_name]
-                if not isinstance(p_df.index, pd.MultiIndex):
-                    p_df.index = sim_control._df_multi_index
-
-                mean_ = p_df.mean(level='time')
-                mean_.plot(ax=ax, kind='line',
-                           legend=False,
-                           linewidth=1,
-                           color='k', alpha=.3,
-                           #                    marker="x"
-                           )
-
-                ax.set_ylabel(data.pint.units)
-                #     fig.title(var_name)
-                ax.set_title(var_name[:70], fontsize=7, loc='right')
-                ax.yaxis.get_offset_text().set_size(6)
-                ax.yaxis.get_offset_text().set_y(0)
-                # https://jakevdp.github.io/PythonDataScienceHandbook/04.10-customizing-ticks.html
-                ax.xaxis.set_major_locator(plt.MaxNLocator(3))
-
-            # f.suptitle(var_name, fontsize=16)
-            plt.subplots_adjust(hspace=0.4, wspace=.3)
-
-            # f.tight_layout()
-            if file_name:
-                if not os.path.exists(f'{base_dir}/{output_directory}'):
-                    os.makedirs(f'{base_dir}/{output_directory}')
-                file_name_ = f'{base_dir}/{output_directory}/{file_name}'
-                logger.info(f'storing plot at {file_name_}')
-                f.savefig(file_name_)
-            plt.close('all')
-            plt.rcParams.update(rcParams_bkp)
-
+        logger.info("writing TOC")
+        writer.save()
+        write_TOC_to_excel(sheet_descriptions, variables, xlsx_file_name)
         return
 
 
@@ -923,6 +833,100 @@ def plot_scenario_def(yaml_struct, plot_def, output_directory, start_date, end_d
     d = plot_kind(data, figsize=(15, 12), file_name=f'{scenario}_{name}_{variable}.{image_filetype}',
                   title=title,
                   kind=kind, **common_args)
+
+
+def plot_input_vars(model, analysis_config, image_filetype, sim_control, base_dir, output_directory):
+    logger.info("plotting input vars")
+    logger.debug("collecting input vars from model")
+    all_vars = model.collect_input_variables()
+
+    _vars = {}
+
+    iv_ac = None
+
+    for _, p_vars in all_vars.items():
+        _vars.update(p_vars)
+
+    # remove all vars that were not defined in the analysis config
+    input_vars_ac = analysis_config['input_vars']
+    if input_vars_ac is not None and 'variables' in input_vars_ac:
+        iv_ac = set(input_vars_ac['variables'])
+        _vars = {k: v for k, v in _vars.items() if k in iv_ac}
+    logger.debug(f"plotting vars: {_vars}")
+
+    file_name = f'input_vars.{image_filetype}'
+
+    import copy
+    rcParams_bkp = copy.deepcopy(plt.rcParams)
+    plt.rcParams['axes.grid'] = True
+    plt.rcParams['axes.linewidth'] = .2
+    plt.rcParams['axes.spines.top'] = True
+    plt.rcParams['axes.spines.right'] = True
+    plt.rcParams['axes.spines.bottom'] = True
+    plt.rcParams['axes.spines.left'] = True
+    plt.rcParams['font.size'] = 8
+    plt.rcParams['grid.linestyle'] = ':'
+    plt.rcParams['lines.linewidth'] = .1
+    plt.rcParams['hatch.linewidth'] = 0.3
+
+    import math
+    n = len(_vars)
+    # n = 50
+    rows = math.ceil(n / 3)
+    f, axarr = plt.subplots(rows, 3, sharex='col', sharey=False)
+    f.set_size_inches(15, n * 0.5)
+
+    var_names = sorted(_vars.keys())
+    for i, ax in enumerate(axarr.flat):
+        if i == len(var_names):
+            break
+        var_name = var_names[i]
+        val = _vars[var_name]
+        logger.info(f"plotting input variable {var_name}")
+        # for var_name, val in sorted(_vars.items()):
+        #     fig = plt.figure(figsize=(10, 5))
+        #     ax = fig.add_subplot(111)
+
+        try:
+            data = _vars[var_name].pint.to_reduced_units()
+        except:
+            logger.error(f"could not reduce units {_vars[var_name].pint.units}")
+            pass
+
+        p_df = pd.DataFrame(data=data.pint.m)
+        p_df.columns = [var_name]
+        if not isinstance(p_df.index, pd.MultiIndex):
+            p_df.index = sim_control._df_multi_index
+
+        mean_ = p_df.mean(level='time')
+        mean_.plot(ax=ax, kind='line',
+                   legend=False,
+                   linewidth=1,
+                   color='k', alpha=.3,
+                   #                    marker="x"
+                   )
+
+        ax.set_ylabel(data.pint.units)
+        #     fig.title(var_name)
+        ax.set_title(var_name[:70], fontsize=7, loc='right')
+        ax.yaxis.get_offset_text().set_size(6)
+        ax.yaxis.get_offset_text().set_y(0)
+        # https://jakevdp.github.io/PythonDataScienceHandbook/04.10-customizing-ticks.html
+        ax.xaxis.set_major_locator(plt.MaxNLocator(3))
+
+    # f.suptitle(var_name, fontsize=16)
+    plt.subplots_adjust(hspace=0.4, wspace=.3)
+
+    # f.tight_layout()
+    if file_name:
+        if not os.path.exists(f'{base_dir}/{output_directory}'):
+            os.makedirs(f'{base_dir}/{output_directory}')
+        file_name_ = f'{base_dir}/{output_directory}/{file_name}'
+        logger.info(f'storing plot at {file_name_}')
+        f.savefig(file_name_)
+    plt.close('all')
+    plt.rcParams.update(rcParams_bkp)
+
 
 if __name__ == '__main__':
     args = setup_parser(sys.argv[1:])
