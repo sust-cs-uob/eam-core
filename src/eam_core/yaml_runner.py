@@ -599,8 +599,11 @@ def overwrite_dummy_vals_with_null(sheets):
         # unimplemented.
         pass
 
+
 def analysis(runner, yaml_struct, analysis_config=None, mean_run=None, image_filetype=None):
     """
+    Performs analysis on a run within a given scenario.
+    Creates any graphs, and creates the results_default_....xlsx sheet.
 
     :param runner:
     :param yaml_struct:
