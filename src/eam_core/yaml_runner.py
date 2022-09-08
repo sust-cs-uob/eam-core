@@ -603,7 +603,7 @@ def overwrite_dummy_vals_with_null(sheets):
 def analysis(runner, yaml_struct, analysis_config=None, mean_run=None, image_filetype=None):
     """
     Performs analysis on a run within a given scenario.
-    Creates any graphs, and creates the results_default_....xlsx sheet.
+    Creates any graphs, and creates the results_[scenario]_[datetime].xlsx sheet.
 
     :param runner:
     :param yaml_struct:
@@ -700,6 +700,13 @@ def analysis(runner, yaml_struct, analysis_config=None, mean_run=None, image_fil
             mean = data.mean(level='time').mean()
             mean.to_excel(writer, sheet_name)
 
+            use_f_units = yaml_struct['Analysis'].get('functional_units', True)
+            if use_f_units:
+                logger.info(f'Calculating functional units for {variable}...')
+                extract_functional_units(yaml_struct, data, sim_control, variable)
+            else:
+                logger.info('Functional units are not calculated for this model')
+
             if sim_control.sample_size > 1:
                 # print(data)
                 sheet_name = f'25 quantiles {variable}'
@@ -764,7 +771,26 @@ def analysis(runner, yaml_struct, analysis_config=None, mean_run=None, image_fil
         logger.info("writing TOC")
         writer.save()
         write_TOC_to_excel(sheet_descriptions, variables, xlsx_file_name)
+
         return
+
+
+def extract_functional_units(yaml_struct, data,  sim_control, variable):
+    """
+    Take the results for the specified output variable and calculate the results in terms of functional units.
+    Functional units are specified in the Analysis section of the yaml model.
+    todo needs tests!
+    """
+    f_unit = yaml_struct['Analysis'].get('functional_unit_type', "UNDEFINED")
+    f_unit_var_list = yaml_struct['Analysis'].get('functional_unit_vars', [])
+
+    f_unit_cumulative_value = 0
+    parameter_set = sim_control.param_repo.parameter_sets
+    scenario = sim_control.scenario
+    for f_unit_var in f_unit_var_list:
+        logger.info(f'Fetching functional unit value for {f_unit_var}')
+        f_unit_value = parameter_set[f_unit_var].scenarios[scenario].kwargs.get('ref value', 0)
+        f_unit_cumulative_value += f_unit_value
 
 
 def plot_scenario_def(yaml_struct, plot_def, output_directory, start_date, end_date, base_dir,
