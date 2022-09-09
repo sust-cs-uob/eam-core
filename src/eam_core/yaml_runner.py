@@ -739,7 +739,7 @@ def analysis(runner, yaml_struct, analysis_config=None, mean_run=None, image_fil
         for plot_def in plot_defs:
             name = plot_def['name']
             if name in analysis_config.get('named_plots', []):
-                plot_scenario_def(yaml_struct, plot_def, output_directory, start_date, end_date, base_dir,
+                d = plot_scenario_def(yaml_struct, plot_def, output_directory, start_date, end_date, base_dir,
                                   metadata, mean_run, name, scenario, image_filetype, load_data)
             else:
                 logger.debug(f"Named plot {plot_def['name']} not used in analysis config")
@@ -791,6 +791,8 @@ def extract_functional_units(yaml_struct, data,  sim_control, variable):
     f_unit_type = yaml_struct['Analysis'].get('functional_unit_type', "UNDEFINED")
     f_unit_var_list = yaml_struct['Analysis'].get('functional_unit_vars', [])
 
+    # Iterate through the parameter set and sum over the specified variables that
+    # contribute to the total functional units for that model.
     f_unit_cumulative_value = 0
     parameter_set = sim_control.param_repo.parameter_sets
     scenario = sim_control.scenario
@@ -800,6 +802,8 @@ def extract_functional_units(yaml_struct, data,  sim_control, variable):
         f_unit_cumulative_value += f_unit_value
     logger.info(f'Total summed functional units: {f_unit_cumulative_value} {f_unit_type}')
 
+    # Then take that summed functional unit value and divide the process results by it,
+    # to get results of energy/carbon unit per functional unit quantity.
     if f_unit_cumulative_value > 0:
         data_per_f_unit = data / f_unit_cumulative_value
         data_per_f_unit.columns = data_per_f_unit.columns.droplevel(1)
@@ -812,6 +816,12 @@ def extract_functional_units(yaml_struct, data,  sim_control, variable):
 
 def plot_scenario_def(yaml_struct, plot_def, output_directory, start_date, end_date, base_dir,
                       metadata, mean_run, name, scenario, image_filetype, load_data):
+    """
+    Refactored out of the analysis() method.
+    Seems to generate plots of a scenario with a given variable.
+    The result from calling plot_kind is never referred to however- maybe this is obsolete?
+    """
+
     variable = plot_def['variable']
     logger.info(plot_def['name'])
     title = plot_def.get('title', 'Annual Total Energy Consumption')
@@ -877,8 +887,17 @@ def plot_scenario_def(yaml_struct, plot_def, output_directory, start_date, end_d
                   title=title,
                   kind=kind, **common_args)
 
+    return d
+
 
 def plot_input_vars(model, analysis_config, image_filetype, sim_control, base_dir, output_directory):
+    """
+    Refactored out of the analysis() method.
+    Plots the input variables and saves it in the input_vars.[filetype]
+    - If input_vars is in the analysis_config!
+    I haven't decomposed the valid yaml structure this calls for- currently unused.
+    """
+
     logger.info("plotting input vars")
     logger.debug("collecting input vars from model")
     all_vars = model.collect_input_variables()
