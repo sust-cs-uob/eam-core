@@ -18,7 +18,8 @@ import json as json
 
 from shutil import copyfile
 from eam_core.util import get_sim_run_description, create_output_folder, \
-    draw_graph_from_dotfile, load_as_df_quantity, load_as_plain_df, prepare_simulation,find_node_by_name
+    draw_graph_from_dotfile, load_as_df_quantity, load_as_plain_df, \
+    prepare_simulation, find_node_by_name, extract_functional_units
 
 from eam_core.YamlLoader import YamlLoader
 from eam_core.common_graphical_analysis import load_metadata, plot_kind, plot_process_with_input_vars
@@ -703,7 +704,13 @@ def analysis(runner, yaml_struct, analysis_config=None, mean_run=None, image_fil
             use_f_units = yaml_struct['Analysis'].get('functional_units', False)
             if use_f_units:
                 logger.info(f'Calculating functional units for {variable}...')
-                data_per_f_unit, f_unit_type = extract_functional_units(yaml_struct, data, sim_control, variable)
+                functional_unit_config = {
+                    'use_functional_units': yaml_struct['Analysis'].get('functional_units', False),
+                    'functional_unit_type': yaml_struct['Analysis'].get('functional_unit_type', "UNDEFINED"),
+                    'functional_unit_vars': yaml_struct['Analysis'].get('functional_unit_vars', [])
+                }
+                data_per_f_unit, f_unit_type = extract_functional_units(functional_unit_config, sim_control,
+                                                                        compute_data=True, data=data)
                 if data_per_f_unit is not None:
                     sheet_name = f'functional unit {variable}'
                     sheet_descriptions[
@@ -780,38 +787,6 @@ def analysis(runner, yaml_struct, analysis_config=None, mean_run=None, image_fil
         write_TOC_to_excel(sheet_descriptions, variables, xlsx_file_name)
 
         return
-
-
-def extract_functional_units(yaml_struct, data,  sim_control, variable):
-    """
-    Take the results for the specified output variable and calculate the results in terms of functional units.
-    Functional units are specified in the Analysis section of the yaml model.
-    todo needs tests!
-    """
-    f_unit_type = yaml_struct['Analysis'].get('functional_unit_type', "UNDEFINED")
-    f_unit_var_list = yaml_struct['Analysis'].get('functional_unit_vars', [])
-
-    # Iterate through the parameter set and sum over the specified variables that
-    # contribute to the total functional units for that model.
-    f_unit_cumulative_value = 0
-    parameter_set = sim_control.param_repo.parameter_sets
-    scenario = sim_control.scenario
-    for f_unit_var in f_unit_var_list:
-        logger.info(f'Fetching functional unit value for {f_unit_var}')
-        f_unit_value = parameter_set[f_unit_var].scenarios[scenario].kwargs.get('ref value', 0)
-        f_unit_cumulative_value += f_unit_value
-    logger.info(f'Total summed functional units: {f_unit_cumulative_value} {f_unit_type}')
-
-    # Then take that summed functional unit value and divide the process results by it,
-    # to get results of energy/carbon unit per functional unit quantity.
-    if f_unit_cumulative_value > 0:
-        data_per_f_unit = data / f_unit_cumulative_value
-        data_per_f_unit.columns = data_per_f_unit.columns.droplevel(1)
-        #data_per_f_unit = data_per_f_unit.pint.quantify()
-        return data_per_f_unit, f_unit_type
-    else:
-        logger.warning(f'{f_unit_type} value was not greater than 0. Value was {f_unit_cumulative_value}')
-        return None, None
 
 
 def plot_scenario_def(yaml_struct, plot_def, output_directory, start_date, end_date, base_dir,

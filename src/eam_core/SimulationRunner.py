@@ -16,7 +16,7 @@ from pip._vendor.pkg_resources import resource_filename, Requirement
 from eam_core import SimulationControl
 from eam_core.util import store_dataframe, \
     store_process_metadata, store_parameter_repo_variables, get_param_names, to_target_dimension, \
-    pandas_series_dict_to_dataframe
+    pandas_series_dict_to_dataframe, extract_functional_units
 
 logger = logging.getLogger(__name__)
 
@@ -227,7 +227,8 @@ class SimulationRunner(object):
         return model, cor
 
     def run(self, create_model_func=None, embodied=False,
-            debug=False, target_units=None, result_variables=None, output_persistence_config=None):
+            debug=False, target_units=None, result_variables=None,
+            output_persistence_config=None, functional_unit_config=None):
 
         self.model = create_model_func(sim_control=self.sim_control)
 
@@ -251,6 +252,14 @@ class SimulationRunner(object):
             self.store_input_var_csv(target_units)
 
             self.store_parameterrepository_variables()
+
+            if functional_unit_config:
+                if functional_unit_config.get('use_functional_units', False):
+                    logger.info(f'Calculating functional units...')
+                    f_unit_cumulative_value, f_unit_type = extract_functional_units(functional_unit_config, self.sim_control)
+                    pass
+                else:
+                    logger.info('Functional units are not calculated for this model')
 
         self.store_json_graph()
 
