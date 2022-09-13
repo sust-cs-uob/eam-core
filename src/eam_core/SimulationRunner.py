@@ -1,6 +1,7 @@
 import csv
 import logging
 import os
+import json
 import pint
 from logging.config import dictConfig
 from typing import Dict
@@ -253,15 +254,7 @@ class SimulationRunner(object):
 
             self.store_parameterrepository_variables()
 
-            if functional_unit_config:
-                if functional_unit_config.get('use_functional_units', False):
-                    logger.info(f'Calculating functional units...')
-                    f_unit_cumulative_value, f_unit_type = extract_functional_units(functional_unit_config,
-                                                                                    self.sim_control.param_repo.parameter_sets,
-                                                                                    self.sim_control.scenario)
-                    pass
-                else:
-                    logger.info('Functional units are not calculated for this model')
+            self.store_functional_unit_value(functional_unit_config)
 
         self.store_json_graph()
 
@@ -274,6 +267,22 @@ class SimulationRunner(object):
     def store_metadata(self):
         logger.info("Storing metadata")
         store_process_metadata(self.model, simulation_control=self.sim_control)
+
+    def store_functional_unit_value(self, functional_unit_config=None):
+        if functional_unit_config:
+            if functional_unit_config.get('use_functional_units', False):
+                logger.info(f'Calculating functional units...')
+                f_unit_cumulative_value, f_unit_type = extract_functional_units(functional_unit_config,
+                                                                                self.sim_control.param_repo.parameter_sets,
+                                                                                self.sim_control.scenario)
+                f_unit_json = {f_unit_type: f_unit_cumulative_value}
+                filename = f'{self.sim_control.output_directory}/functional_unit_sum.json'
+
+                with open(filename, 'w', encoding='utf-8') as f:
+                    json.dump(f_unit_json, f, ensure_ascii=False, indent=4)
+                    f.close()
+            else:
+                logger.info('Functional units are not calculated for this model')
 
     def store_input_var_csv(self, target_units):
         all_vars = self.model.collect_input_variables()
