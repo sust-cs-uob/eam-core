@@ -256,7 +256,9 @@ class SimulationRunner(object):
             if functional_unit_config:
                 if functional_unit_config.get('use_functional_units', False):
                     logger.info(f'Calculating functional units...')
-                    f_unit_cumulative_value, f_unit_type = extract_functional_units(functional_unit_config, self.sim_control)
+                    f_unit_cumulative_value, f_unit_type = extract_functional_units(functional_unit_config,
+                                                                                    self.sim_control.param_repo.parameter_sets,
+                                                                                    self.sim_control.scenario)
                     pass
                 else:
                     logger.info('Functional units are not calculated for this model')

@@ -709,15 +709,26 @@ def analysis(runner, yaml_struct, analysis_config=None, mean_run=None, image_fil
                     'functional_unit_type': yaml_struct['Analysis'].get('functional_unit_type', "UNDEFINED"),
                     'functional_unit_vars': yaml_struct['Analysis'].get('functional_unit_vars', [])
                 }
-                data_per_f_unit, f_unit_type = extract_functional_units(functional_unit_config, sim_control,
-                                                                        compute_data=True, data=data)
-                if data_per_f_unit is not None:
+                parameter_set = sim_control.param_repo.parameter_sets
+                scenario = sim_control.scenario
+                f_unit_cumulative_value, f_unit_type = extract_functional_units(functional_unit_config, parameter_set, scenario)
+
+                # Take the summed functional unit value and divide the process results by it,
+                # to get results of energy/carbon unit per functional unit quantity.
+                # Then output into the sheet.
+                if f_unit_cumulative_value > 0:
+                    data_per_f_unit = data / f_unit_cumulative_value
+                    data_per_f_unit.columns = data_per_f_unit.columns.droplevel(1)
+                    # data_per_f_unit = data_per_f_unit.pint.quantify()
                     sheet_name = f'functional unit {variable}'
                     sheet_descriptions[
                         sheet_name] = f'{sheet_name}: The data presented in terms of {variable} per {f_unit_type}.'
 
                     mean_data_per_f_unit = data_per_f_unit.mean(level='time').mean()
                     mean_data_per_f_unit.to_excel(writer, sheet_name)
+                else:
+                    logger.warning(
+                        f'{f_unit_type} value was not greater than 0. Value was {f_unit_cumulative_value}')
             else:
                 logger.info('Functional units are not calculated for this model')
 

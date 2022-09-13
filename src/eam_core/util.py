@@ -169,7 +169,7 @@ def store_calculation_debug_info(model, simulation_control, store_input_vars=Tru
         df.to_pickle(f'{simulation_control.output_directory}/pd_pickles/input_variables.pdpkl')
 
 
-def extract_functional_units(functional_unit_config, sim_control, compute_data=False, data=None):
+def extract_functional_units(functional_unit_config, parameter_set, scenario):
     """
     Take the results for the specified output variable and calculate the results in terms of functional units.
     Functional units are specified in the Analysis section of the yaml model.
@@ -181,27 +181,15 @@ def extract_functional_units(functional_unit_config, sim_control, compute_data=F
     # Iterate through the parameter set and sum over the specified variables that
     # contribute to the total functional units for that model.
     f_unit_cumulative_value = 0
-    parameter_set = sim_control.param_repo.parameter_sets
-    scenario = sim_control.scenario
+    #parameter_set = sim_control.param_repo.parameter_sets
+    #scenario = sim_control.scenario
     for f_unit_var in f_unit_var_list:
         logger.info(f'Fetching functional unit value for {f_unit_var}')
         f_unit_value = parameter_set[f_unit_var].scenarios[scenario].kwargs.get('ref value', 0)
         f_unit_cumulative_value += f_unit_value
     logger.info(f'Total summed functional units: {f_unit_cumulative_value} {f_unit_type}')
 
-    if compute_data and data is not None:
-        # Then take that summed functional unit value and divide the process results by it,
-        # to get results of energy/carbon unit per functional unit quantity.
-        if f_unit_cumulative_value > 0:
-            data_per_f_unit = data / f_unit_cumulative_value
-            data_per_f_unit.columns = data_per_f_unit.columns.droplevel(1)
-            #data_per_f_unit = data_per_f_unit.pint.quantify()
-            return data_per_f_unit, f_unit_type
-        else:
-            logger.warning(f'{f_unit_type} value was not greater than 0. Value was {f_unit_cumulative_value}')
-            return None, None
-    else:
-        return f_unit_cumulative_value, f_unit_type
+    return f_unit_cumulative_value, f_unit_type
 
 
 def h5store(filename, df, **kwargs):
