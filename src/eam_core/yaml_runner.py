@@ -717,12 +717,14 @@ def analysis(runner, yaml_struct, analysis_config=None, mean_run=None, image_fil
                 # to get results of energy/carbon unit per functional unit quantity.
                 # Then output into the sheet.
                 if f_unit_cumulative_value > 0:
-                    data_per_f_unit = data / f_unit_cumulative_value
+                    data_per_f_unit = data / f_unit_cumulative_value.magnitude
+                    f_unit_units = f_unit_cumulative_value.units
                     data_per_f_unit.columns = data_per_f_unit.columns.droplevel(1)
                     # data_per_f_unit = data_per_f_unit.pint.quantify()
                     sheet_name = f'functional unit {variable}'
                     sheet_descriptions[
-                        sheet_name] = f'{sheet_name}: The data presented in terms of {variable} per {f_unit_type}.'
+                        sheet_name] = f'{sheet_name}: The data presented in terms of {variable}' \
+                                      f' per {f_unit_type} ({f_unit_units}).'
 
                     mean_data_per_f_unit = data_per_f_unit.mean(level='time').mean()
                     mean_data_per_f_unit.to_excel(writer, sheet_name)

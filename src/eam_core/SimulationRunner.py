@@ -275,7 +275,9 @@ class SimulationRunner(object):
                 f_unit_cumulative_value, f_unit_type = extract_functional_units(functional_unit_config,
                                                                                 self.sim_control.param_repo.parameter_sets,
                                                                                 self.sim_control.scenario)
-                f_unit_json = {f_unit_type: f_unit_cumulative_value}
+                f_unit_json = {f_unit_type:
+                               [f_unit_cumulative_value.magnitude,
+                                str(f_unit_cumulative_value.units)]}
                 filename = f'{self.sim_control.output_directory}/functional_unit_sum.json'
 
                 with open(filename, 'w', encoding='utf-8') as f:

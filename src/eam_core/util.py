@@ -186,7 +186,8 @@ def extract_functional_units(functional_unit_config, parameter_set, scenario):
     for f_unit_var in f_unit_var_list:
         logger.info(f'Fetching functional unit value for {f_unit_var}')
         f_unit_value = parameter_set[f_unit_var].scenarios[scenario].kwargs.get('ref value', 0)
-        f_unit_cumulative_value += f_unit_value
+        f_unit_units = Q_(parameter_set[f_unit_var].scenarios[scenario].unit)
+        f_unit_cumulative_value += (f_unit_value * f_unit_units)
     logger.info(f'Total summed functional units: {f_unit_cumulative_value} {f_unit_type}')
 
     return f_unit_cumulative_value, f_unit_type
