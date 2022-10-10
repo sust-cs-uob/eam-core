@@ -188,6 +188,8 @@ def extract_functional_units(functional_unit_config, parameter_set, scenario):
         f_unit_value = parameter_set[f_unit_var].scenarios[scenario].kwargs.get('ref value', 0)
         f_unit_units = Q_(parameter_set[f_unit_var].scenarios[scenario].unit)
         f_unit_cumulative_value += (f_unit_value * f_unit_units)
+        # todo need to check for same units (time) between each functional param
+        # then, maybe include a yaml value for output units? e.g. hours,seconds,etc
     logger.info(f'Total summed functional units: {f_unit_cumulative_value} {f_unit_type}')
 
     return f_unit_cumulative_value, f_unit_type
