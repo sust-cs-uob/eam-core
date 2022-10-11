@@ -707,6 +707,7 @@ def analysis(runner, yaml_struct, analysis_config=None, mean_run=None, image_fil
                 functional_unit_config = {
                     'use_functional_units': yaml_struct['Analysis'].get('functional_units', False),
                     'functional_unit_type': yaml_struct['Analysis'].get('functional_unit_type', "UNDEFINED"),
+                    'functional_unit_unit': yaml_struct['Analysis'].get('functional_unit_unit', "UNDEFINED"),
                     'functional_unit_vars': yaml_struct['Analysis'].get('functional_unit_vars', [])
                 }
                 parameter_set = sim_control.param_repo.parameter_sets
