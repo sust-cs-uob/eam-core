@@ -182,16 +182,14 @@ def extract_functional_units(functional_unit_config, parameter_set, scenario):
     # Iterate through the parameter set and sum over the specified variables that
     # contribute to the total functional units for that model.
     f_unit_cumulative_value = 0 * Q_(f_unit_unit)
-    #parameter_set = sim_control.param_repo.parameter_sets
-    #scenario = sim_control.scenario
+
     for f_unit_var in f_unit_var_list:
-        logger.info(f'Fetching functional unit value for {f_unit_var}')
+        logger.info(f'Fetching functional unit for {f_unit_var}')
         f_unit_value = parameter_set[f_unit_var].scenarios[scenario].kwargs.get('ref value', 0)
         f_unit_units = Q_(parameter_set[f_unit_var].scenarios[scenario].unit)
-        f_unit_cumulative_value += (f_unit_value * f_unit_units)
-        # todo need to check for same units (time) between each functional param
-        # then, maybe include a yaml value for output units? e.g. hours,seconds,etc
 
+        assert f_unit_cumulative_value.dimensionality == f_unit_units.dimensionality
+        f_unit_cumulative_value += (f_unit_value * f_unit_units)
 
     logger.info(f'Total summed functional units: {f_unit_cumulative_value} {f_unit_type}')
 
